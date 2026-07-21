@@ -1,6 +1,6 @@
 import enum
-from sqlalchemy import Column, Integer, String, Float, Boolean, Enum, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy import String, Float, Boolean, Enum as SQLEnum, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.database import Base
 
 class ItemType(str, enum.Enum):
@@ -17,28 +17,28 @@ class MainCategory(str, enum.Enum):
 class Vendor(Base):
     __tablename__ = "vendors"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False, index=True)
-    contact_info = Column(String, nullable=True)
-    is_active = Column(Boolean, default=True)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    contact_info: Mapped[str | None] = mapped_column(String, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
     # Relationship to cleanly find all products owned by this vendor
-    products = relationship("Product", back_populates="vendor")
+    products: Mapped[list["Product"]] = relationship("Product", back_populates="vendor")
 
 class Product(Base):
     __tablename__ = "products"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False, index=True)
-    item_type = Column(Enum(ItemType), nullable=False)
-    retail_price = Column(Float, nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    item_type: Mapped[ItemType] = mapped_column(SQLEnum(ItemType), nullable=False)
+    retail_price: Mapped[float] = mapped_column(Float, nullable=False)
     
-    main_category = Column(Enum(MainCategory), nullable=True)
-    consignment_fee = Column(Float, nullable=True)
-    is_active = Column(Boolean, default=True)
+    main_category: Mapped[MainCategory | None] = mapped_column(SQLEnum(MainCategory), nullable=True)
+    consignment_fee: Mapped[float | None] = mapped_column(Float, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     
     # Foreign Key tracking for Consignment items
-    vendor_id = Column(Integer, ForeignKey("vendors.id"), nullable=True)
+    vendor_id: Mapped[int | None] = mapped_column(ForeignKey("vendors.id"), nullable=True)
     
     # Relationship links
-    vendor = relationship("Vendor", back_populates="products")
+    vendor: Mapped[Vendor | None] = relationship("Vendor", back_populates="products")

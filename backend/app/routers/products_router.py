@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Query, HTTPException
 from app.schemas.products_schema import ProductIn, VendorIn
-from app.services.product_service import create_product, list_products, create_vendor, list_vendors
+from app.services.products_service import create_product, list_products, create_vendor, list_vendors
 
 router = APIRouter()
 
