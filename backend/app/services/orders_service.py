@@ -4,6 +4,10 @@ from app.models.orders import Order, OrderItem
 from app.models.products import Product, ItemType
 from app.models.stocks import ConsignmentStock
 from app.schemas.orders_schema import OrderCreateIn, OrderRead
+from sqlalchemy.orm import joinedload
+from datetime import datetime
+from typing import Optional
+
 
 def process_checkout(order_data: OrderCreateIn) -> OrderRead:
     with SessionLocal() as session:
@@ -20,8 +24,15 @@ def process_checkout(order_data: OrderCreateIn) -> OrderRead:
             if not product:
                 raise HTTPException(status_code=404, detail=f"Product ID {item.product_id} not found or inactive")
 
-            # 1. Price calculations
-            item_total = product.retail_price * item.quantity
+            # --- ADD-ON CALCULATION ---
+            addons_total = 0.0
+            if item.addon_ids:
+                addons = session.query(Product).filter(Product.id.in_(item.addon_ids), Product.is_active == True).all()
+                addons_total = sum(addon.retail_price for addon in addons)
+
+            # 1. Price calculations (Base + Addons)
+            single_item_price = product.retail_price + addons_total
+            item_total = single_item_price * item.quantity
             total_amount += item_total
 
             # 2. Revenue split calculation
@@ -51,6 +62,8 @@ def process_checkout(order_data: OrderCreateIn) -> OrderRead:
                     product_id=product.id,
                     quantity=item.quantity,
                     unit_price=product.retail_price,
+                    addons_price=addons_total,         # <-- Added snapshot
+                    addon_ids=item.addon_ids or [],    # <-- Added snapshot
                     calculated_cafe_revenue=item_cafe_revenue
                 )
             )
@@ -66,8 +79,30 @@ def process_checkout(order_data: OrderCreateIn) -> OrderRead:
         session.refresh(db_order)
 
         return OrderRead.model_validate(db_order)
-
+    
 def get_recent_orders(limit: int = 20) -> list[OrderRead]:
     with SessionLocal() as session:
-        orders = session.query(Order).order_by(Order.created_at.desc()).limit(limit).all()
+        orders = (
+            session.query(Order)
+            .options(joinedload(Order.items))  # Pre-fetches order items in 1 query
+            .order_by(Order.created_at.desc())
+            .limit(limit)
+            .all()
+        )
+        return [OrderRead.model_validate(o) for o in orders]    
+
+def get_orders_by_date_range(
+    start_date: Optional[datetime] = None, 
+    end_date: Optional[datetime] = None, 
+    limit: int = 100
+) -> list[OrderRead]:
+    with SessionLocal() as session:
+        query = session.query(Order).options(joinedload(Order.items))
+        
+        if start_date:
+            query = query.filter(Order.created_at >= start_date)
+        if end_date:
+            query = query.filter(Order.created_at <= end_date)
+            
+        orders = query.order_by(Order.created_at.desc()).limit(limit).all()
         return [OrderRead.model_validate(o) for o in orders]

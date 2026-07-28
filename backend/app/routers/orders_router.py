@@ -1,6 +1,9 @@
+from datetime import datetime
+from typing import Optional
+
 from fastapi import APIRouter, HTTPException, Query
-from app.schemas.orders_schema import OrderCreateIn
-from app.services.orders_service import process_checkout, get_recent_orders
+from app.schemas.orders_schema import OrderCreateIn, OrderItemRead
+from app.services.orders_service import get_orders_by_date_range, process_checkout, get_recent_orders
 
 router = APIRouter()
 
@@ -18,14 +21,15 @@ def create_order(payload: OrderCreateIn):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/orders")
-def list_orders(limit: int = Query(20, ge=1, le=100)):
+@router.get("/orders", response_model=list[OrderItemRead])
+def list_orders(
+    limit: int = Query(20, ge=1, le=100),
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None
+):
     try:
-        orders = get_recent_orders(limit=limit)
-        return {
-            "status": "success",
-            "message": "Fetched recent orders",
-            "data": [o.model_dump(mode="json") for o in orders]
-        }
+        if start_date or end_date:
+            return get_orders_by_date_range(start_date=start_date, end_date=end_date, limit=limit)
+        return get_recent_orders(limit=limit)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

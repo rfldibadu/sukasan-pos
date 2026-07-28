@@ -1,9 +1,12 @@
+from typing import List, Optional
+
 from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 
 class OrderItemIn(BaseModel):
     product_id: int
     quantity: int = Field(..., gt=0)
+    addon_ids: Optional[List[int]] = []  # List of Product IDs for add-ons
 
 class OrderCreateIn(BaseModel):
     items: list[OrderItemIn]
@@ -13,9 +16,11 @@ class OrderItemRead(BaseModel):
     product_id: int
     quantity: int
     unit_price: float
-    calculated_cafe_revenue: float
+    addons_price: float
+    line_total: float
 
-    model_config = ConfigDict(from_attributes=True)
+    class Config:
+        from_attributes = True
 
 class OrderRead(BaseModel):
     id: int
@@ -24,4 +29,5 @@ class OrderRead(BaseModel):
     created_at: datetime
     items: list[OrderItemRead]
 
-    model_config = ConfigDict(from_attributes=True)
+    class Config:
+        from_attributes = True
