@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
-from app.schemas.orders_schema import OrderCreateIn, OrderItemRead
+from app.schemas.orders_schema import OrderCreateIn, OrderItemRead, OrderRead
 from app.services.orders_service import get_orders_by_date_range, process_checkout, get_recent_orders
 
 router = APIRouter()
@@ -21,7 +21,7 @@ def create_order(payload: OrderCreateIn):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/orders", response_model=list[OrderItemRead])
+@router.get("/orders", response_model=list[OrderRead])
 def list_orders(
     limit: int = Query(20, ge=1, le=100),
     start_date: Optional[datetime] = None,

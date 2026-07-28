@@ -1,6 +1,8 @@
 import enum
 from datetime import datetime
+import uuid
 from sqlalchemy import String, Float, DateTime, Enum
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.database import Base
 
@@ -15,7 +17,12 @@ class OperationalCost(Base):
     """Tracks recurring and one-off operational expenses for monthly P&L calculations"""
     __tablename__ = "operational_costs"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), 
+        primary_key=True, 
+        default=uuid.uuid4, 
+        index=True
+    )
     title: Mapped[str] = mapped_column(String, index=True) # e.g. "July Staff Salary - Staff 1"
     category: Mapped[CostCategory] = mapped_column(Enum(CostCategory), nullable=False)
     amount: Mapped[float] = mapped_column(Float, nullable=False) # e.g. 1500000.0

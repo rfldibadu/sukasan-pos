@@ -1,3 +1,4 @@
+import uuid
 from pydantic import BaseModel, Field
 from typing import Optional
 
@@ -14,7 +15,7 @@ class RawStockIn(RawStockBase):
     pass
 
 class RawStockRead(RawStockBase):
-    id: int
+    id: uuid.UUID
 
     class Config:
         from_attributes = True
@@ -23,7 +24,7 @@ class RawStockRead(RawStockBase):
 # CONSIGNMENT STOCK SCHEMAS
 # ==========================================
 class ConsignmentStockBase(BaseModel):
-    product_id: int
+    product_id: uuid.UUID
     current_quantity: int = Field(..., ge=0)
 
 class ConsignmentStockIn(ConsignmentStockBase):
@@ -34,7 +35,7 @@ class ConsignmentStockUpdate(BaseModel):
     current_quantity: int = Field(..., ge=0)
 
 class ConsignmentStockRead(ConsignmentStockBase):
-    id: int
+    id: uuid.UUID
 
     class Config:
         from_attributes = True

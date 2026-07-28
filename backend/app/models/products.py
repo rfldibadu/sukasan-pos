@@ -1,5 +1,7 @@
 import enum
+import uuid
 from sqlalchemy import String, Float, Boolean, Enum as SQLEnum, ForeignKey
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.database import Base
 
@@ -17,7 +19,12 @@ class MainCategory(str, enum.Enum):
 class Vendor(Base):
     __tablename__ = "vendors"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), 
+        primary_key=True, 
+        default=uuid.uuid4, 
+        index=True
+    )
     name: Mapped[str] = mapped_column(String, nullable=False, index=True)
     contact_info: Mapped[str | None] = mapped_column(String, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -28,7 +35,12 @@ class Vendor(Base):
 class Product(Base):
     __tablename__ = "products"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), 
+        primary_key=True, 
+        default=uuid.uuid4, 
+        index=True
+    )
     name: Mapped[str] = mapped_column(String, nullable=False, index=True)
     item_type: Mapped[ItemType] = mapped_column(SQLEnum(ItemType), nullable=False)
     retail_price: Mapped[float] = mapped_column(Float, nullable=False)
@@ -38,7 +50,7 @@ class Product(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     
     # Foreign Key tracking for Consignment items
-    vendor_id: Mapped[int | None] = mapped_column(ForeignKey("vendors.id"), nullable=True)
+    vendor_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("vendors.id"), nullable=True)
     
     # Relationship links
     vendor: Mapped[Vendor | None] = relationship("Vendor", back_populates="products")

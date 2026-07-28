@@ -1,3 +1,4 @@
+import uuid
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from datetime import datetime
@@ -14,7 +15,7 @@ class OperationalCostIn(OperationalCostBase):
     expense_date: datetime = Field(default_factory=datetime.utcnow)
 
 class OperationalCostRead(OperationalCostBase):
-    id: int
+    id: uuid.UUID
     expense_date: datetime
 
     model_config = ConfigDict(from_attributes=True)
