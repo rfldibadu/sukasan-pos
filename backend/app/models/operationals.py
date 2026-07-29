@@ -1,5 +1,5 @@
 import enum
-from datetime import datetime
+from datetime import UTC, datetime
 import uuid
 from sqlalchemy import String, Float, DateTime, Enum
 from sqlalchemy.dialects.postgresql import UUID
@@ -28,5 +28,5 @@ class OperationalCost(Base):
     amount: Mapped[float] = mapped_column(Float, nullable=False) # e.g. 1500000.0
     
     # Allows you to filter expenses by month/year
-    expense_date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    expense_date: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(UTC))
     notes: Mapped[str | None] = mapped_column(String, nullable=True)

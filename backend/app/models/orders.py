@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, UTC
 import uuid
 import enum
 from typing import List, Optional
@@ -56,7 +56,7 @@ class Order(Base):
     void_reason: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     
     # Core Metadata (Using timezone-aware standard if needed)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(UTC))
 
     # Relationships (Using modern Mapped typing)
     items: Mapped[List["OrderItem"]] = relationship("OrderItem", back_populates="order")
