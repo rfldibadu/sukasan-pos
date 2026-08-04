@@ -1,16 +1,19 @@
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query
-from app.schemas.orders_schema import OrderCreateIn, OrderItemRead, OrderRead
+from fastapi import APIRouter, Depends, HTTPException, Query
+from app.core.security import get_current_user
+from app.models.users import User
+from app.schemas.orders_schema import OrderCreateIn, OrderRead
 from app.services.orders_service import get_orders_by_date_range, process_checkout, get_recent_orders
 
 router = APIRouter()
 
 @router.post("/checkout")
-def create_order(payload: OrderCreateIn):
+def create_order(
+    payload: OrderCreateIn, current_user: User = Depends(get_current_user)):
     try:
-        order = process_checkout(payload)
+        order = process_checkout(payload, current_user)
         return {
             "status": "success",
             "message": "Order processed successfully",

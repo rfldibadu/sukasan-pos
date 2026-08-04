@@ -4,8 +4,9 @@ import enum
 from typing import List, Optional
 from sqlalchemy import Float, DateTime, ForeignKey, Integer, JSON, String, Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.orm import  Mapped, mapped_column, relationship
 from app.db.database import Base
+from app.models.users import User
 
 # String-backed enums
 class PaymentMethod(str, enum.Enum):
@@ -49,6 +50,8 @@ class Order(Base):
     order_type: Mapped[OrderType] = mapped_column(
         SQLEnum(OrderType, native_enum=False), default=OrderType.DINE_IN
     )
+    cashier_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    cashier: Mapped["User"] = relationship("User")
     customer_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     status: Mapped[OrderStatus] = mapped_column(
         SQLEnum(OrderStatus, native_enum=False), default=OrderStatus.COMPLETED

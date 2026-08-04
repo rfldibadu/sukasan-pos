@@ -7,9 +7,10 @@ from app.db.database import SessionLocal
 from app.models.orders import Order, OrderItem, OrderStatus, PaymentMethod
 from app.models.products import Product, ItemType
 from app.models.stocks import ConsignmentStock
+from app.models.users import User
 from app.schemas.orders_schema import OrderCreateIn, OrderRead
 
-def process_checkout(order_data: OrderCreateIn) -> OrderRead:
+def process_checkout(order_data: OrderCreateIn, current_user: User) -> OrderRead:
     with SessionLocal() as session:
         if not order_data.items:
             raise HTTPException(status_code=400, detail="Cart cannot be empty")
@@ -116,6 +117,7 @@ def process_checkout(order_data: OrderCreateIn) -> OrderRead:
             cash_amount_received=order_data.cash_amount_received,
             change_given=change_given,
             order_type=order_data.order_type,
+            cashier_id=current_user.id,
             customer_name=order_data.customer_name,
             status=OrderStatus.COMPLETED,
             items=db_order_items

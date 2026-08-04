@@ -38,6 +38,7 @@ class OrderRead(BaseModel):
     discount_amount: float
     total_amount: float
     net_cafe_revenue: float
+    cashier_id: uuid.UUID
     payment_method: PaymentMethod
     cash_amount_received: Optional[float] = None
     change_given: Optional[float] = None
