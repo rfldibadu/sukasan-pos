@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        @page {
+            size: 80mm 220mm;
+            margin: 4mm;
+        }
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 8pt;
+            color: #111111;
+            margin: 0;
+            padding: 0;
+        }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .text-left { text-align: left; }
+        .bold { font-weight: bold; }
+        .muted { color: #666666; font-size: 7.5pt; }
+        
+        /* Layout Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 4px;
+        }
+        td {
+            padding: 2px 0;
+            vertical-align: top;
+        }
+        
+        /* Separator Line */
+        .divider {
+            border-top: 1px dashed #cccccc;
+            margin: 6px 0;
+        }
+
+        .header-title {
+            font-size: 11pt;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+        .header-subtitle {
+            font-size: 8pt;
+            color: #444444;
+            margin-bottom: 6px;
+        }
+        .order-type {
+            font-size: 9.5pt;
+            font-weight: bold;
+            margin: 6px 0;
+        }
+        .item-row td {
+            padding-top: 3px;
+        }
+        .sub-item td {
+            padding-left: 8px;
+            color: #555555;
+            font-size: 7.5pt;
+        }
+        .grand-total {
+            font-size: 10pt;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Section -->
+    <div class="text-center">
+        <div class="header-title">Sukasan Coffee</div>
+        <div class="header-subtitle">Jl. Achmad Nadjamuddin No.21</div>
+        <div class="order-type">
+            {{ order_type_display }} 
+            {% if order.customer_name %} / {{ order.customer_name }} {% endif %}
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Metadata Section -->
+    <table>
+        <tr>
+            <td class="muted">Date</td>
+            <td class="text-right muted">Cashier</td>
+        </tr>
+        <tr>
+            <td class="bold">{{ order.created_at.strftime('%b %d %Y %H:%M') }}</td>
+            <td class="text-right bold">{{ cashier_name }}</td>
+        </tr>
+        <tr>
+            <td class="muted" style="padding-top: 4px;">Trx ID</td>
+            <td class="text-right muted" style="padding-top: 4px;">Order Status</td>
+        </tr>
+        <tr>
+            <td class="bold">{{ str(order.id)[:18].upper() }}</td>
+            <td class="text-right bold">{{ order.status.value | upper }}</td>
+        </tr>
+    </table>
+
+    <div class="divider"></div>
+
+    <!-- Items Section -->
+    <table>
+    {% for item in items %}
+    <tr class="item-row">
+        <td class="bold">
+            {{ item.product_name }} {% if item.quantity > 1 %}x{{ item.quantity }}{% endif %}
+        </td>
+        <td class="text-right bold">
+            Rp{{ "{:,.0f}".format(item.line_total).replace(',', '.') }}
+        </td>
+    </tr>
+    
+    <!-- Add-ons Listing -->
+    {% for addon in item.addons %}
+    <tr class="sub-item">
+        <td style="padding-left: 8px; color: #555555;">+ {{ addon.name }}</td>
+        <td class="text-right" style="color: #555555;">
+            Rp{{ "{:,.0f}".format(addon.price).replace(',', '.') }}
+        </td>
+    </tr>
+    {% endfor %}
+
+    <!-- Notes Listing -->
+    {% if item.item_notes %}
+    <tr class="sub-item">
+        <td colspan="2" style="padding-left: 8px; color: #777777;">
+            Notes: {{ item.item_notes }}
+        </td>
+    </tr>
+    {% endif %}
+    {% endfor %}
+    </table>
+
+    <div class="divider"></div>
+
+    <!-- Payment Details -->
+    <div class="bold" style="margin-bottom: 4px;">Payment Details</div>
+    <table>
+        <tr>
+            <td>Subtotal</td>
+            <td class="text-right">Rp{{ "{:,.0f}".format(order.subtotal_amount).replace(',', '.') }}</td>
+        </tr>
+        {% if order.discount_amount > 0 %}
+        <tr>
+            <td>Discount</td>
+            <td class="text-right">-Rp{{ "{:,.0f}".format(order.discount_amount).replace(',', '.') }}</td>
+        </tr>
+        {% endif %}
+        <tr class="grand-total">
+            <td style="padding-top: 4px;">Total</td>
+            <td class="text-right" style="padding-top: 4px;">Rp{{ "{:,.0f}".format(order.total_amount).replace(',', '.') }}</td>
+        </tr>
+    </table>
+
+    <div class="divider"></div>
+
+    <!-- Payment Method -->
+    <div class="bold" style="margin-bottom: 4px;">Payment Method</div>
+    <table>
+        <tr>
+            <td>{{ order.payment_method.value | upper if order.payment_method else 'CASH' }}</td>
+            <td class="text-right">Rp{{ "{:,.0f}".format(order.cash_amount_received or order.total_amount).replace(',', '.') }}</td>
+        </tr>
+        {% if order.change_given is not none %}
+        <tr>
+            <td>Change</td>
+            <td class="text-right">Rp{{ "{:,.0f}".format(order.change_given).replace(',', '.') }}</td>
+        </tr>
+        {% endif %}
+    </table>
+
+    <div class="divider"></div>
+
+    <!-- Footer -->
+    <div class="text-center" style="margin-top: 8px;">
+        <div class="bold" style="letter-spacing: 1px;">PAID</div>
+        <div class="muted" style="margin-top: 2px;">{{ order.created_at.strftime('%b %d %Y - %H:%M') }}</div>
+        <div style="margin-top: 6px; font-weight: bold;">Thank you for your order!</div>
+
+        <!-- Sukasan Logo -->
+        {% if logo_base64 %}
+        <div style="margin-top: 10px;">
+            <img src="data:image/png;base64,{{ logo_base64 }}" style="width: 20mm; height: auto; filter: grayscale(100%);" />
+        </div>
+        {% endif %}
+    </div>
+
+</body>
+</html>
