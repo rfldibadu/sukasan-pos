@@ -11,6 +11,7 @@ from app.routers.stocks_router import router as stock_router
 from app.routers.operationals_router import router as operational_router
 from app.routers.orders_router import router as order_router
 from app.routers.receipt_router import router as receipt_router
+from app.routers.reports_router import router as reports_router
 
 # Auto-create tables in pgAdmin on boot
 # products.Base.metadata.create_all(bind=engine)
@@ -41,6 +42,7 @@ app.include_router(stock_router, prefix="/api")
 app.include_router(operational_router, prefix="/api")
 app.include_router(order_router, prefix="/api")
 app.include_router(receipt_router, prefix="/api")
+app.include_router(reports_router, prefix="/api")
 
 @app.get("/api/health")
 def health_check():
