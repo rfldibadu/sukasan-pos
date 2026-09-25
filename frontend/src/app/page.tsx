@@ -95,7 +95,7 @@ export default function DashboardPage() {
         />
       </div>
 
-      <div className="bg-gradient-to-r from-amber-700 to-amber-900 rounded-2xl p-5 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-md">
+      <div className="bg-linear-to-r from-amber-700 to-amber-900 rounded-2xl p-5 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-md">
         <div>
           <h3 className="font-bold text-lg">Ready to take orders?</h3>
           <p className="text-xs text-amber-100 mt-0.5">

@@ -6,7 +6,6 @@ from sqlalchemy.orm import joinedload
 from app.db.database import SessionLocal
 from app.models.orders import Order, OrderItem, OrderStatus, PaymentMethod
 from app.models.products import Product, ItemType
-from app.models.stocks import ConsignmentStock
 from app.models.users import User
 from app.schemas.orders_schema import OrderCreateIn, OrderRead
 
@@ -56,19 +55,15 @@ def process_checkout(order_data: OrderCreateIn, current_user: User) -> OrderRead
 
             net_cafe_revenue += item_cafe_revenue
 
-            # 5. Stock deduction for consignment products
-            if product.item_type == ItemType.CONSIGNMENT:
-                stock_record = session.query(ConsignmentStock).filter(
-                    ConsignmentStock.product_id == product.id
-                ).first()
-                
-                if stock_record:
-                    if stock_record.current_quantity < item.quantity:
-                        raise HTTPException(
-                            status_code=400,
-                            detail=f"Insufficient stock for '{product.name}'. Remaining: {stock_record.current_quantity}"
-                        )
-                    stock_record.current_quantity -= item.quantity  # type: ignore
+            # 5. Direct Stock deduction for tracked items (Consignment or items with explicit stock)
+            if product.item_type == ItemType.CONSIGNMENT or product.stock_quantity is not None:
+                current_stock = product.stock_quantity or 0
+                if current_stock < item.quantity:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Insufficient stock for '{product.name}'. Remaining: {current_stock}"
+                    )
+                product.stock_quantity = current_stock - item.quantity
 
             # 6. Build OrderItem entity
             str_addon_ids = [str(a) for a in (item.addon_ids or [])]
@@ -131,7 +126,7 @@ def process_checkout(order_data: OrderCreateIn, current_user: User) -> OrderRead
 
 
 def void_order(order_id: int, reason: str) -> OrderRead:
-    """Cancels an existing order and automatically restores consignment stock levels."""
+    """Cancels an existing order and automatically restores stock levels on Product."""
     with SessionLocal() as session:
         order = session.query(Order).options(
             joinedload(Order.items)
@@ -147,15 +142,11 @@ def void_order(order_id: int, reason: str) -> OrderRead:
         order.status = OrderStatus.VOIDED
         order.void_reason = reason
 
-        # Restore consignment stock for items in this order
+        # Restore product stock for items in this order
         for item in order.items:
             product = session.query(Product).filter(Product.id == item.product_id).first()
-            if product and product.item_type == ItemType.CONSIGNMENT:
-                stock_record = session.query(ConsignmentStock).filter(
-                    ConsignmentStock.product_id == product.id
-                ).first()
-                if stock_record:
-                    stock_record.current_quantity += item.quantity  # type: ignore
+            if product and product.stock_quantity is not None:
+                product.stock_quantity += item.quantity
 
         session.commit()
         session.refresh(order)
