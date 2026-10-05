@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.db.database import engine
 from app.models import products, stocks, operationals, orders, users
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 
 # Import router instances directly
 from app.routers.auth_router import router as auth_router
@@ -25,6 +27,9 @@ app = FastAPI(
     description="Backend API for Sukasan Coffee POS and Management System",
     version="1.0.0"
 )
+
+static_dir = Path("app/static")
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 # Enable CORS for Next.js frontend
 app.add_middleware(

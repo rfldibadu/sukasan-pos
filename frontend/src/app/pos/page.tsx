@@ -2,22 +2,29 @@
 
 import { useState } from "react";
 import { useGetPosProducts } from "./_internal/hooks/use-get-pos-products";
-import { createPOSOrder } from "./_internal/services";
-import { POSProduct, POSCartItem } from "./_internal/usecases/pos";
+import { POSProduct } from "./_internal/usecases/pos";
 
 import { CategoryFilter } from "./_internal/components/category-filter";
 import { ProductGrid } from "./_internal/components/product-grid";
 import { CartSummary } from "./_internal/components/cart-summary";
 import { ItemCustomizerModal } from "./_internal/modals/item-customizer-modal";
 import { CheckoutModal } from "./_internal/modals/checkout-modal";
+import { useCreateOrder } from "./_internal/hooks/use-create-orders";
+
+export interface POSCartItem {
+  product: POSProduct;
+  quantity: number;
+  itemNotes?: string;
+  selectedAddOns?: POSProduct[];
+}
 
 export default function POSPage() {
   const { products, categories, category, setCategory, refreshProducts } = useGetPosProducts();
-  
+  const { createOrder, isSubmitting } = useCreateOrder();
+
   const [cart, setCart] = useState<POSCartItem[]>([]);
   const [activeProduct, setActiveProduct] = useState<POSProduct | null>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form states
   const [customerName, setCustomerName] = useState("");
@@ -25,14 +32,25 @@ export default function POSPage() {
   const [paymentMethod, setPaymentMethod] = useState<"qris" | "cash">("qris");
   const [cashReceived, setCashReceived] = useState<number>(0);
 
-  const subtotal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  // Subtotal calculation factoring in selected add-ons for each cart item
+  const subtotal = cart.reduce((sum, item) => {
+    const addOnsCost = item.selectedAddOns?.reduce((aSum, addon) => aSum + addon.price, 0) || 0;
+    return sum + (item.product.price + addOnsCost) * item.quantity;
+  }, 0);
+
   const changeAmount = paymentMethod === "cash" ? Math.max(0, cashReceived - subtotal) : 0;
 
-  const handleAddToCart = (itemNoteInput: string) => {
+  const handleAddToCart = (itemNoteInput: string, selectedAddOns?: POSProduct[]) => {
     if (!activeProduct) return;
+
     setCart((prev) => [
       ...prev,
-      { product: activeProduct, quantity: 1, itemNotes: itemNoteInput },
+      {
+        product: activeProduct,
+        quantity: 1,
+        itemNotes: itemNoteInput,
+        selectedAddOns: selectedAddOns || [],
+      },
     ]);
     setActiveProduct(null);
   };
@@ -49,32 +67,30 @@ export default function POSPage() {
 
   const handleCheckoutSubmit = async () => {
     if (cart.length === 0) return;
-    setIsSubmitting(true);
 
-    try {
-      await createPOSOrder({
-        customer_name: customerName || "Guest",
-        order_type: orderType,
-        payment_method: paymentMethod,
-        discount_amount: 0,
-        cash_amount_received: paymentMethod === "cash" ? cashReceived : subtotal,
-        items: cart.map((item) => ({
-          product_id: item.product.id,
-          quantity: item.quantity,
-          item_notes: item.itemNotes,
-        })),
-      });
+    const result = await createOrder({
+      customer_name: customerName || "Guest",
+      order_type: orderType,
+      payment_method: paymentMethod,
+      discount_amount: 0,
+      cash_amount_received: paymentMethod === "cash" ? cashReceived : null,
+      items: cart.map((item) => ({
+        product_id: item.product.id,
+        quantity: item.quantity,
+        addon_ids: item.selectedAddOns?.map((a) => a.id) || [],
+        item_notes: item.itemNotes || null,
+      })),
+    });
 
+    if (result && result.status === "success") {
       alert("Order placed successfully!");
       setCart([]);
       setIsCheckoutOpen(false);
       setCustomerName("");
       setCashReceived(0);
       refreshProducts();
-    } catch {
-      alert("Failed to submit order. Please try again.");
-    } finally {
-      setIsSubmitting(false);
+    } else {
+      alert("Failed to submit order. Please check input or server connection.");
     }
   };
 

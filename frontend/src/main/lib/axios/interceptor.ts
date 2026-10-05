@@ -1,23 +1,26 @@
 import { type AxiosInstance } from "axios";
-
-// Helper utilities to retrieve tokens safely
-const getAccessToken = () => typeof window !== "undefined" ? localStorage.getItem("token") || "" : "";
-const getRoleAccess = () => typeof window !== "undefined" ? localStorage.getItem("role") || "" : "";
+import { getSession } from "next-auth/react";
 
 export const addBasePrivateInterceptors = (instance: AxiosInstance) => {
-  instance.interceptors.request.use((config) => {
-    const accessToken = getAccessToken();
-    const roleAccess = getRoleAccess();
+  instance.interceptors.request.use(
+    async (config) => {
+      if (typeof window !== "undefined") {
+        // Retrieve session dynamically from NextAuth
+        const session = await getSession();
 
-    if (accessToken) {
-      config.headers["Authorization"] = `Bearer ${accessToken}`;
-    }
-    if (roleAccess) {
-      config.headers["X-App-Role"] = roleAccess.toString();
-    }
+        if (session?.access_token) {
+          config.headers["Authorization"] = `Bearer ${session.access_token}`;
+        }
 
-    return config;
-  });
+        if (session?.user?.role) {
+          config.headers["X-App-Role"] = session.user.role;
+        }
+      }
+
+      return config;
+    },
+    (error) => Promise.reject(error)
+  );
 
   instance.interceptors.response.use(
     (response) => response,

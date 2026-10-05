@@ -1,7 +1,7 @@
 import axios, { type AxiosInstance } from "axios";
 import { addBasePrivateInterceptors } from "./interceptor";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 /** Public Axios Instance */
 export const axiosHttp: AxiosInstance = axios.create({

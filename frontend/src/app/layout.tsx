@@ -1,5 +1,6 @@
 import "./globals.css";
 import Navigation from "@/main/components/dashboard/navigations";
+import { NextAuthProviders } from "@/main/providers/next-auth";
 
 export const metadata = {
   title: "Sukasan POS",
@@ -13,11 +14,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="bg-gray-50 text-gray-900 min-h-screen flex flex-col antialiased pb-20 
-        md:pb-0 suppressHydrationWarning"
-      >
-        <Navigation />
-        <main className="flex-1 max-w-7xl w-full mx-auto p-4">{children}</main>
+      <body className="bg-gray-50 text-gray-900 min-h-screen flex flex-col antialiased pb-20 md:pb-0 suppressHydrationWarning">
+        {/* Wrap everything that uses NextAuth hooks inside NextAuthProviders */}
+        <NextAuthProviders>
+          <Navigation />
+          <main className="flex-1 max-w-7xl w-full mx-auto p-4">
+            {children}
+          </main>
+        </NextAuthProviders>
       </body>
     </html>
   );

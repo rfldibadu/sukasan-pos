@@ -9,7 +9,7 @@ export const createPOSOrder = async (
 ): Promise<POSCreateOrderResponse | void> => {
   try {
     const response = await axiosHttpPrivate.post<POSCreateOrderResponse>(
-      "/orders",
+      "/checkout",
       payload
     );
     return response.data;

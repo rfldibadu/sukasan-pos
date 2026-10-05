@@ -1,4 +1,3 @@
-# seed.py
 import sys
 import os
 
@@ -20,8 +19,8 @@ def seed_initial_data():
         if not admin:
             default_manager = User(
                 username="admin",
-                full_name="Manager Sukasan",
-                password_hash=hash_password("!Sukasan25"),  # Change password as needed!
+                full_name="Rifaldi",
+                password_hash=hash_password("!admin123"),  # Change password as needed!
                 role=UserRole.MANAGER,
                 is_active=True
             )

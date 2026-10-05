@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, ShoppingBag, Package, Receipt, Users } from "lucide-react";
+import { ProfileAvatar } from "@/main/components/ui/profile-avatar";
 
 const navItems = [
   { label: "Home", href: "/", icon: LayoutDashboard },
@@ -18,19 +19,18 @@ export default function Navigation() {
   return (
     <>
       {/* Top Header */}
-      <header className="sticky top-0 z-40 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
-        <div>
-          <h1 className="font-bold text-lg text-gray-900 leading-tight">Sukasan Coffee</h1>
-          <p className="text-xs text-gray-500">POS & Operations</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-xs font-medium text-gray-600">Online</span>
-        </div>
-      </header>
+      <header className="flex items-center justify-between p-4 bg-white border-b border-slate-100">
+      <div>
+        <h1 className="font-bold text-slate-900">Sukasan Coffee</h1>
+        <p className="text-xs text-slate-500">POS & Operations</p>
+      </div>
+
+      {/* Profile Avatar with status badge */}
+      <ProfileAvatar />
+    </header>
 
       {/* Bottom Bar for Mobile Layout (Realme Note 50 Target) */}
-      <nav className="fixed bottom-0 inset-x-0 flex items-center justify-around bg-white border-t border-slate-200 z-50 py-2">
+      <nav className="fixed bottom-0 inset-x-0 flex items-center justify-around bg-white border-t border-slate-200 z-50 py-1">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;

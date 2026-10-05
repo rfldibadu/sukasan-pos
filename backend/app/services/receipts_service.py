@@ -12,7 +12,7 @@ from app.models.products import Product
 from app.models.users import User
 
 env = Environment(loader=FileSystemLoader("app/templates"))
-logo_path = Path("app/static/sukasan_logo.png") # Adjust relative to backend directory
+logo_path = Path("app/static/logo/sukasan_logo.png") # Adjust relative to backend directory
 
 logo_base64 = ""
 if logo_path.exists():

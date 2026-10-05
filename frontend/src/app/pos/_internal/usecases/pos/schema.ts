@@ -6,13 +6,17 @@ export const POSProductSchema = z.object({
   category: z.string(),
   price: z.number(),
   is_available: z.boolean(),
+  item_type: z.enum(["MAIN", "CONSIGNMENT", "ADD_ON"]).or(z.string()).optional(),
 });
+
 
 export const POSCartItemSchema = z.object({
   product: POSProductSchema,
   quantity: z.number().min(1),
   itemNotes: z.string().optional(),
+  selectedAddOns: z.array(POSProductSchema).optional(),
 });
+
 
 export const POSProductListResponseSchema = z.object({
   success: z.boolean(),
@@ -26,25 +30,24 @@ export const POSFilterListSchema = z.object({
   limit: z.number().default(20),
 });
 
+export const POSCreateOrderItemSchema = z.object({
+  product_id: z.string(),
+  quantity: z.number().min(1),
+  addon_ids: z.array(z.string()).optional(),
+  item_notes: z.string().nullable().optional(),
+});
+
 export const POSCreateOrderSubmitSchema = z.object({
-  customer_name: z.string().min(1, "Customer name is required"),
-  order_type: z.enum(["takeaway", "dine_in"]),
-  payment_method: z.enum(["qris", "cash"]),
+  customer_name: z.string().nullable().optional(),
+  order_type: z.enum(["takeaway", "dine_in", "TAKEAWAY", "DINE_IN"]),
+  payment_method: z.enum(["qris", "cash", "QRIS", "CASH"]),
   discount_amount: z.number().default(0),
-  cash_amount_received: z.number().nonnegative(),
-  items: z.array(
-    z.object({
-      product_id: z.string(),
-      quantity: z.number().min(1),
-      item_notes: z.string().optional(),
-    })
-  ),
+  cash_amount_received: z.number().nullable().optional(),
+  items: z.array(POSCreateOrderItemSchema),
 });
 
 export const POSCreateOrderResponseSchema = z.object({
-  success: z.boolean(),
+  status: z.string(),
   message: z.string(),
-  data: z.object({
-    order_id: z.string(),
-  }),
+  data: z.record(z.string(), z.unknown()),
 });

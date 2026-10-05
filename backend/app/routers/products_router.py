@@ -1,10 +1,10 @@
+from typing import Optional
 from fastapi import APIRouter, Query, HTTPException
 from app.schemas.products_schema import ProductIn, VendorIn
 from app.services.products_service import create_product, list_products, create_vendor, list_vendors
 
 router = APIRouter()
 
-# Simple standardized response wrappers
 def success_response(data: dict | list, message: str):
     return {"status": "success", "message": message, "data": data}
 
@@ -43,13 +43,26 @@ def add_product(product: ProductIn):
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/products")
-def get_products(page: int = Query(1, ge=1), limit: int = Query(10, ge=1)):
+def get_products(
+    page: int = Query(1, ge=1),
+    limit: int = Query(100, ge=1, le=1000),
+    item_type: Optional[str] = Query(None),
+    main_category: Optional[str] = Query(None)
+):
     try:
         results = list_products()
+
+        # Apply filters
+        if item_type:
+            results = [p for p in results if getattr(p, "item_type", None) == item_type.upper()]
+        if main_category:
+            results = [p for p in results if getattr(p, "main_category", None) == main_category.upper()]
+
         total_data = len(results)
         start = (page - 1) * limit
         end = start + limit
         paginated_data = [product.model_dump(mode="json") for product in results[start:end]]
+        
         return paginated_response(paginated_data, page, limit, total_data, "Successfully fetched products")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

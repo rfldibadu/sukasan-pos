@@ -1,137 +1,85 @@
 import uuid
-from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
-from pydantic import BaseModel, ConfigDict
+from fastapi import APIRouter, Depends, status, UploadFile, File
 from sqlalchemy.orm import Session
 
-from app.db.database import SessionLocal
-from app.models.users import User, UserRole
-from app.core.security import (
-    hash_password,
-    verify_password,
-    create_access_token,
-    get_current_user
+from app.db.database import get_db
+from app.models.users import User
+from app.core.security import get_current_user
+from app.schemas.auth_schema import (
+    LoginRequest,
+    UserCreate,
+    UserUpdateSelf,
+    UserUpdateAdmin,
+    UserRead,
+    TokenResponse,
 )
+from app.services.auth_service import AuthService
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
-# --- Schemas ---
-class LoginRequest(BaseModel):
-    username: str
-    password: str
-    
-class UserCreate(BaseModel):
-    username: str
-    full_name: str
-    password: str
-    role: UserRole = UserRole.CASHIER
-
-class UserRead(BaseModel):
-    id: uuid.UUID
-    username: str
-    full_name: str
-    role: UserRole
-    is_active: bool
-
-    model_config = ConfigDict(from_attributes=True)
-
-class TokenResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
-    full_name: str
-    role: UserRole
-
-
-# --- Endpoints ---
 
 @router.post("/setup-admin", response_model=UserRead, summary="Initial One-Time Manager Bootstrap")
-def setup_initial_admin(user_in: UserCreate):
-    """
-    Allows creating the very first Manager account.
-    Once a manager exists in the DB, this endpoint locks automatically.
-    """
-    with SessionLocal() as session:
-        existing_manager = session.query(User).filter(User.role == UserRole.MANAGER).first()
-        if existing_manager:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="A manager account already exists. Use /auth/register with manager credentials instead."
-            )
-
-        existing_username = session.query(User).filter(User.username == user_in.username).first()
-        if existing_username:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Username already taken"
-            )
-
-        new_manager = User(
-            username=user_in.username,
-            full_name=user_in.full_name,
-            password_hash=hash_password(user_in.password),
-            role=UserRole.MANAGER
-        )
-        session.add(new_manager)
-        session.commit()
-        session.refresh(new_manager)
-        return new_manager
+def setup_initial_admin(user_in: UserCreate, db: Session = Depends(get_db)):
+    return AuthService.setup_initial_admin(db, user_in)
 
 
 @router.post("/register", response_model=UserRead, summary="Register Staff (Manager Only)")
 def register_staff(
     user_in: UserCreate,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    """
-    Only logged-in Managers can create new staff or cashier accounts.
-    """
-    if current_user.role != UserRole.MANAGER:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only managers can register new staff accounts"
-        )
-
-    with SessionLocal() as session:
-        existing_user = session.query(User).filter(User.username == user_in.username).first()
-        if existing_user:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Username already registered"
-            )
-
-        new_user = User(
-            username=user_in.username,
-            full_name=user_in.full_name,
-            password_hash=hash_password(user_in.password),
-            role=user_in.role
-        )
-        session.add(new_user)
-        session.commit()
-        session.refresh(new_user)
-        return new_user
+    return AuthService.register_staff(db, user_in, current_user)
 
 
-@router.post("/login", response_model=TokenResponse)
-def login(login_data: LoginRequest):
-    with SessionLocal() as session:
-        user = session.query(User).filter(User.username == login_data.username, User.is_active == True).first()
-        if not user or not verify_password(login_data.password, user.password_hash):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect username or password",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
+@router.post("/login", response_model=TokenResponse, summary="User Login")
+def login(login_data: LoginRequest, db: Session = Depends(get_db)):
+    return AuthService.login(db, login_data)
 
-        access_token = create_access_token(data={"sub": str(user.id), "role": user.role.value})
-        return TokenResponse(
-            access_token=access_token,
-            token_type="bearer",
-            full_name=user.full_name,
-            role=user.role
-        )
+
+@router.post("/logout", summary="Logout User")
+def logout(current_user: User = Depends(get_current_user)):
+    return {"message": "Successfully logged out"}
 
 
 @router.get("/me", response_model=UserRead, summary="Get Logged-in Staff Profile")
 def get_me(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+@router.post("/me/avatar", response_model=UserRead, summary="Upload Profile Picture")
+def upload_avatar(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return AuthService.upload_avatar(db, file, current_user)
+
+
+@router.put("/me", response_model=UserRead, summary="Update Own Profile")
+def update_me(
+    user_in: UserUpdateSelf,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return AuthService.update_me(db, user_in, current_user)
+
+
+@router.put("/users/{user_id}", response_model=UserRead, summary="Update Any User (Manager Only)")
+def update_user_by_id(
+    user_id: uuid.UUID,
+    user_in: UserUpdateAdmin,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return AuthService.update_user_by_id(db, user_id, user_in, current_user)
+
+
+@router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete User (Manager Only)")
+def delete_user(
+    user_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    AuthService.delete_user(db, user_id, current_user)
+    return None
