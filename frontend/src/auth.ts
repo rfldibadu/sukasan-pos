@@ -61,38 +61,25 @@ export const authOptions: AuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user, trigger, session }) {
-      // Initial Sign-in
       if (user) {
         token.id = user.id;
         token.username = user.username;
         token.full_name = user.full_name;
-        token.profile_picture_url = sanitizeAvatarUrl(user.profile_picture_url);
+        token.profile_picture_url = user.profile_picture_url;
         token.role = user.role;
         token.access_token = user.access_token;
       }
 
-      // Handle updateSession(...) calls
-      if (trigger === "update") {
-        // Option A: Client passed explicit data in updateSession({ ... })
-        if (session?.full_name !== undefined) {
-          token.full_name = session.full_name;
-        }
-        if (session?.profile_picture_url !== undefined) {
-          token.profile_picture_url = sanitizeAvatarUrl(session.profile_picture_url);
-        }
-
-        // Option B: Empty updateSession() call -> Re-fetch fresh profile from /auth/me
-        if (!session?.full_name && !session?.profile_picture_url && token.access_token) {
-          try {
-            const meResponse = await axios.get(`${API_BASE_URL}/auth/me`, {
-              headers: { Authorization: `Bearer ${token.access_token}` },
-            });
-
-            token.full_name = meResponse.data.full_name;
-            token.profile_picture_url = sanitizeAvatarUrl(meResponse.data.profile_picture_url);
-          } catch (error) {
-            console.error("Error refreshing user token data from /auth/me:", error);
-          }
+      if (trigger === "update" && token.access_token) {
+        try {
+          const meResponse = await axios.get(`${API_BASE_URL}/auth/me`, {
+            headers: { Authorization: `Bearer ${token.access_token}` },
+          });
+          token.full_name = meResponse.data.full_name;
+          token.profile_picture_url = meResponse.data.profile_picture_url;
+        } catch (error) {
+          console.error("Failed to re-fetch /auth/me safely:", error);
+          // Fail silently so NextAuth returns standard JSON instead of crashing with HTML 500
         }
       }
 

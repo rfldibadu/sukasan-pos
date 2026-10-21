@@ -1,114 +1,95 @@
-'use client';
+"use client";
 
-import Link from "next/link";
-import { useSWRPrivateRequest } from "@/main/lib/axios";
-import { ShoppingBag, DollarSign, Receipt, TrendingUp, RefreshCw } from "lucide-react";
-
-interface DashboardMetrics {
-  todayRevenue: number;
-  todayOrders: number;
-  averageTicket: number;
-}
-
-interface MetricCardProps {
-  title: string;
-  value: string;
-  subtext: string;
-  icon: React.ElementType;
-  color: string;
-}
-
-function MetricCard({ title, value, subtext, icon: Icon, color }: MetricCardProps) {
-  return (
-    <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm flex items-center justify-between">
-      <div>
-        <p className="text-xs font-medium text-gray-500">{title}</p>
-        <p className="text-xl font-bold text-gray-900 mt-1">{value}</p>
-        <p className="text-[11px] text-gray-400 mt-0.5">{subtext}</p>
-      </div>
-      <div className={`p-3 rounded-xl ${color}`}>
-        <Icon className="w-6 h-6 text-white" />
-      </div>
-    </div>
-  );
-}
+import { useSession } from "next-auth/react";
+import { DollarSign, Receipt, TrendingUp, RefreshCw, Wallet } from "lucide-react";
+import { useDashboard } from "@/main/hooks/reports/use-dashboard";
+import { formatIDR } from "@/main/usecases/dashboard";
+import { MetricCard } from "@/main/components/dashboard/metric-card";
+import { TopProductsCard } from "@/main/components/dashboard/top-products-card";
+import { POSBanner } from "@/main/components/dashboard/pos-banner";
 
 export default function DashboardPage() {
-  // Disables automatic error retries if the backend endpoint is not implemented yet
-  const { data, isValidating, mutate, error } = useSWRPrivateRequest<DashboardMetrics>(
-    {
-      url: "/orders/metrics",
-      method: "GET",
-    },
-    {
-      shouldRetryOnError: false,
-      revalidateOnFocus: false,
-    }
-  );
+  const { status } = useSession();
+  const { report, isValidating, refresh } = useDashboard();
 
-  const metrics = error || !data?.data ? {
-    todayRevenue: 0,
-    todayOrders: 0,
-    averageTicket: 0,
-  } : data.data;
+  // Guard: Prevent rendering dashboard network calls if session is unauthenticated or loading
+  if (status === "loading") {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-800" />
+      </div>
+    );
+  }
 
-  const formatIDR = (val: number) =>
-    `Rp${val.toLocaleString('id-ID', { minimumFractionDigits: 0 })}`;
+  const metrics = report || {
+    gross_sales: 0,
+    completed_orders_count: 0,
+    net_cafe_revenue: 0,
+    net_profit: 0,
+    top_selling_products: [],
+  };
+
+  const avgTicket = metrics.completed_orders_count > 0 
+    ? metrics.gross_sales / metrics.completed_orders_count 
+    : 0;
 
   return (
     <div className="space-y-5 h-full overflow-y-auto pb-20 p-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Dashboard Overview</h2>
-          <p className="text-xs text-gray-500">Jl. Achmad Nadjamuddin No.20</p>
+          <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
+            Dashboard Overview
+          </h2>
+          <p className="text-[11px] text-slate-500">Jl. Achmad Nadjamuddin No.20</p>
         </div>
         <button
-          onClick={() => mutate()}
-          className="p-2.5 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition-colors"
+          onClick={() => refresh()}
+          className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 transition-colors"
           title="Refresh Data"
         >
-          <RefreshCw className={`w-4 h-4 ${isValidating ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-3.5 h-3.5 ${isValidating ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <MetricCard
-          title="Today's Sales"
-          value={formatIDR(metrics.todayRevenue)}
-          subtext="Net cafe revenue"
+          title="Gross Sales Today"
+          value={formatIDR(metrics.gross_sales)}
+          subtext="Total order volume"
           icon={DollarSign}
           color="bg-amber-600"
         />
         <MetricCard
           title="Total Orders"
-          value={metrics.todayOrders.toString()}
+          value={metrics.completed_orders_count.toString()}
           subtext="Completed transactions"
           icon={Receipt}
           color="bg-emerald-600"
         />
         <MetricCard
-          title="Avg. Spend per Order"
-          value={formatIDR(metrics.averageTicket)}
+          title="Avg. Spend / Order"
+          value={formatIDR(avgTicket)}
           subtext="Ticket size average"
           icon={TrendingUp}
           color="bg-blue-600"
         />
+        <MetricCard
+          title="Net Cafe Revenue"
+          value={formatIDR(metrics.net_cafe_revenue)}
+          subtext="Excludes vendor payouts"
+          icon={Wallet}
+          color="bg-indigo-600"
+        />
       </div>
 
-      <div className="bg-linear-to-r from-amber-700 to-amber-900 rounded-2xl p-5 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-md">
-        <div>
-          <h3 className="font-bold text-lg">Ready to take orders?</h3>
-          <p className="text-xs text-amber-100 mt-0.5">
-            Create new dine-in or takeaway transactions, select add-ons, and auto-generate receipts.
-          </p>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 space-y-4">
+          <TopProductsCard products={metrics.top_selling_products} />
         </div>
-        <Link
-          href="/pos"
-          className="inline-flex items-center justify-center gap-2 bg-white text-amber-900 font-semibold px-5 py-3 rounded-xl text-sm shadow hover:bg-amber-50 active:scale-95 transition-all w-full sm:w-auto"
-        >
-          <ShoppingBag className="w-4 h-4" />
-          <span>Open POS Register</span>
-        </Link>
+        <div>
+          <POSBanner />
+        </div>
       </div>
     </div>
   );
