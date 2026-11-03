@@ -1,8 +1,38 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import type { AxiosResponse } from "axios";
 import { useSWRPrivateRequest } from "@/main/lib/axios";
 import { POSProductListResponse, POSProduct } from "../usecases/pos";
+
+type ProductData = AxiosResponse<unknown> | POSProductListResponse | POSProduct[] | undefined;
+type PosProductApi = POSProduct & {
+  stock_quantity?: number | null;
+  is_active?: boolean;
+  main_category?: string | null;
+  retail_price?: number;
+  price?: number;
+  category?: string;
+};
+
+function isAxiosResponse(value: ProductData): value is AxiosResponse<unknown> {
+  return Boolean(value) && typeof value === "object" && "data" in value && "status" in value && "config" in value;
+}
+
+function toProductArray(data: ProductData): PosProductApi[] {
+  if (!data) return [];
+
+  const payload = isAxiosResponse(data) ? data.data : data;
+
+  if (Array.isArray(payload)) return payload as PosProductApi[];
+
+  if (payload && typeof payload === "object" && "data" in payload) {
+    const nestedData = payload.data;
+    if (Array.isArray(nestedData)) return nestedData as PosProductApi[];
+  }
+
+  return [];
+}
 
 export function useGetPosProducts() {
   const [category, setCategory] = useState<string>("All");
@@ -13,16 +43,11 @@ export function useGetPosProducts() {
   });
 
   const products: POSProduct[] = useMemo(() => {
-    if (!data) return [];
-    
-    let rawProducts: any[] = [];
-    if (Array.isArray(data)) rawProducts = data;
-    else if (Array.isArray(data.data)) rawProducts = data.data;
-    else if (data.data && Array.isArray((data.data as any).data)) rawProducts = (data.data as any).data;
+    const rawProducts = toProductArray(data);
 
     return rawProducts.map((p) => {
       const isConsignment = p.item_type === "CONSIGNMENT";
-      const isAvailable = isConsignment 
+      const isAvailable = isConsignment
         ? (p.stock_quantity ?? 0) > 0 && (p.is_active ?? true)
         : Boolean(p.is_active);
 
@@ -41,7 +66,7 @@ export function useGetPosProducts() {
     const rawCategories = products
       .map((p) => p.category)
       .filter((cat): cat is string => Boolean(cat));
-      
+
     const uniqueCats = Array.from(new Set(rawCategories));
     return ["All", ...uniqueCats];
   }, [products]);
@@ -69,12 +94,7 @@ export function useGetAddOns() {
   });
 
   const addOns: POSProduct[] = useMemo(() => {
-    if (!data) return [];
-    
-    let rawProducts: any[] = [];
-    if (Array.isArray(data)) rawProducts = data;
-    else if (Array.isArray(data.data)) rawProducts = data.data;
-    else if (data.data && Array.isArray((data.data as any).data)) rawProducts = (data.data as any).data;
+    const rawProducts = toProductArray(data);
 
     return rawProducts
       .filter((p) => p.item_type === "ADD_ON" && p.is_active !== false)

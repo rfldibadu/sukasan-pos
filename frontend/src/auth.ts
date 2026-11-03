@@ -1,6 +1,6 @@
 import NextAuth, { AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
@@ -52,15 +52,19 @@ export const authOptions: AuthOptions = {
             role: user.role,
             access_token: token,
           };
-        } catch (error: any) {
-          console.error("NextAuth Authorize Error:", error?.response?.data || error.message);
+        } catch (error: unknown) {
+          const axiosError = error as AxiosError<{ detail?: string; message?: string }>;
+          console.error(
+            "NextAuth Authorize Error:",
+            axiosError.response?.data ?? axiosError.message,
+          );
           return null;
         }
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user, trigger, session }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id;
         token.username = user.username;

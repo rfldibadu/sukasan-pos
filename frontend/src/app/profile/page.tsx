@@ -1,12 +1,10 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useProfile } from './_internal/hooks/use-profile';
 import { UpdateProfileForm } from './_internal/forms/edit';
 import { DeleteAccountForm } from './_internal/forms/delete';
 
 export default function ProfilePage() {
-  const router = useRouter();
   const { profile, isLoading } = useProfile();
 
   if (isLoading) {

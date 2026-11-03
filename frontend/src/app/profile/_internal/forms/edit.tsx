@@ -1,18 +1,17 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useProfile,  } from '../hooks/use-profile';
+import { useProfile } from '../hooks/use-profile';
 import { useSession } from 'next-auth/react';
 
 export function UpdateProfileForm() {
   const router = useRouter();
-  const { profile, updateProfile, mutate, uploadAvatar } = useProfile();
+  const { profile, updateProfile, mutate } = useProfile();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [fullName, setFullName] = useState('');
   const [pictureUrl, setPictureUrl] = useState('');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [password, setPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
@@ -20,73 +19,60 @@ export function UpdateProfileForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { update: updateSession } = useSession();
 
-  // Sync state whenever profile data updates
-  useEffect(() => {
-    if (profile) {
-      setFullName(profile.full_name || '');
-      setPictureUrl(profile.profile_picture_url || '');
-      setSelectedFile(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  }, [profile]);
+  const displayFullName = fullName || profile?.full_name || '';
+  const displayPictureUrl = pictureUrl || profile?.profile_picture_url || '';
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
-        alert("File size should be less than 2MB");
+        alert('File size should be less than 2MB');
         if (fileInputRef.current) fileInputRef.current.value = '';
         return;
       }
-      setSelectedFile(file);
+
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPictureUrl(reader.result as string);
+        setPictureUrl(String(reader.result || ''));
       };
       reader.readAsDataURL(file);
     }
   };
 
   const handleResetForm = () => {
-    if (profile) {
-      setFullName(profile.full_name || '');
-      setPictureUrl(profile.profile_picture_url || '');
-      setSelectedFile(null);
-      setPassword('');
-      setNewPassword('');
-      setConfirmNewPassword('');
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
+    setFullName(profile?.full_name || '');
+    setPictureUrl(profile?.profile_picture_url || '');
+    setPassword('');
+    setNewPassword('');
+    setConfirmNewPassword('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setIsSubmitting(true);
+    e.preventDefault();
+    setIsSubmitting(true);
 
-  try {
-    const response = await updateProfile({
-      full_name: fullName,
-      profile_picture_url: pictureUrl,
-    });
-
-    if (response.success) {
-      await mutate(); // Refresh SWR state
-
-      // Directly update the NextAuth JWT session payload client-side
-      await updateSession({
-        full_name: response.data?.full_name || fullName,
-        profile_picture_url: response.data?.profile_picture_url || pictureUrl,
+    try {
+      const response = await updateProfile({
+        full_name: displayFullName,
+        profile_picture_url: displayPictureUrl,
       });
 
-      setStatusMsg({ type: 'success', text: 'Profile updated successfully!' });
+      if (response.success) {
+        await mutate();
+
+        await updateSession({
+          full_name: response.data?.full_name || displayFullName,
+          profile_picture_url: response.data?.profile_picture_url || displayPictureUrl,
+        });
+
+        setStatusMsg({ type: 'success', text: 'Profile updated successfully!' });
+      }
+    } catch {
+      setStatusMsg({ type: 'error', text: 'An error occurred.' });
+    } finally {
+      setIsSubmitting(false);
     }
-  } catch (err) {
-    setStatusMsg({ type: 'error', text: 'An error occurred.' });
-  } finally {
-    setIsSubmitting(false);
-  }
   };
 
   return (
@@ -138,7 +124,7 @@ export function UpdateProfileForm() {
         <label className="block text-xs font-medium text-slate-600 mb-1">Full Name</label>
         <input
           type="text"
-          value={fullName}
+          value={displayFullName}
           onChange={(e) => setFullName(e.target.value)}
           className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
           required

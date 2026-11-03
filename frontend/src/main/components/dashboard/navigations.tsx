@@ -16,18 +16,22 @@ const navItems = [
 export default function Navigation() {
   const pathname = usePathname();
 
+  if (pathname === "/login") {
+    return null;
+  }
+
   return (
     <>
       {/* Top Header */}
       <header className="flex items-center justify-between p-4 bg-white border-b border-slate-100">
-      <div>
-        <h1 className="font-bold text-slate-900">Sukasan Coffee</h1>
-        <p className="text-xs text-slate-500">POS & Operations</p>
-      </div>
+        <div>
+          <h1 className="font-bold text-slate-900">Sukasan Coffee</h1>
+          <p className="text-xs text-slate-500">POS & Operations</p>
+        </div>
 
-      {/* Profile Avatar with status badge */}
-      <ProfileAvatar />
-    </header>
+        {/* Profile Avatar with status badge */}
+        <ProfileAvatar />
+      </header>
 
       {/* Bottom Bar for Mobile Layout (Realme Note 50 Target) */}
       <nav className="fixed bottom-0 inset-x-0 flex items-center justify-around bg-white border-t border-slate-200 z-50 py-1">
