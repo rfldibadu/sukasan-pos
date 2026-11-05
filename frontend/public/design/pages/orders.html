@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sukasan POS - Orders &amp; Queue Management</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            amber: {
+              50: '#fffbeb',
+              100: '#fef3c7',
+              200: '#fde68a',
+              300: '#fcd34d',
+              400: '#fbbf24',
+              500: '#f59e0b',
+              600: '#d97706',
+              700: '#b45309',
+              800: '#92400e',
+              900: '#78350f',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="../assets/css/design-system.css">
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen pb-24 md:pb-8">
+
+  <!-- Prototype Banner -->
+  <div class="bg-amber-800 text-amber-50 text-xs py-1.5 px-4 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+      <span class="font-medium">PROTOTYPE: Orders &amp; Queue (Open Bill Workflow)</span>
+    </div>
+    <a href="../index.html" class="underline hover:text-white font-semibold">Back to Design Hub</a>
+  </div>
+
+  <!-- Top Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-2xs">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-amber-700 flex items-center justify-center text-white shadow-xs">
+          <i data-lucide="coffee" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h1 class="text-sm font-bold text-slate-900 leading-tight">Sukasan Coffee</h1>
+          <p class="text-[11px] text-slate-500">Orders Queue &bull; Jl. Achmad Nadjamuddin No.20</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Shift Open
+        </span>
+        <button class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-xs" title="Cashier Profile">
+          CK
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-5xl mx-auto px-4 py-5 space-y-4">
+
+    <!-- Page Title & Actions -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div>
+        <div class="flex items-center gap-2">
+          <h2 class="text-lg font-bold text-slate-900">Orders &amp; Open Bills</h2>
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+            FIFO Queue
+          </span>
+        </div>
+        <p class="text-xs text-slate-500">Track active prep queue, settle open bills, add items to tabs, and manage voids.</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="showToast('Orders queue refreshed!', 'info')" class="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors shadow-2xs" title="Refresh">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+        </button>
+        <button onclick="showToast('Thermal printer online (58mm)', 'info')" class="px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 flex items-center gap-1.5 shadow-2xs">
+          <i data-lucide="printer" class="w-4 h-4 text-emerald-600"></i>
+          <span>Printer: Online</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Search & Shift Filter Bar -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div class="sm:col-span-2 relative">
+        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+        <input type="text" id="orderSearch" onkeyup="filterOrdersBySearch()" placeholder="Search by Table (e.g. Meja 4), Customer, or Order #..." class="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-amber-600 shadow-2xs">
+      </div>
+      <div class="relative">
+        <select class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-amber-600 shadow-2xs text-slate-700">
+          <option>Shift 1 (Current Shift)</option>
+          <option>Today (All Shifts)</option>
+          <option>Yesterday</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Streamlined Status Tabs (3 Core Statuses + All) -->
+    <div class="flex items-center gap-2 overflow-x-auto pb-1 border-b border-slate-200 text-xs font-semibold" id="order-tabs">
+      <!-- Tab 1: Active Queue (FIFO) -->
+      <button data-tab-button onclick="filterOrderByStatus('queued', this)" class="px-3.5 py-2 rounded-xl bg-amber-100 text-amber-800 border-amber-600 font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap shadow-2xs">
+        <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+        <span>Antrean Aktif (FIFO Queue)</span>
+        <span id="badgeCountQueued" class="bg-amber-200 text-amber-900 text-[10px] px-1.5 py-0.2 rounded-full font-mono">3</span>
+      </button>
+
+      <!-- Tab 2: Completed -->
+      <button data-tab-button onclick="filterOrderByStatus('completed', this)" class="px-3.5 py-2 rounded-xl text-slate-600 hover:text-slate-900 transition-all flex items-center gap-1.5 whitespace-nowrap">
+        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        <span>Selesai (Completed)</span>
+        <span id="badgeCountCompleted" class="bg-slate-200 text-slate-700 text-[10px] px-1.5 py-0.2 rounded-full font-mono">2</span>
+      </button>
+
+      <!-- Tab 3: Voided -->
+      <button data-tab-button onclick="filterOrderByStatus('voided', this)" class="px-3.5 py-2 rounded-xl text-slate-600 hover:text-slate-900 transition-all flex items-center gap-1.5 whitespace-nowrap">
+        <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+        <span>Dibatalkan (Voided)</span>
+        <span id="badgeCountVoided" class="bg-slate-200 text-slate-700 text-[10px] px-1.5 py-0.2 rounded-full font-mono">1</span>
+      </button>
+
+      <!-- Tab 4: All -->
+      <button data-tab-button onclick="filterOrderByStatus('all', this)" class="px-3.5 py-2 rounded-xl text-slate-600 hover:text-slate-900 transition-all flex items-center gap-1.5 whitespace-nowrap">
+        <span>Semua (All)</span>
+        <span class="bg-slate-200 text-slate-700 text-[10px] px-1.5 py-0.2 rounded-full font-mono">6</span>
+      </button>
+    </div>
+
+    <!-- Orders Feed List -->
+    <div class="space-y-3" id="orders-list">
+
+      <!-- ORDER 1: Active FIFO #1 - Open Bill (Dine-In, Unpaid) -->
+      <div data-status="queued" data-payment="unpaid" data-search="meja 04 budi setiawan dine in #ord-1049 #1" class="order-card bg-white rounded-2xl border-2 border-amber-300 p-4 shadow-2xs hover:border-amber-500 transition-all cursor-pointer" onclick="openOrderDetails('ORD-1049', '1', 'Meja 04 - Budi Setiawan', 'Dine-In', 'unpaid', 'queued', 62000, 0, '10:45 AM (8m ago)')">
+        <div class="flex items-start justify-between gap-3">
+          <div class="space-y-1.5">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <!-- FIFO Sequence Badge -->
+              <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-black bg-amber-700 text-white font-mono shadow-2xs">
+                #1
+              </span>
+              <span class="text-xs font-bold text-slate-900 font-mono">ORD-1049</span>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                <i data-lucide="coffee" class="w-3 h-3"></i> Dine-In (Meja 04)
+              </span>
+              <!-- Payment Status: Unpaid Open Bill -->
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                <i data-lucide="clock" class="w-3 h-3 text-amber-700"></i> Open Bill (Belum Bayar)
+              </span>
+            </div>
+            <h3 class="text-sm font-bold text-slate-900">Meja 04 - Budi Setiawan</h3>
+            <p class="text-xs text-slate-600">2x Kopi Susu Sukasan (Less Sugar), 1x Almond Croissant</p>
+          </div>
+          <div class="text-right space-y-1">
+            <div class="text-sm font-bold font-mono text-amber-800">Rp 62.000</div>
+            <span class="inline-block text-[10px] font-semibold px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">Bayar Nanti</span>
+            <p class="text-[10px] text-slate-400 font-medium">10:45 AM &bull; 8m ago</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ORDER 2: Active FIFO #2 - Takeaway (Paid Upfront) -->
+      <div data-status="queued" data-payment="paid" data-search="annisa rahma takeaway #ord-1048 #2" class="order-card bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs hover:border-amber-400 transition-all cursor-pointer" onclick="openOrderDetails('ORD-1048', '2', 'Annisa Rahma', 'Takeaway', 'paid', 'queued', 28000, 0, '10:48 AM (5m ago)')">
+        <div class="flex items-start justify-between gap-3">
+          <div class="space-y-1.5">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-black bg-slate-800 text-white font-mono shadow-2xs">
+                #2
+              </span>
+              <span class="text-xs font-bold text-slate-900 font-mono">ORD-1048</span>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-200">
+                <i data-lucide="shopping-bag" class="w-3 h-3"></i> Takeaway
+              </span>
+              <!-- Payment Status: Paid -->
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <i data-lucide="check" class="w-3 h-3"></i> Sudah Bayar (Cash)
+              </span>
+            </div>
+            <h3 class="text-sm font-bold text-slate-900">Annisa Rahma</h3>
+            <p class="text-xs text-slate-600">1x Matcha Latte (Oat Milk), 1x Mineral Water</p>
+          </div>
+          <div class="text-right space-y-1">
+            <div class="text-sm font-bold font-mono text-slate-900">Rp 28.000</div>
+            <span class="inline-block text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700">Cash Lunas</span>
+            <p class="text-[10px] text-slate-400 font-medium">10:48 AM &bull; 5m ago</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ORDER 3: Active FIFO #3 - Open Bill (Dine-In, Unpaid) -->
+      <div data-status="queued" data-payment="unpaid" data-search="meja 02 hendra dine in #ord-1050 #3" class="order-card bg-white rounded-2xl border-2 border-amber-300 p-4 shadow-2xs hover:border-amber-500 transition-all cursor-pointer" onclick="openOrderDetails('ORD-1050', '3', 'Meja 02 - Hendra', 'Dine-In', 'unpaid', 'queued', 38000, 0, '10:51 AM (2m ago)')">
+        <div class="flex items-start justify-between gap-3">
+          <div class="space-y-1.5">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-black bg-amber-700 text-white font-mono shadow-2xs">
+                #3
+              </span>
+              <span class="text-xs font-bold text-slate-900 font-mono">ORD-1050</span>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                <i data-lucide="coffee" class="w-3 h-3"></i> Dine-In (Meja 02)
+              </span>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                <i data-lucide="clock" class="w-3 h-3 text-amber-700"></i> Open Bill (Belum Bayar)
+              </span>
+            </div>
+            <h3 class="text-sm font-bold text-slate-900">Meja 02 - Hendra</h3>
+            <p class="text-xs text-slate-600">1x Americano Hot, 1x Cinnamon Roll</p>
+          </div>
+          <div class="text-right space-y-1">
+            <div class="text-sm font-bold font-mono text-amber-800">Rp 38.000</div>
+            <span class="inline-block text-[10px] font-semibold px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">Bayar Nanti</span>
+            <p class="text-[10px] text-slate-400 font-medium">10:51 AM &bull; 2m ago</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ORDER 4: Completed -->
+      <div data-status="completed" data-payment="paid" data-search="dimas yoga dine in meja 01 #ord-1047" class="order-card bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs hover:border-amber-400 transition-all cursor-pointer hidden" onclick="openOrderDetails('ORD-1047', '', 'Dimas Yoga (Meja 01)', 'Dine-In', 'paid', 'completed', 45000, 0, '10:25 AM')">
+        <div class="flex items-start justify-between gap-3">
+          <div class="space-y-1.5">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold text-slate-900 font-mono">ORD-1047</span>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                <i data-lucide="coffee" class="w-3 h-3"></i> Dine-In (Meja 01)
+              </span>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <i data-lucide="check" class="w-3 h-3"></i> Selesai &amp; Lunas
+              </span>
+            </div>
+            <h3 class="text-sm font-bold text-slate-900">Dimas Yoga</h3>
+            <p class="text-xs text-slate-500">1x Americano Hot, 1x Cinnamon Roll</p>
+          </div>
+          <div class="text-right space-y-1">
+            <div class="text-sm font-bold font-mono text-slate-900">Rp 45.000</div>
+            <span class="inline-block text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700">QRIS</span>
+            <p class="text-[10px] text-slate-400">10:25 AM</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ORDER 5: Completed -->
+      <div data-status="completed" data-payment="paid" data-search="siti aminah takeaway #ord-1046" class="order-card bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs hover:border-amber-400 transition-all cursor-pointer hidden" onclick="openOrderDetails('ORD-1046', '', 'Siti Aminah', 'Takeaway', 'paid', 'completed', 72000, 0, '10:10 AM')">
+        <div class="flex items-start justify-between gap-3">
+          <div class="space-y-1.5">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold text-slate-900 font-mono">ORD-1046</span>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-200">
+                <i data-lucide="shopping-bag" class="w-3 h-3"></i> Takeaway
+              </span>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <i data-lucide="check" class="w-3 h-3"></i> Selesai &amp; Lunas
+              </span>
+            </div>
+            <h3 class="text-sm font-bold text-slate-900">Siti Aminah</h3>
+            <p class="text-xs text-slate-500">4x Es Kopi Susu Sukasan</p>
+          </div>
+          <div class="text-right space-y-1">
+            <div class="text-sm font-bold font-mono text-slate-900">Rp 72.000</div>
+            <span class="inline-block text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700">Cash</span>
+            <p class="text-[10px] text-slate-400">10:10 AM</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ORDER 6: Voided -->
+      <div data-status="voided" data-payment="unpaid" data-search="farhan voided customer cancelled #ord-1045" class="order-card bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs opacity-80 hover:opacity-100 transition-all cursor-pointer hidden" onclick="openOrderDetails('ORD-1045', '', 'Farhan (Cancelled)', 'Dine-In', 'unpaid', 'voided', 36000, 0, '09:50 AM')">
+        <div class="flex items-start justify-between gap-3">
+          <div class="space-y-1.5">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold text-slate-400 font-mono line-through">ORD-1045</span>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                <i data-lucide="alert-circle" class="w-3 h-3"></i> Dibatalkan (Voided)
+              </span>
+              <span class="text-[10px] font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded">Stock Restored</span>
+            </div>
+            <h3 class="text-sm font-bold text-slate-600 line-through">Farhan</h3>
+            <p class="text-xs text-rose-600 font-medium">Alasan Void: Customer cancelled order before brewing</p>
+          </div>
+          <div class="text-right space-y-1">
+            <div class="text-sm font-bold font-mono text-slate-400 line-through">Rp 36.000</div>
+            <p class="text-[10px] text-slate-400">09:50 AM</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Bottom Navigation Bar (Realme Note 50 Mobile Layout) -->
+  <nav class="fixed bottom-0 inset-x-0 flex items-center justify-around bg-white border-t border-slate-200 z-40 py-1">
+    <a href="dashboard.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
+      <i data-lucide="layout-dashboard" class="w-5 h-5 mb-0.5"></i>
+      <span>Home</span>
+    </a>
+    <a href="pos.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
+      <i data-lucide="shopping-bag" class="w-5 h-5 mb-0.5"></i>
+      <span>POS</span>
+    </a>
+    <a href="orders.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-semibold text-amber-800 bg-amber-100/70">
+      <i data-lucide="receipt" class="w-5 h-5 mb-0.5"></i>
+      <span>Orders</span>
+    </a>
+    <a href="menu.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
+      <i data-lucide="package" class="w-5 h-5 mb-0.5"></i>
+      <span>Menu</span>
+    </a>
+    <a href="staff.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
+      <i data-lucide="users" class="w-5 h-5 mb-0.5"></i>
+      <span>Staff</span>
+    </a>
+  </nav>
+
+  <!-- Order Details Slide-Over / Bottom Sheet Drawer -->
+  <div id="orderDetailsDrawer" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-white rounded-t-3xl sm:rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-5 space-y-4 shadow-2xl">
+      <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto sm:hidden"></div>
+      
+      <!-- Drawer Header with Open Bill / Queue Badges -->
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div>
+          <div class="flex items-center gap-2">
+            <span id="drawerQueueNum" class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-black bg-amber-700 text-white font-mono">#1</span>
+            <span id="drawerOrderId" class="font-mono text-sm font-bold text-slate-900">ORD-1049</span>
+            <span id="drawerPaymentBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">Open Bill</span>
+          </div>
+          <p id="drawerCustomerName" class="text-xs text-slate-600 mt-0.5 font-medium">Meja 04 - Budi Setiawan &bull; Dine-In</p>
+        </div>
+        <button onclick="closeDrawer('orderDetailsDrawer')" class="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Order Items Detail List -->
+      <div class="space-y-2">
+        <div class="flex items-center justify-between">
+          <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Ordered Items</h4>
+          <!-- Add Items to Open Bill Button -->
+          <button id="drawerAddItemsBtn" onclick="openModal('addItemsModal')" class="text-xs font-bold text-amber-800 hover:text-amber-900 inline-flex items-center gap-1 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 hover:bg-amber-100 transition-colors">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Tambah Item (Add to Bill)
+          </button>
+        </div>
+
+        <div id="drawerItemsContainer" class="bg-slate-50 rounded-xl p-3.5 space-y-3 border border-slate-100">
+          <div class="flex items-start justify-between text-xs">
+            <div>
+              <p class="font-bold text-slate-900">2x Kopi Susu Sukasan</p>
+              <p class="text-[11px] text-amber-800">&bull; Less Sugar (70%)</p>
+            </div>
+            <span class="font-mono font-bold text-slate-900">Rp 36.000</span>
+          </div>
+
+          <div class="border-t border-slate-200/60 pt-2 flex items-start justify-between text-xs">
+            <div>
+              <p class="font-bold text-slate-900">1x Almond Croissant (Consignment)</p>
+              <p class="text-[11px] text-indigo-700">&bull; Vendor: Bakehouse No.7</p>
+            </div>
+            <span class="font-mono font-bold text-slate-900">Rp 14.000</span>
+          </div>
+
+          <div class="border-t border-slate-200/60 pt-2 flex items-start justify-between text-xs">
+            <div>
+              <p class="font-bold text-slate-900">1x Oat Milk Upgrade</p>
+              <p class="text-[11px] text-slate-500">&bull; Substitute Oatside</p>
+            </div>
+            <span class="font-mono font-bold text-slate-900">Rp 6.000</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Financial Breakdown -->
+      <div class="bg-white rounded-xl border border-slate-200/80 p-3.5 space-y-2 text-xs">
+        <div class="flex justify-between text-slate-500">
+          <span>Subtotal</span>
+          <span id="drawerSubtotal" class="font-mono">Rp 62.000</span>
+        </div>
+        <div class="flex justify-between text-slate-500">
+          <span>Discounts</span>
+          <span id="drawerDiscount" class="font-mono">Rp 0</span>
+        </div>
+        <div class="flex justify-between font-bold text-slate-900 pt-2 border-t border-slate-100 text-sm">
+          <span>Total Tagihan (Bill Due)</span>
+          <span id="drawerTotalAmount" class="font-mono text-amber-800">Rp 62.000</span>
+        </div>
+        <div class="flex justify-between text-[11px] text-slate-400 pt-1">
+          <span>Est. Net Cafe Revenue (less vendor fee)</span>
+          <span class="font-mono text-emerald-600 font-semibold">Rp 50.800</span>
+        </div>
+      </div>
+
+      <!-- Dynamic Actions Based on Open Bill / Paid Status -->
+      <div class="space-y-2 pt-2" id="drawerActions">
+        
+        <!-- Open Bill Action: Settle Bill (Bayar Sekarang) -->
+        <div id="unpaidActionSection" class="space-y-2">
+          <button onclick="openSettleBillModal()" class="w-full py-3 px-4 bg-amber-700 hover:bg-amber-800 active:bg-amber-900 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-sm">
+            <i data-lucide="credit-card" class="w-4 h-4"></i> Selesaikan Pembayaran (Pay Bill)
+          </button>
+        </div>
+
+        <!-- Paid & Queued Action: Handover Drink -->
+        <div id="paidActionSection" class="space-y-2 hidden">
+          <button onclick="completeCurrentOrder()" class="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-sm">
+            <i data-lucide="check-circle" class="w-4 h-4"></i> Serahkan Pesanan (Mark Completed)
+          </button>
+        </div>
+
+        <!-- Secondary Actions -->
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="openModal('receiptModal')" class="py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors">
+            <i data-lucide="printer" class="w-4 h-4"></i> Print Bill / Receipt
+          </button>
+          <button id="btnVoidOrder" onclick="openModal('voidModal')" class="py-2.5 px-4 bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors">
+            <i data-lucide="x-circle" class="w-4 h-4"></i> Void Order
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Settle Bill Modal (Cashier settles Open Bill) -->
+  <div id="settleBillModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+        <div>
+          <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Settle Open Bill</h3>
+          <p id="settleTargetCustomer" class="text-xs text-slate-500">Meja 04 - Budi Setiawan</p>
+        </div>
+        <button onclick="closeModal('settleBillModal')" class="p-1 text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="text-center py-1">
+        <p class="text-xs text-slate-500">Total Tagihan (Bill Due)</p>
+        <p id="settleAmountDisplay" class="text-2xl font-bold font-mono text-amber-800">Rp 62.000</p>
+      </div>
+
+      <!-- Payment Method Toggle -->
+      <div class="grid grid-cols-2 gap-2 text-xs font-semibold">
+        <button id="settlePayCash" onclick="setSettleMethod('cash')" class="py-2.5 rounded-xl border border-amber-600 bg-amber-100 text-amber-800 flex items-center justify-center gap-1.5">
+          <i data-lucide="banknote" class="w-4 h-4"></i> Cash
+        </button>
+        <button id="settlePayQris" onclick="setSettleMethod('qris')" class="py-2.5 rounded-xl border border-slate-200 text-slate-600 flex items-center justify-center gap-1.5">
+          <i data-lucide="qr-code" class="w-4 h-4"></i> QRIS
+        </button>
+      </div>
+
+      <!-- Cash Calculation Section -->
+      <div id="settleCashSection" class="p-3 bg-slate-50 rounded-xl space-y-2 border border-slate-100 text-xs">
+        <div>
+          <label class="text-slate-600 font-semibold">Cash Tendered (Rp)</label>
+          <input type="number" id="settleCashInput" onkeyup="calcSettleChange(this.value)" placeholder="e.g. 100000" class="w-full mt-1 px-3 py-2 bg-white border border-slate-200 rounded-xl font-mono text-sm">
+        </div>
+        <div class="flex justify-between pt-1">
+          <span class="text-slate-500">Change Due (Kembalian):</span>
+          <span id="settleCashChange" class="font-mono font-bold text-emerald-600">Rp 0</span>
+        </div>
+      </div>
+
+      <!-- QRIS Section -->
+      <div id="settleQrisSection" class="p-4 bg-slate-50 rounded-2xl text-center space-y-2 border border-slate-100 hidden">
+        <div class="w-32 h-32 bg-white border border-slate-300 mx-auto rounded-xl flex items-center justify-center shadow-xs">
+          <i data-lucide="qr-code" class="w-20 h-20 text-slate-800"></i>
+        </div>
+        <p class="text-[11px] text-slate-500">Scan QRIS to confirm payment</p>
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button onclick="closeModal('settleBillModal')" class="flex-1 py-2 text-xs font-semibold text-slate-600 rounded-xl hover:bg-slate-100">
+          Cancel
+        </button>
+        <button onclick="confirmSettleBill()" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold">
+          Settle &amp; Complete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Items to Open Bill Modal -->
+  <div id="addItemsModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+        <div>
+          <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Add Items to Open Bill</h3>
+          <p id="addItemCustomerTarget" class="text-xs text-slate-500">Meja 04 - Budi Setiawan</p>
+        </div>
+        <button onclick="closeModal('addItemsModal')" class="p-1 text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="font-semibold text-slate-700">Select Item to Add</label>
+          <select id="extraItemSelect" class="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+            <option value="24000|1x Caramel Macchiato">Caramel Macchiato - Rp 24.000</option>
+            <option value="18000|1x Kopi Susu Sukasan">Kopi Susu Sukasan - Rp 18.000</option>
+            <option value="15000|1x Americano Hot/Ice">Americano Hot/Ice - Rp 15.000</option>
+            <option value="16000|1x Cinnamon Roll (Consignment)">Cinnamon Roll - Rp 16.000</option>
+            <option value="5000|1x Extra Espresso Shot">Extra Espresso Shot - Rp 5.000</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="font-semibold text-slate-700">Special Notes</label>
+          <input type="text" id="extraItemNotes" placeholder="e.g. Less sugar, extra hot" class="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-2 border-t border-slate-100">
+        <button onclick="closeModal('addItemsModal')" class="flex-1 py-2 text-xs font-semibold text-slate-600 rounded-xl hover:bg-slate-100">
+          Cancel
+        </button>
+        <button onclick="confirmAddExtraItem()" class="flex-1 py-2.5 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold">
+          Add to Bill
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Receipt Preview Modal (Thermal 58mm emulation) -->
+  <div id="receiptModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+        <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Receipt Preview (58mm)</h3>
+        <button onclick="closeModal('receiptModal')" class="p-1 text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Thermal Paper Receipt Card -->
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 font-mono text-[11px] text-slate-800 space-y-2.5 shadow-inner">
+        <div class="text-center space-y-0.5">
+          <p class="font-bold text-sm">SUKASAN COFFEE</p>
+          <p class="text-[10px] text-slate-500">Jl. Achmad Nadjamuddin No.20</p>
+          <p class="text-[10px] text-slate-500">WA: 0812-3456-7890</p>
+        </div>
+        <div class="border-t border-dashed border-slate-300 pt-1 text-[10px] text-slate-500 flex justify-between">
+          <span id="receiptOrderNum">ORD-1049 &bull; Cashier: Alex</span>
+          <span>10:45 AM</span>
+        </div>
+        <div class="border-t border-dashed border-slate-300 pt-1.5 space-y-1" id="receiptItemsList">
+          <div class="flex justify-between">
+            <span>2x Kopi Susu Sukasan</span>
+            <span>36.000</span>
+          </div>
+          <div class="flex justify-between">
+            <span>1x Almond Croissant</span>
+            <span>14.000</span>
+          </div>
+          <div class="flex justify-between">
+            <span>1x Oat Milk Upgrade</span>
+            <span>6.000</span>
+          </div>
+        </div>
+        <div class="border-t border-dashed border-slate-300 pt-1.5 space-y-1 font-bold">
+          <div class="flex justify-between text-xs">
+            <span>TOTAL:</span>
+            <span id="receiptTotalText">Rp 62.000</span>
+          </div>
+          <div class="flex justify-between text-[10px] font-normal text-slate-500">
+            <span>STATUS:</span>
+            <span id="receiptPaymentText">LUNAS (PAID)</span>
+          </div>
+        </div>
+        <div class="border-t border-dashed border-slate-300 pt-2 text-center text-[10px] text-slate-500">
+          <p>Terima Kasih!</p>
+          <p>Nikmati Harimu bersama Sukasan</p>
+        </div>
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="closeModal('receiptModal')" class="flex-1 py-2 text-xs font-semibold text-slate-600 rounded-xl hover:bg-slate-100">
+          Close
+        </button>
+        <button onclick="closeModal('receiptModal'); showToast('Receipt sent to Bluetooth thermal printer!', 'success')" class="flex-1 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5">
+          <i data-lucide="printer" class="w-3.5 h-3.5"></i> Print Now
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Void Order Reason Modal -->
+  <div id="voidModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center">
+          <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold text-slate-900">Void Order</h3>
+          <p class="text-xs text-slate-500">Restore inventory &amp; cancel transaction</p>
+        </div>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs font-semibold text-slate-700">Reason for Voiding</label>
+          <select id="voidReasonSelect" class="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+            <option>Customer cancelled / Left before payment</option>
+            <option>Wrong item input by cashier</option>
+            <option>Product out of stock / Machine malfunction</option>
+            <option>Duplicate order punched</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-700">Manager Authorization PIN</label>
+          <input type="password" maxlength="6" placeholder="Enter 4 or 6-digit PIN" class="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono tracking-widest text-center">
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button onclick="closeModal('voidModal')" class="flex-1 py-2 text-xs font-semibold text-slate-600 rounded-xl hover:bg-slate-100">
+          Cancel
+        </button>
+        <button onclick="confirmVoidOrder()" class="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold">
+          Confirm Void &amp; Restore Stock
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/js/prototype.js"></script>
+  <script>
+    let activeOrder = {
+      id: 'ORD-1049',
+      queueNum: '1',
+      customer: 'Meja 04 - Budi Setiawan',
+      type: 'Dine-In',
+      paymentStatus: 'unpaid',
+      fulfillmentStatus: 'queued',
+      total: 62000,
+      time: '10:45 AM (8m ago)'
+    };
+
+    function filterOrderByStatus(status, btn) {
+      const container = document.getElementById('order-tabs');
+      container.querySelectorAll('[data-tab-button]').forEach(b => {
+        b.className = 'px-3.5 py-2 rounded-xl text-slate-600 hover:text-slate-900 transition-all flex items-center gap-1.5 whitespace-nowrap';
+      });
+      btn.className = 'px-3.5 py-2 rounded-xl bg-amber-100 text-amber-800 border-amber-600 font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap shadow-2xs';
+
+      const cards = document.querySelectorAll('.order-card');
+      cards.forEach(card => {
+        if (status === 'all' || card.getAttribute('data-status') === status) {
+          card.classList.remove('hidden');
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+    }
+
+    function filterOrdersBySearch() {
+      const term = document.getElementById('orderSearch').value.toLowerCase();
+      const cards = document.querySelectorAll('.order-card');
+      cards.forEach(card => {
+        const text = card.getAttribute('data-search') || '';
+        if (text.includes(term)) {
+          card.classList.remove('hidden');
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+    }
+
+    function openOrderDetails(id, queueNum, customer, type, paymentStatus, fulfillmentStatus, total, discount, time) {
+      activeOrder = { id, queueNum, customer, type, paymentStatus, fulfillmentStatus, total, time };
+
+      document.getElementById('drawerOrderId').innerText = id;
+      document.getElementById('drawerQueueNum').innerText = '#' + (queueNum || '1');
+      if (!queueNum) {
+        document.getElementById('drawerQueueNum').classList.add('hidden');
+      } else {
+        document.getElementById('drawerQueueNum').classList.remove('hidden');
+      }
+
+      document.getElementById('drawerCustomerName').innerText = `${customer} • ${type}`;
+      document.getElementById('drawerTotalAmount').innerText = formatIDR(total);
+      document.getElementById('drawerSubtotal').innerText = formatIDR(total);
+
+      const payBadge = document.getElementById('drawerPaymentBadge');
+      const unpaidSec = document.getElementById('unpaidActionSection');
+      const paidSec = document.getElementById('paidActionSection');
+      const addItemsBtn = document.getElementById('drawerAddItemsBtn');
+      const voidBtn = document.getElementById('btnVoidOrder');
+
+      if (paymentStatus === 'unpaid') {
+        payBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300';
+        payBadge.innerText = 'Open Bill (Belum Bayar)';
+        unpaidSec.classList.remove('hidden');
+        paidSec.classList.add('hidden');
+        addItemsBtn.classList.remove('hidden');
+        voidBtn.classList.remove('hidden');
+      } else {
+        payBadge.className = 'text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200';
+        payBadge.innerText = 'Sudah Bayar (Lunas)';
+        unpaidSec.classList.add('hidden');
+        addItemsBtn.classList.add('hidden');
+
+        if (fulfillmentStatus === 'queued') {
+          paidSec.classList.remove('hidden');
+          voidBtn.classList.remove('hidden');
+        } else {
+          paidSec.classList.add('hidden');
+          voidBtn.classList.add('hidden');
+        }
+      }
+
+      openDrawer('orderDetailsDrawer');
+    }
+
+    function openSettleBillModal() {
+      document.getElementById('settleTargetCustomer').innerText = activeOrder.customer;
+      document.getElementById('settleAmountDisplay').innerText = formatIDR(activeOrder.total);
+      document.getElementById('settleCashInput').value = '';
+      document.getElementById('settleCashChange').innerText = 'Rp 0';
+      setSettleMethod('cash');
+      openModal('settleBillModal');
+    }
+
+    function setSettleMethod(method) {
+      const bCash = document.getElementById('settlePayCash');
+      const bQris = document.getElementById('settlePayQris');
+      const cSec = document.getElementById('settleCashSection');
+      const qSec = document.getElementById('settleQrisSection');
+
+      if (method === 'cash') {
+        bCash.className = 'py-2.5 rounded-xl border border-amber-600 bg-amber-100 text-amber-800 font-semibold flex items-center justify-center gap-1.5';
+        bQris.className = 'py-2.5 rounded-xl border border-slate-200 text-slate-600 flex items-center justify-center gap-1.5';
+        cSec.classList.remove('hidden');
+        qSec.classList.add('hidden');
+      } else {
+        bQris.className = 'py-2.5 rounded-xl border border-amber-600 bg-amber-100 text-amber-800 font-semibold flex items-center justify-center gap-1.5';
+        bCash.className = 'py-2.5 rounded-xl border border-slate-200 text-slate-600 flex items-center justify-center gap-1.5';
+        qSec.classList.remove('hidden');
+        cSec.classList.add('hidden');
+      }
+      if (window.lucide) window.lucide.createIcons();
+    }
+
+    function calcSettleChange(val) {
+      const tendered = parseFloat(val) || 0;
+      const change = Math.max(0, tendered - activeOrder.total);
+      document.getElementById('settleCashChange').innerText = formatIDR(change);
+    }
+
+    function confirmSettleBill() {
+      closeModal('settleBillModal');
+      closeDrawer('orderDetailsDrawer');
+      showToast(`Bill for ${activeOrder.customer} settled! Order moved to Completed.`, 'success');
+
+      // Update the first card in UI to completed
+      const card = document.querySelector('[data-search*="1049"]');
+      if (card) {
+        card.setAttribute('data-status', 'completed');
+        card.setAttribute('data-payment', 'paid');
+        card.classList.remove('border-amber-300', 'border-2');
+        card.classList.add('border-slate-200');
+        const badge = card.querySelector('.bg-amber-100');
+        if (badge) {
+          badge.className = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200';
+          badge.innerHTML = '<i data-lucide="check" class="w-3 h-3"></i> Selesai &amp; Lunas';
+        }
+      }
+
+      // Update badge counts
+      const qCount = document.getElementById('badgeCountQueued');
+      const cCount = document.getElementById('badgeCountCompleted');
+      if (qCount && cCount) {
+        qCount.innerText = '2';
+        cCount.innerText = '3';
+      }
+
+      // Open receipt
+      openModal('receiptModal');
+    }
+
+    function confirmAddExtraItem() {
+      const selectVal = document.getElementById('extraItemSelect').value;
+      const [priceStr, name] = selectVal.split('|');
+      const itemPrice = parseInt(priceStr);
+      const notes = document.getElementById('extraItemNotes').value.trim();
+
+      activeOrder.total += itemPrice;
+
+      // Append item to container
+      const container = document.getElementById('drawerItemsContainer');
+      const newDiv = document.createElement('div');
+      newDiv.className = 'border-t border-slate-200/60 pt-2 flex items-start justify-between text-xs animate-in fade-in duration-200';
+      newDiv.innerHTML = `
+        <div>
+          <p class="font-bold text-slate-900">${name} (Added)</p>
+          ${notes ? `<p class="text-[11px] text-amber-800">&bull; ${notes}</p>` : ''}
+        </div>
+        <span class="font-mono font-bold text-slate-900">${formatIDR(itemPrice)}</span>
+      `;
+      container.appendChild(newDiv);
+
+      document.getElementById('drawerTotalAmount').innerText = formatIDR(activeOrder.total);
+      document.getElementById('drawerSubtotal').innerText = formatIDR(activeOrder.total);
+
+      closeModal('addItemsModal');
+      showToast(`${name} added to Open Bill! Total updated.`, 'success');
+    }
+
+    function completeCurrentOrder() {
+      closeDrawer('orderDetailsDrawer');
+      showToast(`Order #${activeOrder.id} handed over & marked completed!`, 'success');
+      const card = document.querySelector('[data-search*="1048"]');
+      if (card) {
+        card.setAttribute('data-status', 'completed');
+      }
+    }
+
+    function confirmVoidOrder() {
+      closeModal('voidModal');
+      closeDrawer('orderDetailsDrawer');
+      showToast(`Order #${activeOrder.id} voided! Stock has been returned to inventory.`, 'info');
+      const card = document.querySelector(`[data-search*="${activeOrder.id.toLowerCase()}"]`);
+      if (card) {
+        card.setAttribute('data-status', 'voided');
+        card.classList.add('opacity-70');
+      }
+    }
+  </script>
+</body>
+</html>

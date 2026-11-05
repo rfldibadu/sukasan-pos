@@ -1,4 +1,4 @@
-import NextAuth, { AuthOptions } from "next-auth";
+import { AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import axios, { AxiosError } from "axios";
 
@@ -80,7 +80,7 @@ export const authOptions: AuthOptions = {
             headers: { Authorization: `Bearer ${token.access_token}` },
           });
           token.full_name = meResponse.data.full_name;
-          token.profile_picture_url = meResponse.data.profile_picture_url;
+          token.profile_picture_url = sanitizeAvatarUrl(meResponse.data.profile_picture_url);
         } catch (error) {
           console.error("Failed to re-fetch /auth/me safely:", error);
           // Fail silently so NextAuth returns standard JSON instead of crashing with HTML 500
@@ -97,6 +97,7 @@ export const authOptions: AuthOptions = {
         session.user.full_name = token.full_name as string;
         session.user.profile_picture_url = token.profile_picture_url as string | null;
         session.user.role = token.role as string;
+        session.user.access_token = token.access_token as string;
         session.access_token = token.access_token as string;
       }
       return session;
@@ -110,6 +111,3 @@ export const authOptions: AuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
 };
-
-const handler = NextAuth(authOptions);
-export { handler as GET, handler as POST };

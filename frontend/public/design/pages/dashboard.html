@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sukasan POS - Dashboard Overview</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            amber: {
+              50: '#fffbeb',
+              100: '#fef3c7',
+              200: '#fde68a',
+              300: '#fcd34d',
+              400: '#fbbf24',
+              500: '#f59e0b',
+              600: '#d97706',
+              700: '#b45309',
+              800: '#92400e',
+              900: '#78350f',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="../assets/css/design-system.css">
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen pb-24 md:pb-8">
+
+  <!-- Prototype Banner -->
+  <div class="bg-amber-800 text-amber-50 text-xs py-1.5 px-4 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+      <span class="font-medium">PROTOTYPE: Dashboard &bull; Executive Overview</span>
+    </div>
+    <a href="../index.html" class="underline hover:text-white font-semibold">Back to Design Hub</a>
+  </div>
+
+  <!-- Top Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-amber-700 flex items-center justify-center text-white">
+          <i data-lucide="coffee" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h1 class="text-sm font-bold text-slate-900 leading-tight">Sukasan Coffee</h1>
+          <p class="text-[11px] text-slate-500">POS &amp; Operations &bull; Jl. Achmad Nadjamuddin No.20</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <a href="profile.html" class="w-8 h-8 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-xs" title="Profile">
+          FS
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-5 space-y-5">
+
+    <!-- Header & Refresh -->
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-lg font-bold text-slate-900">Today's Performance</h2>
+        <p class="text-xs text-slate-500">Live operational figures updated in real-time</p>
+      </div>
+      <button onclick="showToast('Dashboard metrics refreshed!', 'info')" class="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors" title="Refresh">
+        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- 4 KPI Metrics Grid -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <!-- Metric 1: Gross Sales -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-1">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-medium text-slate-500">Gross Sales</span>
+          <div class="w-7 h-7 rounded-lg bg-amber-600 text-white flex items-center justify-center">
+            <i data-lucide="dollar-sign" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="text-base sm:text-xl font-bold font-mono text-slate-900">Rp 1.840.000</div>
+        <p class="text-[10px] text-slate-400">Total gross order volume</p>
+      </div>
+
+      <!-- Metric 2: Completed Orders -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-1">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-medium text-slate-500">Total Orders</span>
+          <div class="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center">
+            <i data-lucide="receipt" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="text-base sm:text-xl font-bold font-mono text-slate-900">42 Orders</div>
+        <p class="text-[10px] text-emerald-600 font-medium">+8 vs yesterday</p>
+      </div>
+
+      <!-- Metric 3: Avg. Ticket -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-1">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-medium text-slate-500">Avg. Spend</span>
+          <div class="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center">
+            <i data-lucide="trending-up" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="text-base sm:text-xl font-bold font-mono text-slate-900">Rp 43.800</div>
+        <p class="text-[10px] text-slate-400">Per ticket average</p>
+      </div>
+
+      <!-- Metric 4: Net Cafe Revenue -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-1">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-medium text-slate-500">Net Cafe Revenue</span>
+          <div class="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center">
+            <i data-lucide="wallet" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="text-base sm:text-xl font-bold font-mono text-slate-900">Rp 1.580.000</div>
+        <p class="text-[10px] text-indigo-600 font-medium">Excludes vendor share</p>
+      </div>
+    </div>
+
+    <!-- Hourly Sales Rush Bar Chart -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <i data-lucide="bar-chart-2" class="w-4 h-4 text-amber-700"></i>
+            Hourly Sales &amp; Traffic Rush
+          </h3>
+          <p class="text-xs text-slate-500">Peak ordering velocity throughout operating hours</p>
+        </div>
+        <div class="flex items-center gap-3 text-xs">
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded bg-amber-600"></span> Gross Volume</span>
+          <span class="text-slate-400">Peak: <strong>11:00 AM (Coffee Rush)</strong></span>
+        </div>
+      </div>
+
+      <!-- CSS Bar Chart -->
+      <div class="pt-4 pb-2 flex items-end justify-between gap-2 sm:gap-4 h-40 border-b border-slate-100 px-2">
+        <div class="flex-1 flex flex-col items-center gap-1.5 group">
+          <div class="w-full bg-amber-100 group-hover:bg-amber-600 rounded-t-md transition-all h-[25%]" title="08:00 - Rp 110.000"></div>
+          <span class="text-[10px] text-slate-400 font-mono">08:00</span>
+        </div>
+        <div class="flex-1 flex flex-col items-center gap-1.5 group">
+          <div class="w-full bg-amber-200 group-hover:bg-amber-600 rounded-t-md transition-all h-[45%]" title="09:00 - Rp 230.000"></div>
+          <span class="text-[10px] text-slate-400 font-mono">09:00</span>
+        </div>
+        <div class="flex-1 flex flex-col items-center gap-1.5 group">
+          <div class="w-full bg-amber-300 group-hover:bg-amber-600 rounded-t-md transition-all h-[70%]" title="10:00 - Rp 340.000"></div>
+          <span class="text-[10px] text-slate-400 font-mono">10:00</span>
+        </div>
+        <div class="flex-1 flex flex-col items-center gap-1.5 group">
+          <div class="w-full bg-amber-600 rounded-t-md transition-all h-[95%]" title="11:00 (Peak) - Rp 480.000"></div>
+          <span class="text-[10px] font-bold text-amber-800 font-mono">11:00</span>
+        </div>
+        <div class="flex-1 flex flex-col items-center gap-1.5 group">
+          <div class="w-full bg-amber-300 group-hover:bg-amber-600 rounded-t-md transition-all h-[60%]" title="12:00 - Rp 290.000"></div>
+          <span class="text-[10px] text-slate-400 font-mono">12:00</span>
+        </div>
+        <div class="flex-1 flex flex-col items-center gap-1.5 group">
+          <div class="w-full bg-amber-200 group-hover:bg-amber-600 rounded-t-md transition-all h-[40%]" title="13:00 - Rp 190.000"></div>
+          <span class="text-[10px] text-slate-400 font-mono">13:00</span>
+        </div>
+        <div class="flex-1 flex flex-col items-center gap-1.5 group">
+          <div class="w-full bg-amber-100 group-hover:bg-amber-600 rounded-t-md transition-all h-[30%]" title="14:00 - Rp 140.000"></div>
+          <span class="text-[10px] text-slate-400 font-mono">14:00</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content Area: Top Products + Quick POS Banner -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+      <!-- Left 2 Cols: Top Products Ranking -->
+      <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <i data-lucide="flame" class="w-4 h-4 text-amber-600"></i>
+            Top Selling Products Today
+          </h3>
+          <span class="text-xs text-slate-400">By units sold</span>
+        </div>
+
+        <div class="space-y-3">
+          
+          <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs">
+            <div class="flex items-center gap-3">
+              <span class="w-6 h-6 rounded-full bg-amber-700 text-white flex items-center justify-center font-bold text-xs">1</span>
+              <div>
+                <p class="font-bold text-slate-900">Kopi Susu Sukasan</p>
+                <p class="text-[10px] text-slate-400">Signature blend &bull; Rp 18.000</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="font-mono font-bold text-slate-900">28 sold</span>
+              <p class="text-[10px] text-slate-400 font-mono">Rp 504.000</p>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs">
+            <div class="flex items-center gap-3">
+              <span class="w-6 h-6 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-xs">2</span>
+              <div>
+                <p class="font-bold text-slate-900">Americano Hot / Iced</p>
+                <p class="text-[10px] text-slate-400">Black coffee &bull; Rp 15.000</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="font-mono font-bold text-slate-900">14 sold</span>
+              <p class="text-[10px] text-slate-400 font-mono">Rp 210.000</p>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs">
+            <div class="flex items-center gap-3">
+              <span class="w-6 h-6 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-xs">3</span>
+              <div>
+                <p class="font-bold text-slate-900">Almond Croissant (Consignment)</p>
+                <p class="text-[10px] text-indigo-600">Bakehouse No.7 &bull; Rp 14.000</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="font-mono font-bold text-slate-900">11 sold</span>
+              <p class="text-[10px] text-slate-400 font-mono">Rp 154.000</p>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs">
+            <div class="flex items-center gap-3">
+              <span class="w-6 h-6 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-xs">4</span>
+              <div>
+                <p class="font-bold text-slate-900">Matcha Latte</p>
+                <p class="text-[10px] text-slate-400">Non-coffee &bull; Rp 22.000</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="font-mono font-bold text-slate-900">8 sold</span>
+              <p class="text-[10px] text-slate-400 font-mono">Rp 176.000</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Right 1 Col: Quick Action Banner -->
+      <div class="bg-gradient-to-br from-amber-700 to-amber-900 rounded-2xl p-6 text-white space-y-4 flex flex-col justify-between shadow-sm">
+        <div class="space-y-2">
+          <div class="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center">
+            <i data-lucide="shopping-bag" class="w-5 h-5 text-amber-100"></i>
+          </div>
+          <h3 class="text-lg font-bold">Ready to take customer orders?</h3>
+          <p class="text-xs text-amber-100/90 leading-relaxed">
+            Switch directly to the POS register for touch-friendly ordering and rapid receipt checkout.
+          </p>
+        </div>
+        <a href="pos.html" class="w-full py-3 bg-white text-amber-900 rounded-xl text-xs font-bold text-center hover:bg-amber-50 transition-colors shadow-xs">
+          Open POS Terminal
+        </a>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Bottom Navigation Bar (Realme Note 50 Mobile Layout) -->
+  <nav class="fixed bottom-0 inset-x-0 flex items-center justify-around bg-white border-t border-slate-200 z-40 py-1">
+    <a href="dashboard.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-semibold text-amber-800 bg-amber-100/70">
+      <i data-lucide="layout-dashboard" class="w-5 h-5 mb-0.5"></i>
+      <span>Home</span>
+    </a>
+    <a href="pos.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
+      <i data-lucide="shopping-bag" class="w-5 h-5 mb-0.5"></i>
+      <span>POS</span>
+    </a>
+    <a href="orders.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
+      <i data-lucide="receipt" class="w-5 h-5 mb-0.5"></i>
+      <span>Orders</span>
+    </a>
+    <a href="menu.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
+      <i data-lucide="package" class="w-5 h-5 mb-0.5"></i>
+      <span>Menu</span>
+    </a>
+    <a href="staff.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
+      <i data-lucide="users" class="w-5 h-5 mb-0.5"></i>
+      <span>Staff</span>
+    </a>
+  </nav>
+
+  <script src="../assets/js/prototype.js"></script>
+</body>
+</html>

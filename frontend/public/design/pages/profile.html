@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sukasan POS - Profile &amp; Store Shift</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            amber: {
+              50: '#fffbeb',
+              100: '#fef3c7',
+              200: '#fde68a',
+              300: '#fcd34d',
+              400: '#fbbf24',
+              500: '#f59e0b',
+              600: '#d97706',
+              700: '#b45309',
+              800: '#92400e',
+              900: '#78350f',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="../assets/css/design-system.css">
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen pb-24 md:pb-8">
+
+  <!-- Prototype Banner -->
+  <div class="bg-amber-800 text-amber-50 text-xs py-1.5 px-4 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+      <span class="font-medium">PROTOTYPE: Profile &amp; Shift Management</span>
+    </div>
+    <a href="../index.html" class="underline hover:text-white font-semibold">Back to Design Hub</a>
+  </div>
+
+  <!-- Top Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-amber-700 flex items-center justify-center text-white">
+          <i data-lucide="coffee" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h1 class="text-sm font-bold text-slate-900 leading-tight">Sukasan Coffee</h1>
+          <p class="text-[11px] text-slate-500">Terminal &amp; Profile</p>
+        </div>
+      </div>
+      <button onclick="openModal('endShiftModal')" class="px-3 py-1.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 text-xs font-semibold flex items-center gap-1.5 transition-colors">
+        <i data-lucide="log-out" class="w-3.5 h-3.5"></i> End Shift
+      </button>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-4 py-5 space-y-5">
+
+    <!-- Profile Card -->
+    <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-2xs space-y-4">
+      <div class="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+        <div class="w-16 h-16 rounded-2xl bg-amber-700 text-white flex items-center justify-center font-bold text-xl shadow-md">
+          CK
+        </div>
+        <div class="space-y-1">
+          <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+            <h2 class="text-base font-bold text-slate-900">Clarissa Putri</h2>
+            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+              Cashier
+            </span>
+            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> On Duty
+            </span>
+          </div>
+          <p class="text-xs text-slate-500">@clarissa.pos &bull; Shift 1 (Morning Shift)</p>
+          <p class="text-[11px] text-slate-400">Shift Started: Today at 07:45 AM (3 hrs 15 mins)</p>
+        </div>
+      </div>
+
+      <!-- Shift Metrics -->
+      <div class="grid grid-cols-3 gap-3 pt-3 border-t border-slate-100 text-xs">
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 text-center">
+          <p class="text-slate-400 text-[10px]">Orders Punched</p>
+          <p class="font-mono font-bold text-slate-900 text-sm mt-0.5">24</p>
+        </div>
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 text-center">
+          <p class="text-slate-400 text-[10px]">Cash Received</p>
+          <p class="font-mono font-bold text-amber-800 text-sm mt-0.5">Rp 480.000</p>
+        </div>
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 text-center">
+          <p class="text-slate-400 text-[10px]">QRIS Payments</p>
+          <p class="font-mono font-bold text-emerald-600 text-sm mt-0.5">Rp 820.000</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Store Information Settings -->
+    <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-2xs space-y-4">
+      <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+        <i data-lucide="store" class="w-4 h-4 text-amber-700"></i>
+        Store &amp; Outlet Configuration
+      </h3>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+        <div>
+          <label class="text-slate-500 font-medium">Store Name</label>
+          <p class="font-bold text-slate-900 mt-0.5">Sukasan Coffee &amp; Eatery</p>
+        </div>
+        <div>
+          <label class="text-slate-500 font-medium">Branch Location</label>
+          <p class="font-bold text-slate-900 mt-0.5">Jl. Achmad Nadjamuddin No.20</p>
+        </div>
+        <div>
+          <label class="text-slate-500 font-medium">Receipt Contact / WhatsApp</label>
+          <p class="font-bold text-slate-900 mt-0.5">0812-3456-7890</p>
+        </div>
+        <div>
+          <label class="text-slate-500 font-medium">Receipt Footer Note</label>
+          <p class="font-bold text-slate-900 mt-0.5">"Terima Kasih! Nikmati Harimu bersama Sukasan"</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Terminal Device Preferences -->
+    <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-2xs space-y-4">
+      <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+        <i data-lucide="sliders" class="w-4 h-4 text-amber-700"></i>
+        Terminal Preferences
+      </h3>
+
+      <div class="space-y-3 text-xs">
+        <div class="flex items-center justify-between py-1">
+          <div>
+            <p class="font-bold text-slate-800">Auto-print Receipt on Cash Checkout</p>
+            <p class="text-[11px] text-slate-400">Automatically trigger Bluetooth 58mm printer</p>
+          </div>
+          <input type="checkbox" checked class="w-4 h-4 rounded text-amber-700 accent-amber-700">
+        </div>
+
+        <div class="flex items-center justify-between py-1 border-t border-slate-100">
+          <div>
+            <p class="font-bold text-slate-800">Touch Feedback &amp; Beep on Add to Cart</p>
+            <p class="text-[11px] text-slate-400">Play subtle sound when cashier taps product card</p>
+          </div>
+          <input type="checkbox" checked class="w-4 h-4 rounded text-amber-700 accent-amber-700">
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Bottom Navigation Bar (Realme Note 50 Mobile Layout) -->
+  <nav class="fixed bottom-0 inset-x-0 flex items-center justify-around bg-white border-t border-slate-200 z-40 py-1">
+    <a href="dashboard.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
+      <i data-lucide="layout-dashboard" class="w-5 h-5 mb-0.5"></i>
+      <span>Home</span>
+    </a>
+    <a href="pos.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
+      <i data-lucide="shopping-bag" class="w-5 h-5 mb-0.5"></i>
+      <span>POS</span>
+    </a>
+    <a href="orders.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
+      <i data-lucide="receipt" class="w-5 h-5 mb-0.5"></i>
+      <span>Orders</span>
+    </a>
+    <a href="menu.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
+      <i data-lucide="package" class="w-5 h-5 mb-0.5"></i>
+      <span>Menu</span>
+    </a>
+    <a href="staff.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
+      <i data-lucide="users" class="w-5 h-5 mb-0.5"></i>
+      <span>Staff</span>
+    </a>
+  </nav>
+
+  <!-- End Shift Modal -->
+  <div id="endShiftModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center">
+          <i data-lucide="log-out" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold text-slate-900">End Cashier Shift</h3>
+          <p class="text-xs text-slate-500">Reconcile drawer before sign-out</p>
+        </div>
+      </div>
+
+      <div class="bg-slate-50 rounded-xl p-3 text-xs space-y-1.5 border border-slate-100">
+        <div class="flex justify-between text-slate-600">
+          <span>Expected Cash in Drawer:</span>
+          <span class="font-mono font-bold text-slate-900">Rp 480.000</span>
+        </div>
+        <div class="flex justify-between text-slate-600">
+          <span>QRIS Reconciled:</span>
+          <span class="font-mono font-bold text-emerald-600">Rp 820.000</span>
+        </div>
+      </div>
+
+      <div>
+        <label class="text-xs font-semibold text-slate-700">Actual Cash Counted (Rp)</label>
+        <input type="number" id="actualCashInput" onkeyup="checkCashVariance(this.value)" placeholder="e.g. 480000" class="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono">
+        <div id="varianceWrapper" class="mt-2 text-xs flex items-center justify-between p-2 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200">
+          <span>Drawer Variance:</span>
+          <span id="varianceText" class="font-bold font-mono">Rp 0 (Balanced)</span>
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button onclick="closeModal('endShiftModal')" class="flex-1 py-2 text-xs font-semibold text-slate-600 rounded-xl hover:bg-slate-100">
+          Cancel
+        </button>
+        <button onclick="closeModal('endShiftModal'); showToast('Shift ended successfully!', 'info'); setTimeout(() => window.location.href='login.html', 800)" class="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold">
+          Close Shift
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/js/prototype.js"></script>
+  <script>
+    function checkCashVariance(val) {
+      const expected = 480000;
+      const actual = parseFloat(val) || 0;
+      const diff = actual - expected;
+      const textEl = document.getElementById('varianceText');
+      const wrapEl = document.getElementById('varianceWrapper');
+
+      if (!val) {
+        textEl.innerText = 'Rp 0 (Balanced)';
+        wrapEl.className = 'mt-2 text-xs flex items-center justify-between p-2 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200';
+        return;
+      }
+
+      if (diff === 0) {
+        textEl.innerText = 'Rp 0 (Balanced)';
+        wrapEl.className = 'mt-2 text-xs flex items-center justify-between p-2 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200';
+      } else if (diff < 0) {
+        textEl.innerText = '-Rp ' + Math.abs(diff).toLocaleString('id-ID') + ' (Shortage)';
+        wrapEl.className = 'mt-2 text-xs flex items-center justify-between p-2 rounded-lg bg-rose-50 text-rose-800 border border-rose-200';
+      } else {
+        textEl.innerText = '+Rp ' + diff.toLocaleString('id-ID') + ' (Overage)';
+        wrapEl.className = 'mt-2 text-xs flex items-center justify-between p-2 rounded-lg bg-amber-50 text-amber-800 border border-amber-200';
+      }
+    }
+  </script>
+</body>
+</html>

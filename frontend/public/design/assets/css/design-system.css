@@ -1,0 +1,79 @@
+/* Sukasan POS - Design System & Custom Overrides */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --sukasan-primary: #b45309;       /* amber-700 */
+  --sukasan-primary-hover: #92400e; /* amber-800 */
+  --sukasan-primary-light: #fef3c7; /* amber-100 */
+  --sukasan-dark: #0f172a;          /* slate-900 */
+  --sukasan-bg: #f8fafc;            /* slate-50 */
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background-color: var(--sukasan-bg);
+  color: var(--sukasan-dark);
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Shake animation for input errors (PIN error) */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+.animate-shake {
+  animation: shake 0.4s ease-in-out;
+}
+
+/* Interactive Device Simulator Frame (Realme Note 50: 360-412px x 840px) */
+.device-simulator-frame {
+  width: 100%;
+  max-width: 412px;
+  height: 780px;
+  border: 12px solid #0f172a;
+  border-radius: 42px;
+  box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.4);
+  background: #fff;
+  overflow: hidden;
+  position: relative;
+  transition: max-width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.device-notch {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 110px;
+  height: 18px;
+  background-color: #0f172a;
+  border-radius: 12px;
+  z-index: 50;
+  pointer-events: none;
+}
+
+/* Pulse badge */
+.status-pulse {
+  animation: pulseDot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .5; transform: scale(1.2); }
+}

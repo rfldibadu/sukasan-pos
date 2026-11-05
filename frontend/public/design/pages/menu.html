@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sukasan POS - Menu &amp; Products</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            amber: {
+              50: '#fffbeb',
+              100: '#fef3c7',
+              200: '#fde68a',
+              300: '#fcd34d',
+              400: '#fbbf24',
+              500: '#f59e0b',
+              600: '#d97706',
+              700: '#b45309',
+              800: '#92400e',
+              900: '#78350f',
+            }
+          }
+        }
+      }
+    }
+    function openAddProductModal() {
+      document.getElementById('modalProductTitle').innerText = 'Add New Product';
+      document.getElementById('modalProdName').value = '';
+      document.getElementById('modalProdPrice').value = '';
+      document.getElementById('modalProdStock').value = '';
+      document.getElementById('modalSourceSelect').value = 'in_house';
+      toggleConsignmentFields('in_house');
+      openModal('addProductModal');
+    }
+
+    function openEditProductModal(name, cat, price, stock, isConsign) {
+      document.getElementById('modalProductTitle').innerText = 'Edit Product: ' + name;
+      document.getElementById('modalProdName').value = name;
+      document.getElementById('modalProdPrice').value = price;
+      document.getElementById('modalProdStock').value = stock;
+      document.getElementById('modalProdCategory').value = cat;
+      document.getElementById('modalSourceSelect').value = isConsign ? 'consignment' : 'in_house';
+      toggleConsignmentFields(isConsign ? 'consignment' : 'in_house');
+      openModal('addProductModal');
+    }
+  </script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="../assets/css/design-system.css">
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen pb-24 md:pb-8">
+
+  <!-- Prototype Announcement Banner -->
+  <div class="bg-amber-800 text-amber-50 text-xs py-1.5 px-4 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+      <span class="font-medium">PROTOTYPE: Menu &amp; Catalog Page &bull; Ready for Review</span>
+    </div>
+    <a href="../index.html" class="underline hover:text-white font-semibold">Back to Design Hub</a>
+  </div>
+
+  <!-- Top Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-amber-700 flex items-center justify-center text-white">
+          <i data-lucide="coffee" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h1 class="text-sm font-bold text-slate-900 leading-tight">Sukasan Coffee</h1>
+          <p class="text-[11px] text-slate-500">Menu &amp; Catalog Management</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="openModal('addProductModal')" class="px-3.5 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-colors">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>Add Product</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 py-5 space-y-4">
+
+    <!-- Title & Stats -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div>
+        <h2 class="text-lg font-bold text-slate-900">Menu Catalog</h2>
+        <p class="text-xs text-slate-500">Configure prices, manage stock, and toggle in-store item availability.</p>
+      </div>
+      <div class="flex items-center gap-2 text-xs">
+        <span class="bg-white px-3 py-1.5 rounded-xl border border-slate-200 font-medium text-slate-600">
+          Total Items: <strong class="text-slate-900">18</strong>
+        </span>
+        <span class="bg-white px-3 py-1.5 rounded-xl border border-slate-200 font-medium text-emerald-700">
+          Active: <strong class="text-emerald-800">16</strong>
+        </span>
+      </div>
+    </div>
+
+    <!-- Search & Filter Controls -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div class="sm:col-span-2 relative">
+        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+        <input type="text" id="menuSearch" onkeyup="filterMenuBySearch()" placeholder="Search menu item by name, category, or vendor..." class="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-amber-600 shadow-2xs">
+      </div>
+      <div>
+        <select id="sourceFilter" onchange="filterMenuBySource()" class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-amber-600 shadow-2xs text-slate-700">
+          <option value="all">All Sources (In-House &amp; Vendors)</option>
+          <option value="in_house">In-House Production Only</option>
+          <option value="consignment">Consignment (Third-Party Vendors)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Category Pills -->
+    <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-semibold" id="categoryPills">
+      <button onclick="filterCategory('all', this)" class="px-3.5 py-2 rounded-xl bg-amber-100 text-amber-800 font-semibold transition-all whitespace-nowrap">
+        All Categories
+      </button>
+      <button onclick="filterCategory('coffee', this)" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-slate-900 transition-all whitespace-nowrap">
+        ☕ Espresso &amp; Coffee
+      </button>
+      <button onclick="filterCategory('non_coffee', this)" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-slate-900 transition-all whitespace-nowrap">
+        🍵 Non-Coffee / Tea
+      </button>
+      <button onclick="filterCategory('food', this)" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-slate-900 transition-all whitespace-nowrap">
+        🥐 Pastry &amp; Food
+      </button>
+      <button onclick="filterCategory('addons', this)" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-slate-900 transition-all whitespace-nowrap">
+        ✨ Add-ons &amp; Syrups
+      </button>
+    </div>
+
+    <!-- Product Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="productGrid">
+
+      <!-- Product Card 1: Coffee -->
+      <div data-category="coffee" data-source="in_house" data-name="kopi susu sukasan" class="product-item bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs hover:border-amber-400 transition-all space-y-3">
+        <div class="flex items-start justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-800 flex items-center justify-center font-bold">
+              <i data-lucide="coffee" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <span class="text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded">Coffee</span>
+              <h3 class="text-xs font-bold text-slate-900 mt-0.5">Kopi Susu Sukasan</h3>
+              <p class="text-[11px] text-slate-500">In-House Signature</p>
+            </div>
+          </div>
+          <!-- Instant Availability Switch -->
+          <label class="relative inline-flex items-center cursor-pointer" title="Toggle active status">
+            <input type="checkbox" checked onchange="toggleItemAvailability(this, 'Kopi Susu Sukasan')" class="sr-only peer">
+            <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+          </label>
+        </div>
+
+        <div class="flex items-center justify-between text-xs pt-2 border-t border-slate-100">
+          <div>
+            <span class="text-slate-400 text-[10px]">Price:</span>
+            <p class="font-mono font-bold text-amber-800">Rp 18.000</p>
+          </div>
+          <div class="text-right">
+            <span class="text-slate-400 text-[10px]">Stock:</span>
+            <p class="text-emerald-600 font-semibold">Plenty</p>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-1 pt-1">
+          <button onclick="openModal('addProductModal')" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-50" title="Edit Product">
+            <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+          </button>
+          <button onclick="showToast('Item archived', 'info')" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50" title="Delete">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Product Card 2: Americano -->
+      <div data-category="coffee" data-source="in_house" data-name="americano hot iced" class="product-item bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs hover:border-amber-400 transition-all space-y-3">
+        <div class="flex items-start justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-800 flex items-center justify-center font-bold">
+              <i data-lucide="coffee" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <span class="text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded">Coffee</span>
+              <h3 class="text-xs font-bold text-slate-900 mt-0.5">Americano (Hot/Ice)</h3>
+              <p class="text-[11px] text-slate-500">Double espresso + water</p>
+            </div>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" checked onchange="toggleItemAvailability(this, 'Americano')" class="sr-only peer">
+            <div class="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 peer-checked:bg-emerald-600"></div>
+          </label>
+        </div>
+
+        <div class="flex items-center justify-between text-xs pt-2 border-t border-slate-100">
+          <div>
+            <span class="text-slate-400 text-[10px]">Price:</span>
+            <p class="font-mono font-bold text-amber-800">Rp 15.000</p>
+          </div>
+          <div class="text-right">
+            <span class="text-slate-400 text-[10px]">Stock:</span>
+            <p class="text-emerald-600 font-semibold">Plenty</p>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-1 pt-1">
+          <button onclick="openModal('addProductModal')" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-50"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
+          <button onclick="showToast('Item archived', 'info')" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+        </div>
+      </div>
+
+      <!-- Product Card 3: Consignment Pastry (Almond Croissant) -->
+      <div data-category="food" data-source="consignment" data-name="almond croissant bakehouse" class="product-item bg-white rounded-2xl border-2 border-indigo-100 p-4 shadow-2xs hover:border-amber-400 transition-all space-y-3">
+        <div class="flex items-start justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold">
+              <i data-lucide="croissant" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <span class="text-[10px] font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded">Consignment</span>
+              <h3 class="text-xs font-bold text-slate-900 mt-0.5">Almond Croissant</h3>
+              <p class="text-[11px] text-slate-500">Vendor: Bakehouse No.7</p>
+            </div>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" checked onchange="toggleItemAvailability(this, 'Almond Croissant')" class="sr-only peer">
+            <div class="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 peer-checked:bg-emerald-600"></div>
+          </label>
+        </div>
+
+        <div class="flex items-center justify-between text-xs pt-2 border-t border-slate-100">
+          <div>
+            <span class="text-slate-400 text-[10px]">Price:</span>
+            <p class="font-mono font-bold text-amber-800">Rp 14.000</p>
+            <span class="text-[10px] text-indigo-600">Consign Fee: Rp 2.800</span>
+          </div>
+          <div class="text-right">
+            <span class="text-slate-400 text-[10px]">Stock Left:</span>
+            <p class="text-amber-600 font-semibold">4 units (Low)</p>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-1 pt-1">
+          <button onclick="openModal('addProductModal')" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-50"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
+          <button onclick="showToast('Item archived', 'info')" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+        </div>
+      </div>
+
+      <!-- Product Card 4: Non-Coffee (Matcha) -->
+      <div data-category="non_coffee" data-source="in_house" data-name="matcha latte ceremonial" class="product-item bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs hover:border-amber-400 transition-all space-y-3">
+        <div class="flex items-start justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-800 flex items-center justify-center font-bold">
+              <i data-lucide="cup-soda" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <span class="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">Tea / Non-Coffee</span>
+              <h3 class="text-xs font-bold text-slate-900 mt-0.5">Matcha Latte</h3>
+              <p class="text-[11px] text-slate-500">Pure Uji Matcha + Fresh Milk</p>
+            </div>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" checked onchange="toggleItemAvailability(this, 'Matcha Latte')" class="sr-only peer">
+            <div class="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 peer-checked:bg-emerald-600"></div>
+          </label>
+        </div>
+
+        <div class="flex items-center justify-between text-xs pt-2 border-t border-slate-100">
+          <div>
+            <span class="text-slate-400 text-[10px]">Price:</span>
+            <p class="font-mono font-bold text-amber-800">Rp 22.000</p>
+          </div>
+          <div class="text-right">
+            <span class="text-slate-400 text-[10px]">Stock:</span>
+            <p class="text-emerald-600 font-semibold">Plenty</p>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-1 pt-1">
+          <button onclick="openModal('addProductModal')" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-50"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
+          <button onclick="showToast('Item archived', 'info')" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+        </div>
+      </div>
+
+      <!-- Product Card 5: Add-on (Oat Milk) -->
+      <div data-category="addons" data-source="in_house" data-name="oat milk oatside addon" class="product-item bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs hover:border-amber-400 transition-all space-y-3">
+        <div class="flex items-start justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-800 flex items-center justify-center font-bold">
+              <i data-lucide="milk" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <span class="text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded">Add-on</span>
+              <h3 class="text-xs font-bold text-slate-900 mt-0.5">Oat Milk Upgrade</h3>
+              <p class="text-[11px] text-slate-500">Dairy substitute (Oatside)</p>
+            </div>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" checked onchange="toggleItemAvailability(this, 'Oat Milk')" class="sr-only peer">
+            <div class="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 peer-checked:bg-emerald-600"></div>
+          </label>
+        </div>
+
+        <div class="flex items-center justify-between text-xs pt-2 border-t border-slate-100">
+          <div>
+            <span class="text-slate-400 text-[10px]">Add-on Price:</span>
+            <p class="font-mono font-bold text-amber-800">+Rp 6.000</p>
+          </div>
+          <div class="text-right">
+            <span class="text-slate-400 text-[10px]">Stock:</span>
+            <p class="text-emerald-600 font-semibold">In Stock</p>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-1 pt-1">
+          <button onclick="openModal('addProductModal')" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-50"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
+          <button onclick="showToast('Item archived', 'info')" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+        </div>
+      </div>
+
+      <!-- Product Card 6: Out of Stock Example -->
+      <div data-category="food" data-source="consignment" data-name="fudgy brownie chocolate" class="product-item bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs opacity-70 hover:opacity-100 transition-all space-y-3">
+        <div class="flex items-start justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center font-bold">
+              <i data-lucide="cake" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <span class="text-[10px] font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded">Out of Stock</span>
+              <h3 class="text-xs font-bold text-slate-900 mt-0.5">Fudgy Brownie</h3>
+              <p class="text-[11px] text-slate-500">Vendor: Sweet Tooth Bakery</p>
+            </div>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" onchange="toggleItemAvailability(this, 'Fudgy Brownie')" class="sr-only peer">
+            <div class="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 peer-checked:bg-emerald-600"></div>
+          </label>
+        </div>
+
+        <div class="flex items-center justify-between text-xs pt-2 border-t border-slate-100">
+          <div>
+            <span class="text-slate-400 text-[10px]">Price:</span>
+            <p class="font-mono font-bold text-slate-400 line-through">Rp 16.000</p>
+          </div>
+          <div class="text-right">
+            <span class="text-slate-400 text-[10px]">Stock:</span>
+            <p class="text-rose-600 font-semibold">0 left</p>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-1 pt-1">
+          <button onclick="openModal('addProductModal')" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-50"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
+          <button onclick="showToast('Item archived', 'info')" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Bottom Navigation Bar (Realme Note 50 Mobile Layout) -->
+  <nav class="fixed bottom-0 inset-x-0 flex items-center justify-around bg-white border-t border-slate-200 z-40 py-1">
+    <a href="dashboard.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
+      <i data-lucide="layout-dashboard" class="w-5 h-5 mb-0.5"></i>
+      <span>Home</span>
+    </a>
+    <a href="pos.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
+      <i data-lucide="shopping-bag" class="w-5 h-5 mb-0.5"></i>
+      <span>POS</span>
+    </a>
+    <a href="orders.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
+      <i data-lucide="receipt" class="w-5 h-5 mb-0.5"></i>
+      <span>Orders</span>
+    </a>
+    <a href="menu.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-semibold text-amber-800 bg-amber-100/70">
+      <i data-lucide="package" class="w-5 h-5 mb-0.5"></i>
+      <span>Menu</span>
+    </a>
+    <a href="staff.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
+      <i data-lucide="users" class="w-5 h-5 mb-0.5"></i>
+      <span>Staff</span>
+    </a>
+  </nav>
+
+  <!-- Add / Edit Product Modal -->
+  <div id="addProductModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          </div>
+          <h3 id="modalProductTitle" class="font-bold text-slate-900 text-sm">Add New Product</h3>
+        </div>
+        <button onclick="closeModal('addProductModal')" class="p-1 text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="font-semibold text-slate-700">Product Name</label>
+          <input type="text" id="modalProdName" placeholder="e.g. Kopi Tubruk Nusantara" class="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-amber-600">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-semibold text-slate-700">Main Category</label>
+            <select id="modalProdCategory" class="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+              <option value="Coffee">Coffee</option>
+              <option value="Non-Coffee / Tea">Non-Coffee / Tea</option>
+              <option value="Food & Pastry">Food &amp; Pastry</option>
+              <option value="Add-ons">Add-ons</option>
+            </select>
+          </div>
+          <div>
+            <label class="font-semibold text-slate-700">Item Source</label>
+            <select id="modalSourceSelect" onchange="toggleConsignmentFields(this.value)" class="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+              <option value="in_house">In-House</option>
+              <option value="consignment">Consignment (Vendor)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-semibold text-slate-700">Retail Price (Rp)</label>
+            <input type="number" id="modalProdPrice" placeholder="20000" class="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono">
+          </div>
+          <div>
+            <label class="font-semibold text-slate-700">Initial Stock</label>
+            <input type="number" id="modalProdStock" placeholder="50" class="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono">
+          </div>
+        </div>
+
+        <!-- Consignment specific fields (hidden by default) -->
+        <div id="consignmentFields" class="bg-indigo-50/60 border border-indigo-100 rounded-xl p-3 space-y-2 hidden">
+          <p class="font-semibold text-indigo-900 text-[11px]">Consignment Details</p>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[11px] text-slate-600">Vendor Partner</label>
+              <select class="w-full mt-1 px-2.5 py-1.5 bg-white border border-indigo-200 rounded-lg text-xs">
+                <option>Bakehouse No.7</option>
+                <option>Sweet Tooth Bakery</option>
+                <option>Donut Corner</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[11px] text-slate-600">Vendor Fee / Share (Rp)</label>
+              <input type="number" placeholder="e.g. 2500" class="w-full mt-1 px-2.5 py-1.5 bg-white border border-indigo-200 rounded-lg text-xs font-mono">
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+        <button onclick="closeModal('addProductModal')" class="px-3.5 py-2 text-slate-600 hover:bg-slate-100 rounded-xl text-xs font-semibold">
+          Cancel
+        </button>
+        <button onclick="closeModal('addProductModal'); showToast('New product added to catalog!', 'success')" class="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-semibold">
+          Save Product
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/js/prototype.js"></script>
+  <script>
+    function filterCategory(cat, btn) {
+      const container = document.getElementById('categoryPills');
+      container.querySelectorAll('button').forEach(b => {
+        b.className = 'px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-slate-900 transition-all whitespace-nowrap';
+      });
+      btn.className = 'px-3.5 py-2 rounded-xl bg-amber-100 text-amber-800 font-semibold transition-all whitespace-nowrap';
+
+      const items = document.querySelectorAll('.product-item');
+      items.forEach(item => {
+        if (cat === 'all' || item.getAttribute('data-category') === cat) {
+          item.classList.remove('hidden');
+        } else {
+          item.classList.add('hidden');
+        }
+      });
+    }
+
+    function filterMenuBySearch() {
+      const term = document.getElementById('menuSearch').value.toLowerCase();
+      const items = document.querySelectorAll('.product-item');
+      items.forEach(item => {
+        const text = (item.getAttribute('data-name') || '') + ' ' + (item.getAttribute('data-category') || '');
+        if (text.includes(term)) {
+          item.classList.remove('hidden');
+        } else {
+          item.classList.add('hidden');
+        }
+      });
+    }
+
+    function filterMenuBySource() {
+      const source = document.getElementById('sourceFilter').value;
+      const items = document.querySelectorAll('.product-item');
+      items.forEach(item => {
+        if (source === 'all' || item.getAttribute('data-source') === source) {
+          item.classList.remove('hidden');
+        } else {
+          item.classList.add('hidden');
+        }
+      });
+    }
+
+    function toggleItemAvailability(checkbox, name) {
+      if (checkbox.checked) {
+        showToast(name + ' is now available for ordering in POS.', 'success');
+      } else {
+        showToast(name + ' marked OUT OF STOCK.', 'info');
+      }
+    }
+
+    function toggleConsignmentFields(val) {
+      const el = document.getElementById('consignmentFields');
+      if (val === 'consignment') {
+        el.classList.remove('hidden');
+      } else {
+        el.classList.add('hidden');
+      }
+    }
+    function openAddProductModal() {
+      document.getElementById('modalProductTitle').innerText = 'Add New Product';
+      document.getElementById('modalProdName').value = '';
+      document.getElementById('modalProdPrice').value = '';
+      document.getElementById('modalProdStock').value = '';
+      document.getElementById('modalSourceSelect').value = 'in_house';
+      toggleConsignmentFields('in_house');
+      openModal('addProductModal');
+    }
+
+    function openEditProductModal(name, cat, price, stock, isConsign) {
+      document.getElementById('modalProductTitle').innerText = 'Edit Product: ' + name;
+      document.getElementById('modalProdName').value = name;
+      document.getElementById('modalProdPrice').value = price;
+      document.getElementById('modalProdStock').value = stock;
+      document.getElementById('modalProdCategory').value = cat;
+      document.getElementById('modalSourceSelect').value = isConsign ? 'consignment' : 'in_house';
+      toggleConsignmentFields(isConsign ? 'consignment' : 'in_house');
+      openModal('addProductModal');
+    }
+  </script>
+</body>
+</html>

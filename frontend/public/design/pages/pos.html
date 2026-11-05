@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sukasan POS - Register &amp; Checkout</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            amber: {
+              50: '#fffbeb',
+              100: '#fef3c7',
+              200: '#fde68a',
+              300: '#fcd34d',
+              400: '#fbbf24',
+              500: '#f59e0b',
+              600: '#d97706',
+              700: '#b45309',
+              800: '#92400e',
+              900: '#78350f',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="../assets/css/design-system.css">
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen pb-28 md:pb-8">
+
+  <!-- Prototype Banner -->
+  <div class="bg-amber-800 text-amber-50 text-xs py-1.5 px-4 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+      <span class="font-medium">PROTOTYPE: POS Register (Cashier View)</span>
+    </div>
+    <a href="../index.html" class="underline hover:text-white font-semibold">Back to Design Hub</a>
+  </div>
+
+  <!-- Top Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-2xs">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-amber-700 flex items-center justify-center text-white">
+          <i data-lucide="coffee" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h1 class="text-sm font-bold text-slate-900 leading-tight">Sukasan Coffee</h1>
+          <p class="text-[11px] text-slate-500">POS Register &bull; Cashier: Alex</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <!-- Order Type Switcher -->
+        <div class="inline-flex bg-slate-100 p-0.5 rounded-xl text-xs font-semibold">
+          <button id="btnDineIn" onclick="setOrderType('dine_in')" class="px-3 py-1.5 rounded-lg bg-white shadow-2xs text-amber-800">Dine-In</button>
+          <button id="btnTakeaway" onclick="setOrderType('takeaway')" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900">Takeaway</button>
+        </div>
+        <button onclick="openDrawer('cartDrawer')" class="md:hidden relative p-2 rounded-xl bg-amber-100 text-amber-800">
+          <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+          <span id="mobileHeaderCartCount" class="absolute -top-1 -right-1 w-4 h-4 bg-amber-700 text-white text-[10px] rounded-full flex items-center justify-center font-bold">2</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main POS Workspace -->
+  <main class="max-w-6xl mx-auto px-4 py-4">
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
+
+      <!-- Left Column: Products & Categories (8 Cols on Desktop) -->
+      <div class="md:col-span-7 lg:col-span-8 space-y-4">
+
+        <!-- Search Bar -->
+        <div class="relative">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+          <input type="text" id="posSearch" onkeyup="filterPosCatalog()" placeholder="Search menu items..." class="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-amber-600 shadow-2xs">
+        </div>
+
+        <!-- Category Chips -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-semibold" id="posCategoryPills">
+          <button onclick="filterPosCat('all', this)" class="px-3.5 py-2 rounded-xl bg-amber-100 text-amber-800 font-semibold whitespace-nowrap">All Items</button>
+          <button onclick="filterPosCat('coffee', this)" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-slate-900 whitespace-nowrap">☕ Espresso &amp; Coffee</button>
+          <button onclick="filterPosCat('tea', this)" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-slate-900 whitespace-nowrap">🍵 Non-Coffee / Tea</button>
+          <button onclick="filterPosCat('pastry', this)" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-slate-900 whitespace-nowrap">🥐 Pastry &amp; Food</button>
+        </div>
+
+        <!-- Product Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3" id="posGrid">
+
+          <!-- Card 1 -->
+          <div data-cat="coffee" data-name="kopi susu sukasan" onclick="openItemCustomizer('Kopi Susu Sukasan', 18000, false)" class="pos-item bg-white p-3 rounded-2xl border border-slate-200 hover:border-amber-500 shadow-2xs cursor-pointer transition-all space-y-2">
+            <div class="h-24 bg-amber-50 rounded-xl flex items-center justify-center text-amber-700 font-bold">
+              <i data-lucide="coffee" class="w-8 h-8 opacity-60"></i>
+            </div>
+            <div>
+              <span class="text-[9px] font-semibold text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded">Signature</span>
+              <h4 class="text-xs font-bold text-slate-900 leading-tight mt-0.5">Kopi Susu Sukasan</h4>
+              <p class="font-mono font-bold text-amber-800 text-xs mt-1">Rp 18.000</p>
+            </div>
+          </div>
+
+          <!-- Card 2 -->
+          <div data-cat="coffee" data-name="americano hot iced" onclick="openItemCustomizer('Americano', 15000, false)" class="pos-item bg-white p-3 rounded-2xl border border-slate-200 hover:border-amber-500 shadow-2xs cursor-pointer transition-all space-y-2">
+            <div class="h-24 bg-amber-50 rounded-xl flex items-center justify-center text-amber-700 font-bold">
+              <i data-lucide="coffee" class="w-8 h-8 opacity-60"></i>
+            </div>
+            <div>
+              <span class="text-[9px] font-semibold text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded">Coffee</span>
+              <h4 class="text-xs font-bold text-slate-900 leading-tight mt-0.5">Americano</h4>
+              <p class="font-mono font-bold text-amber-800 text-xs mt-1">Rp 15.000</p>
+            </div>
+          </div>
+
+          <!-- Card 3: Consignment -->
+          <div data-cat="pastry" data-name="almond croissant bakehouse" onclick="openItemCustomizer('Almond Croissant', 14000, true)" class="pos-item bg-white p-3 rounded-2xl border-2 border-indigo-100 hover:border-amber-500 shadow-2xs cursor-pointer transition-all space-y-2">
+            <div class="h-24 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-700 font-bold">
+              <i data-lucide="croissant" class="w-8 h-8 opacity-60"></i>
+            </div>
+            <div>
+              <span class="text-[9px] font-semibold text-indigo-700 bg-indigo-50 px-1.5 py-0.2 rounded">Consign</span>
+              <h4 class="text-xs font-bold text-slate-900 leading-tight mt-0.5">Almond Croissant</h4>
+              <p class="font-mono font-bold text-amber-800 text-xs mt-1">Rp 14.000</p>
+            </div>
+          </div>
+
+          <!-- Card 4 -->
+          <div data-cat="tea" data-name="matcha latte" onclick="openItemCustomizer('Matcha Latte', 22000, false)" class="pos-item bg-white p-3 rounded-2xl border border-slate-200 hover:border-amber-500 shadow-2xs cursor-pointer transition-all space-y-2">
+            <div class="h-24 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-700 font-bold">
+              <i data-lucide="cup-soda" class="w-8 h-8 opacity-60"></i>
+            </div>
+            <div>
+              <span class="text-[9px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded">Non-Coffee</span>
+              <h4 class="text-xs font-bold text-slate-900 leading-tight mt-0.5">Matcha Latte</h4>
+              <p class="font-mono font-bold text-amber-800 text-xs mt-1">Rp 22.000</p>
+            </div>
+          </div>
+
+          <!-- Card 5 -->
+          <div data-cat="coffee" data-name="caramel macchiato" onclick="openItemCustomizer('Caramel Macchiato', 24000, false)" class="pos-item bg-white p-3 rounded-2xl border border-slate-200 hover:border-amber-500 shadow-2xs cursor-pointer transition-all space-y-2">
+            <div class="h-24 bg-amber-50 rounded-xl flex items-center justify-center text-amber-700 font-bold">
+              <i data-lucide="coffee" class="w-8 h-8 opacity-60"></i>
+            </div>
+            <div>
+              <span class="text-[9px] font-semibold text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded">Coffee</span>
+              <h4 class="text-xs font-bold text-slate-900 leading-tight mt-0.5">Caramel Macchiato</h4>
+              <p class="font-mono font-bold text-amber-800 text-xs mt-1">Rp 24.000</p>
+            </div>
+          </div>
+
+          <!-- Card 6 -->
+          <div data-cat="coffee" data-name="cafe latte" onclick="openItemCustomizer('Cafe Latte', 20000, false)" class="pos-item bg-white p-3 rounded-2xl border border-slate-200 hover:border-amber-500 shadow-2xs cursor-pointer transition-all space-y-2">
+            <div class="h-24 bg-amber-50 rounded-xl flex items-center justify-center text-amber-700 font-bold">
+              <i data-lucide="coffee" class="w-8 h-8 opacity-60"></i>
+            </div>
+            <div>
+              <span class="text-[9px] font-semibold text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded">Coffee</span>
+              <h4 class="text-xs font-bold text-slate-900 leading-tight mt-0.5">Cafe Latte</h4>
+              <p class="font-mono font-bold text-amber-800 text-xs mt-1">Rp 20.000</p>
+            </div>
+          </div>
+
+          <!-- Card 7 -->
+          <div data-cat="tea" data-name="earl grey tea" onclick="openItemCustomizer('Earl Grey Tea', 14000, false)" class="pos-item bg-white p-3 rounded-2xl border border-slate-200 hover:border-amber-500 shadow-2xs cursor-pointer transition-all space-y-2">
+            <div class="h-24 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-700 font-bold">
+              <i data-lucide="cup-soda" class="w-8 h-8 opacity-60"></i>
+            </div>
+            <div>
+              <span class="text-[9px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded">Tea</span>
+              <h4 class="text-xs font-bold text-slate-900 leading-tight mt-0.5">Earl Grey Tea</h4>
+              <p class="font-mono font-bold text-amber-800 text-xs mt-1">Rp 14.000</p>
+            </div>
+          </div>
+
+          <!-- Card 8: Consignment Pastry -->
+          <div data-cat="pastry" data-name="cinnamon roll bakehouse" onclick="openItemCustomizer('Cinnamon Roll', 16000, true)" class="pos-item bg-white p-3 rounded-2xl border-2 border-indigo-100 hover:border-amber-500 shadow-2xs cursor-pointer transition-all space-y-2">
+            <div class="h-24 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-700 font-bold">
+              <i data-lucide="croissant" class="w-8 h-8 opacity-60"></i>
+            </div>
+            <div>
+              <span class="text-[9px] font-semibold text-indigo-700 bg-indigo-50 px-1.5 py-0.2 rounded">Consign</span>
+              <h4 class="text-xs font-bold text-slate-900 leading-tight mt-0.5">Cinnamon Roll</h4>
+              <p class="font-mono font-bold text-amber-800 text-xs mt-1">Rp 16.000</p>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Right Column: Cart Panel (Desktop Only, 4-5 Cols) -->
+      <div class="hidden md:block md:col-span-5 lg:col-span-4 bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-4 sticky top-20">
+        
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div class="flex items-center gap-2">
+            <i data-lucide="shopping-bag" class="w-4 h-4 text-amber-700"></i>
+            <h3 class="text-sm font-bold text-slate-900">Current Order</h3>
+          </div>
+          <button onclick="clearCurrentCart()" class="text-xs text-rose-600 hover:underline">Clear</button>
+        </div>
+
+        <div>
+          <label class="text-xs font-semibold text-slate-700">Customer / Table (Open Bill ID)</label>
+          <input type="text" id="customerInput" placeholder="e.g. Meja 04 - Budi / Takeaway" class="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-amber-600">
+        </div>
+
+        <!-- Dynamic Cart Items Container -->
+        <div id="desktopCartItems" class="space-y-3 max-h-64 overflow-y-auto pr-1">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Order Total & Dual Open Bill / Pay CTA -->
+        <div class="space-y-2 pt-2 border-t border-slate-100 text-xs">
+          <div class="flex justify-between text-slate-500">
+            <span>Subtotal</span>
+            <span id="desktopSubtotal" class="font-mono">Rp 0</span>
+          </div>
+          <div class="flex justify-between text-base font-bold text-slate-900 pt-1">
+            <span>Total</span>
+            <span id="desktopTotal" class="font-mono text-amber-800">Rp 0</span>
+          </div>
+          <div class="space-y-2 pt-1">
+            <!-- Primary Action: Open Bill (Dine-in / Bayar Nanti) -->
+            <button id="desktopOpenBillBtn" onclick="saveAsOpenBill()" class="w-full py-2.5 px-3 bg-amber-100/80 hover:bg-amber-200/80 border border-amber-300 text-amber-900 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-2xs">
+              <i data-lucide="clock" class="w-4 h-4 text-amber-800"></i>
+              <span>Simpan Antrean (Open Bill)</span>
+            </button>
+            <!-- Secondary Action: Direct Pay (Takeaway / Instant Pay) -->
+            <button id="desktopCheckoutBtn" onclick="openCheckoutModal()" class="w-full py-2.5 px-3 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold shadow-sm transition-colors flex items-center justify-center gap-1.5">
+              <i data-lucide="credit-card" class="w-4 h-4"></i>
+              <span>Bayar Sekarang (Direct Pay)</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Mobile Bottom Floating Cart Bar (Realme Note 50) -->
+  <div class="md:hidden fixed bottom-14 inset-x-0 p-3 z-30">
+    <button onclick="openDrawer('cartDrawer')" class="w-full bg-slate-900 text-white p-3 rounded-2xl shadow-xl flex items-center justify-between">
+      <div class="flex items-center gap-2 text-xs font-semibold">
+        <span id="mobileFloatingCount" class="w-6 h-6 rounded-full bg-amber-600 flex items-center justify-center text-[11px]">0</span>
+        <span>View Order</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="mobileFloatingTotal" class="font-mono font-bold text-amber-400 text-sm">Rp 0</span>
+        <i data-lucide="chevron-up" class="w-4 h-4"></i>
+      </div>
+    </button>
+  </div>
+
+  <!-- Bottom Navigation Bar -->
+  <nav class="fixed bottom-0 inset-x-0 flex items-center justify-around bg-white border-t border-slate-200 z-40 py-1">
+    <a href="dashboard.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
+      <i data-lucide="layout-dashboard" class="w-5 h-5 mb-0.5"></i>
+      <span>Home</span>
+    </a>
+    <a href="pos.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-semibold text-amber-800 bg-amber-100/70">
+      <i data-lucide="shopping-bag" class="w-5 h-5 mb-0.5"></i>
+      <span>POS</span>
+    </a>
+    <a href="orders.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
+      <i data-lucide="receipt" class="w-5 h-5 mb-0.5"></i>
+      <span>Orders</span>
+    </a>
+    <a href="menu.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
+      <i data-lucide="package" class="w-5 h-5 mb-0.5"></i>
+      <span>Menu</span>
+    </a>
+    <a href="staff.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
+      <i data-lucide="users" class="w-5 h-5 mb-0.5"></i>
+      <span>Staff</span>
+    </a>
+  </nav>
+
+  <!-- Item Customizer Modal -->
+  <div id="itemCustomizerModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-white rounded-t-3xl sm:rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div>
+          <h3 id="customizerTitle" class="font-bold text-slate-900 text-sm">Customize Item</h3>
+          <p id="customizerPrice" class="text-xs font-mono font-bold text-amber-800">Rp 18.000</p>
+        </div>
+        <button onclick="closeModal('itemCustomizerModal')" class="p-1 text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="font-semibold text-slate-700">Sugar Level</label>
+          <div class="grid grid-cols-3 gap-2 mt-1" id="sugarOptions">
+            <button onclick="setSugar('Normal 100%', this)" class="sugar-btn py-2 rounded-xl border border-slate-200 text-slate-600 font-medium">Normal 100%</button>
+            <button onclick="setSugar('Less 70%', this)" class="sugar-btn py-2 rounded-xl bg-amber-100 border border-amber-600 text-amber-800 font-semibold">Less 70%</button>
+            <button onclick="setSugar('No Sugar', this)" class="sugar-btn py-2 rounded-xl border border-slate-200 text-slate-600 font-medium">No Sugar</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="font-semibold text-slate-700">Add-ons</label>
+          <div class="space-y-1.5 mt-1">
+            <label class="flex items-center justify-between p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50">
+              <div class="flex items-center gap-2">
+                <input type="checkbox" id="chkExtraShot" class="rounded text-amber-700">
+                <span>Extra Espresso Shot</span>
+              </div>
+              <span class="font-mono text-slate-500">+Rp 5.000</span>
+            </label>
+            <label class="flex items-center justify-between p-2.5 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-50">
+              <div class="flex items-center gap-2">
+                <input type="checkbox" id="chkOatMilk" class="rounded text-amber-700">
+                <span>Oat Milk Substitute (Oatside)</span>
+              </div>
+              <span class="font-mono text-slate-500">+Rp 6.000</span>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label class="font-semibold text-slate-700">Barista Item Notes</label>
+          <input type="text" id="itemNotesInput" placeholder="e.g. Extra ice, serve in glass mug" class="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+        </div>
+      </div>
+
+      <div class="pt-2">
+        <button onclick="confirmAddToCart()" class="w-full py-3 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-semibold">
+          Add to Cart
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Cart Drawer -->
+  <div id="cartDrawer" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-end justify-center hidden">
+    <div class="bg-white rounded-t-3xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-5 space-y-4 shadow-2xl">
+      <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto"></div>
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 id="mobileDrawerTitle" class="font-bold text-slate-900 text-base">Current Cart</h3>
+        <button onclick="closeDrawer('cartDrawer')" class="p-1 text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div id="mobileCartItems" class="space-y-3">
+        <!-- Populated by JS -->
+      </div>
+
+      <div class="pt-2 space-y-2 border-t border-slate-100">
+        <div class="flex justify-between text-base font-bold text-slate-900">
+          <span>Total</span>
+          <span id="mobileDrawerTotal" class="font-mono text-amber-800">Rp 0</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <button onclick="closeDrawer('cartDrawer'); saveAsOpenBill()" class="w-full py-3 bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-900 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition-colors">
+            <i data-lucide="clock" class="w-4 h-4 text-amber-800"></i>
+            <span>Open Bill</span>
+          </button>
+          <button onclick="closeDrawer('cartDrawer'); openCheckoutModal()" class="w-full py-3 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition-colors">
+            <i data-lucide="credit-card" class="w-4 h-4"></i>
+            <span>Bayar Sekarang</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Checkout Modal (QRIS & Cash Tendered) -->
+  <div id="checkoutModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+        <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Payment Checkout</h3>
+        <button onclick="closeModal('checkoutModal')" class="p-1 text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="text-center py-1">
+        <p class="text-xs text-slate-500">Total Due</p>
+        <p id="checkoutDueAmount" class="text-2xl font-bold font-mono text-amber-800">Rp 0</p>
+      </div>
+
+      <!-- Payment Method Toggle -->
+      <div class="grid grid-cols-2 gap-2 text-xs font-semibold">
+        <button id="payQris" onclick="selectPaymentMethod('qris')" class="py-2.5 rounded-xl border border-amber-600 bg-amber-100 text-amber-800 flex items-center justify-center gap-1.5">
+          <i data-lucide="qr-code" class="w-4 h-4"></i> QRIS
+        </button>
+        <button id="payCash" onclick="selectPaymentMethod('cash')" class="py-2.5 rounded-xl border border-slate-200 text-slate-600 flex items-center justify-center gap-1.5">
+          <i data-lucide="banknote" class="w-4 h-4"></i> Cash
+        </button>
+      </div>
+
+      <!-- QRIS View -->
+      <div id="qrisSection" class="p-4 bg-slate-50 rounded-2xl text-center space-y-2 border border-slate-100">
+        <div class="w-36 h-36 bg-white border border-slate-300 mx-auto rounded-xl flex items-center justify-center shadow-xs">
+          <i data-lucide="qr-code" class="w-24 h-24 text-slate-800"></i>
+        </div>
+        <p class="text-[11px] text-slate-500">Scan via BCA, Gopay, OVO, ShopeePay</p>
+      </div>
+
+      <!-- Cash View (Hidden by default) -->
+      <div id="cashSection" class="p-3 bg-slate-50 rounded-xl space-y-2 hidden border border-slate-100 text-xs">
+        <div>
+          <label class="text-slate-600 font-semibold">Cash Tendered (Rp)</label>
+          <input type="number" id="cashInput" onkeyup="calcChange(this.value)" placeholder="e.g. 50000" class="w-full mt-1 px-3 py-2 bg-white border border-slate-200 rounded-xl font-mono text-sm">
+        </div>
+        <div class="flex justify-between pt-1">
+          <span class="text-slate-500">Change Due:</span>
+          <span id="cashChange" class="font-mono font-bold text-emerald-600">Rp 0</span>
+        </div>
+      </div>
+
+      <button onclick="finishCheckout()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold">
+        Complete &amp; Print Receipt
+      </button>
+    </div>
+  </div>
+
+  <script src="../assets/js/prototype.js"></script>
+  <script>
+    // Live POS Cart State
+    let cart = [
+      { name: 'Kopi Susu Sukasan', price: 18000, qty: 1, notes: 'Less 70%', isConsign: false },
+      { name: 'Almond Croissant', price: 14000, qty: 1, notes: 'Consignment', isConsign: true }
+    ];
+
+    let currentCustomizingItem = { name: '', price: 0, isConsign: false };
+    let selectedSugar = 'Less 70%';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderCart();
+    });
+
+    function setOrderType(type) {
+      const bDine = document.getElementById('btnDineIn');
+      const bTake = document.getElementById('btnTakeaway');
+      if (type === 'dine_in') {
+        bDine.className = 'px-3 py-1.5 rounded-lg bg-white shadow-2xs text-amber-800';
+        bTake.className = 'px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900';
+      } else {
+        bTake.className = 'px-3 py-1.5 rounded-lg bg-white shadow-2xs text-amber-800';
+        bDine.className = 'px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900';
+      }
+    }
+
+    function filterPosCat(cat, btn) {
+      const container = document.getElementById('posCategoryPills');
+      container.querySelectorAll('button').forEach(b => {
+        b.className = 'px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-slate-900 whitespace-nowrap';
+      });
+      btn.className = 'px-3.5 py-2 rounded-xl bg-amber-100 text-amber-800 font-semibold whitespace-nowrap';
+
+      const items = document.querySelectorAll('.pos-item');
+      items.forEach(item => {
+        if (cat === 'all' || item.getAttribute('data-cat') === cat) {
+          item.classList.remove('hidden');
+        } else {
+          item.classList.add('hidden');
+        }
+      });
+    }
+
+    function filterPosCatalog() {
+      const term = document.getElementById('posSearch').value.toLowerCase();
+      const items = document.querySelectorAll('.pos-item');
+      items.forEach(item => {
+        const text = item.getAttribute('data-name') || '';
+        if (text.includes(term)) {
+          item.classList.remove('hidden');
+        } else {
+          item.classList.add('hidden');
+        }
+      });
+    }
+
+    function openItemCustomizer(name, price, isConsign) {
+      currentCustomizingItem = { name, price, isConsign };
+      document.getElementById('customizerTitle').innerText = name;
+      document.getElementById('customizerPrice').innerText = formatIDR(price);
+      document.getElementById('itemNotesInput').value = '';
+      document.getElementById('chkExtraShot').checked = false;
+      document.getElementById('chkOatMilk').checked = false;
+      openModal('itemCustomizerModal');
+    }
+
+    function setSugar(level, btn) {
+      selectedSugar = level;
+      document.querySelectorAll('.sugar-btn').forEach(b => {
+        b.className = 'sugar-btn py-2 rounded-xl border border-slate-200 text-slate-600 font-medium';
+      });
+      btn.className = 'sugar-btn py-2 rounded-xl bg-amber-100 border border-amber-600 text-amber-800 font-semibold';
+    }
+
+    function confirmAddToCart() {
+      let finalPrice = currentCustomizingItem.price;
+      let notes = selectedSugar;
+
+      if (document.getElementById('chkExtraShot').checked) {
+        finalPrice += 5000;
+        notes += ', +Extra Shot';
+      }
+      if (document.getElementById('chkOatMilk').checked) {
+        finalPrice += 6000;
+        notes += ', Oat Milk';
+      }
+      const customNotes = document.getElementById('itemNotesInput').value.trim();
+      if (customNotes) {
+        notes += ' (' + customNotes + ')';
+      }
+
+      cart.push({
+        name: currentCustomizingItem.name,
+        price: finalPrice,
+        qty: 1,
+        notes: notes,
+        isConsign: currentCustomizingItem.isConsign
+      });
+
+      closeModal('itemCustomizerModal');
+      renderCart();
+      showToast('Added ' + currentCustomizingItem.name + ' to cart!', 'success');
+    }
+
+    function changeQty(index, delta) {
+      if (cart[index]) {
+        cart[index].qty += delta;
+        if (cart[index].qty <= 0) {
+          cart.splice(index, 1);
+        }
+        renderCart();
+      }
+    }
+
+    function clearCurrentCart() {
+      cart = [];
+      renderCart();
+      showToast('Cart cleared', 'info');
+    }
+
+    function renderCart() {
+      const desktopList = document.getElementById('desktopCartItems');
+      const mobileList = document.getElementById('mobileCartItems');
+      let subtotal = 0;
+      let count = 0;
+
+      desktopList.innerHTML = '';
+      mobileList.innerHTML = '';
+
+      if (cart.length === 0) {
+        const emptyHtml = `
+          <div class="py-8 text-center text-slate-400 space-y-1">
+            <i data-lucide="shopping-bag" class="w-8 h-8 mx-auto opacity-30"></i>
+            <p class="text-xs">Cart is empty. Tap any product to add.</p>
+          </div>
+        `;
+        desktopList.innerHTML = emptyHtml;
+        mobileList.innerHTML = emptyHtml;
+      } else {
+        cart.forEach((item, idx) => {
+          subtotal += item.price * item.qty;
+          count += item.qty;
+
+          const itemHtml = `
+            <div class="flex items-start justify-between text-xs border-b border-slate-100 pb-2.5">
+              <div class="space-y-0.5">
+                <p class="font-bold text-slate-900">${item.name}</p>
+                <p class="text-[10px] text-slate-500">${item.notes}</p>
+                <div class="flex items-center gap-2 mt-1">
+                  <button onclick="changeQty(${idx}, -1)" class="w-5 h-5 bg-slate-100 rounded text-slate-700 font-bold text-[11px] hover:bg-slate-200">-</button>
+                  <span class="font-mono font-bold">${item.qty}</span>
+                  <button onclick="changeQty(${idx}, 1)" class="w-5 h-5 bg-slate-100 rounded text-slate-700 font-bold text-[11px] hover:bg-slate-200">+</button>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="font-mono font-bold text-slate-900">${formatIDR(item.price * item.qty)}</span>
+                ${item.isConsign ? '<p class="text-[9px] text-indigo-600">Consign</p>' : ''}
+              </div>
+            </div>
+          `;
+          desktopList.innerHTML += itemHtml;
+          mobileList.innerHTML += itemHtml;
+        });
+      }
+
+      // Update total displays
+      const formattedTotal = formatIDR(subtotal);
+      document.getElementById('desktopSubtotal').innerText = formattedTotal;
+      document.getElementById('desktopTotal').innerText = formattedTotal;
+      document.getElementById('desktopCheckoutBtn').innerHTML = `<i data-lucide="credit-card" class="w-4 h-4"></i> Bayar Sekarang (${formattedTotal})`;
+      document.getElementById('desktopOpenBillBtn').innerHTML = `<i data-lucide="clock" class="w-4 h-4 text-amber-800"></i> Simpan Antrean (${formattedTotal})`;
+      
+      document.getElementById('mobileFloatingCount').innerText = count;
+      document.getElementById('mobileHeaderCartCount').innerText = count;
+      document.getElementById('mobileFloatingTotal').innerText = formattedTotal;
+      document.getElementById('mobileDrawerTotal').innerText = formattedTotal;
+      document.getElementById('mobileDrawerTitle').innerText = `Current Cart (${count} items)`;
+      document.getElementById('checkoutDueAmount').innerText = formattedTotal;
+
+      if (window.lucide) window.lucide.createIcons();
+    }
+
+    function saveAsOpenBill() {
+      if (cart.length === 0) {
+        showToast('Cart is empty! Select items to open bill.', 'warning');
+        return;
+      }
+      const customer = document.getElementById('customerInput').value.trim() || 'Meja 04 - Budi';
+      showToast(`Order sent to Barista Queue! [Open Bill: ${customer}]`, 'success');
+      cart = [];
+      document.getElementById('customerInput').value = '';
+      renderCart();
+    }
+
+    function openCheckoutModal() {
+      if (cart.length === 0) {
+        showToast('Cannot checkout: cart is empty!', 'warning');
+        return;
+      }
+      openModal('checkoutModal');
+    }
+
+    function selectPaymentMethod(method) {
+      const qrisBtn = document.getElementById('payQris');
+      const cashBtn = document.getElementById('payCash');
+      const qrisSec = document.getElementById('qrisSection');
+      const cashSec = document.getElementById('cashSection');
+
+      if (method === 'qris') {
+        qrisBtn.className = 'py-2.5 rounded-xl border border-amber-600 bg-amber-100 text-amber-800 flex items-center justify-center gap-1.5';
+        cashBtn.className = 'py-2.5 rounded-xl border border-slate-200 text-slate-600 flex items-center justify-center gap-1.5';
+        qrisSec.classList.remove('hidden');
+        cashSec.classList.add('hidden');
+      } else {
+        cashBtn.className = 'py-2.5 rounded-xl border border-amber-600 bg-amber-100 text-amber-800 flex items-center justify-center gap-1.5';
+        qrisBtn.className = 'py-2.5 rounded-xl border border-slate-200 text-slate-600 flex items-center justify-center gap-1.5';
+        cashSec.classList.remove('hidden');
+        qrisSec.classList.add('hidden');
+      }
+      if (window.lucide) window.lucide.createIcons();
+    }
+
+    function calcChange(val) {
+      const tendered = parseFloat(val) || 0;
+      let total = 0;
+      cart.forEach(i => total += i.price * i.qty);
+      const change = Math.max(0, tendered - total);
+      document.getElementById('cashChange').innerText = formatIDR(change);
+    }
+
+    function finishCheckout() {
+      closeModal('checkoutModal');
+      showToast('Payment received! Order sent to kitchen and receipt queued.', 'success');
+      cart = [];
+      renderCart();
+    }
+  </script>
+</body>
+</html>

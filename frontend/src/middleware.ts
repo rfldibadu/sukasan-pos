@@ -8,5 +8,10 @@ export default withAuth({
 
 export const config = {
   // Add routes that require authentication
-  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico).*)","/", "/checkout/:path*", "/orders/:path*"],
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+    "/",
+    "/checkout/:path*",
+    "/orders/:path*",
+  ],
 };

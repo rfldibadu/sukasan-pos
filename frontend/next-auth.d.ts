@@ -19,6 +19,7 @@ declare module "next-auth" {
       full_name?: string;
       profile_picture_url?: string | null;
       role: string;
+      access_token?: string;
     } & DefaultSession["user"];
   }
 }

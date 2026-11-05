@@ -1,9 +1,8 @@
 import uuid
-
-from pydantic import BaseModel, Field, ConfigDict
-from typing import List, Optional
 from datetime import datetime
-from app.models.orders import PaymentMethod, OrderType, OrderStatus
+from typing import List, Optional
+from pydantic import BaseModel, Field, ConfigDict
+from app.models.orders import PaymentMethod, PaymentStatus, OrderType, OrderStatus
 
 class OrderItemIn(BaseModel):
     product_id: uuid.UUID
@@ -13,11 +12,24 @@ class OrderItemIn(BaseModel):
 
 class OrderCreateIn(BaseModel):
     items: List[OrderItemIn]
-    payment_method: PaymentMethod = PaymentMethod.CASH
+    payment_method: Optional[PaymentMethod] = None
+    payment_status: PaymentStatus = PaymentStatus.UNPAID
     cash_amount_received: Optional[float] = None
     order_type: OrderType = OrderType.DINE_IN
     customer_name: Optional[str] = None
+    table_number: Optional[str] = None
     discount_amount: float = Field(0.0, ge=0.0)
+
+class OrderSettleIn(BaseModel):
+    payment_method: PaymentMethod
+    cash_amount_received: Optional[float] = None
+    discount_amount: float = Field(0.0, ge=0.0)
+
+class OrderVoidIn(BaseModel):
+    void_reason: str = Field(..., min_length=1)
+
+class OrderAddItemsIn(BaseModel):
+    items: List[OrderItemIn]
 
 class OrderItemRead(BaseModel):
     id: uuid.UUID
@@ -39,11 +51,14 @@ class OrderRead(BaseModel):
     total_amount: float
     net_cafe_revenue: float
     cashier_id: uuid.UUID
-    payment_method: PaymentMethod
+    payment_method: Optional[PaymentMethod] = None
+    payment_status: PaymentStatus
     cash_amount_received: Optional[float] = None
     change_given: Optional[float] = None
     order_type: OrderType
     customer_name: Optional[str] = None
+    table_number: Optional[str] = None
+    daily_order_number: Optional[int] = None
     status: OrderStatus
     void_reason: Optional[str] = None
     created_at: datetime

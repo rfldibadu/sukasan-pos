@@ -4,7 +4,7 @@ import enum
 from typing import List, Optional
 from sqlalchemy import Float, DateTime, ForeignKey, Integer, JSON, String, Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import  Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.database import Base
 from app.models.users import User
 
@@ -14,11 +14,16 @@ class PaymentMethod(str, enum.Enum):
     QRIS = "qris"
     TRANSFER = "transfer"
 
+class PaymentStatus(str, enum.Enum):
+    UNPAID = "unpaid"
+    PAID = "paid"
+
 class OrderType(str, enum.Enum):
     DINE_IN = "dine_in"
     TAKEAWAY = "takeaway"
 
 class OrderStatus(str, enum.Enum):
+    QUEUED = "queued"
     COMPLETED = "completed"
     VOIDED = "voided"
 
@@ -40,8 +45,11 @@ class Order(Base):
     net_cafe_revenue: Mapped[float] = mapped_column(Float, nullable=False)
     
     # Payment Details (native_enum=False keeps database columns as standard VARCHAR)
-    payment_method: Mapped[PaymentMethod] = mapped_column(
-        SQLEnum(PaymentMethod, native_enum=False), default=PaymentMethod.CASH
+    payment_method: Mapped[Optional[PaymentMethod]] = mapped_column(
+        SQLEnum(PaymentMethod, native_enum=False), nullable=True, default=None
+    )
+    payment_status: Mapped[PaymentStatus] = mapped_column(
+        SQLEnum(PaymentStatus, native_enum=False), default=PaymentStatus.UNPAID
     )
     cash_amount_received: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     change_given: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
@@ -53,8 +61,10 @@ class Order(Base):
     cashier_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     cashier: Mapped["User"] = relationship("User")
     customer_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    table_number: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    daily_order_number: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     status: Mapped[OrderStatus] = mapped_column(
-        SQLEnum(OrderStatus, native_enum=False), default=OrderStatus.COMPLETED
+        SQLEnum(OrderStatus, native_enum=False), default=OrderStatus.QUEUED
     )
     void_reason: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     
