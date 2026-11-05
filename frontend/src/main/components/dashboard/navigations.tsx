@@ -2,23 +2,32 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ShoppingBag, Package, Receipt, Users } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { LayoutDashboard, ShoppingBag, Package, Receipt, Boxes, Users } from "lucide-react";
 import { ProfileAvatar } from "@/main/components/ui/profile-avatar";
+import { canAccessRoute } from "@/main/utils/permissions";
 
 const navItems = [
   { label: "Home", href: "/", icon: LayoutDashboard },
   { label: "POS", href: "/pos", icon: ShoppingBag },
   { label: "Orders", href: "/orders", icon: Receipt },
   { label: "Menu", href: "/products", icon: Package },
+  { label: "Stocks", href: "/stocks", icon: Boxes },
   { label: "Staff", href: "/users", icon: Users },
 ];
 
 export default function Navigation() {
   const pathname = usePathname();
+  const { data: session } = useSession();
 
   if (pathname === "/login") {
     return null;
   }
+
+  const userRole = session?.user?.role;
+  const visibleNavItems = navItems.filter((item) =>
+    userRole ? canAccessRoute(item.href, userRole) : item.href !== "/" && item.href !== "/stocks" && item.href !== "/users"
+  );
 
   return (
     <>
@@ -26,7 +35,7 @@ export default function Navigation() {
       <header className="flex items-center justify-between p-4 bg-white border-b border-slate-100">
         <div>
           <h1 className="font-bold text-slate-900">Sukasan Coffee</h1>
-          <p className="text-xs text-slate-500">POS & Operations</p>
+          <p className="text-xs text-slate-500">POS &amp; Operations</p>
         </div>
 
         {/* Profile Avatar with status badge */}
@@ -35,7 +44,7 @@ export default function Navigation() {
 
       {/* Bottom Bar for Mobile Layout (Realme Note 50 Target) */}
       <nav className="fixed bottom-0 inset-x-0 flex items-center justify-around bg-white border-t border-slate-200 z-50 py-1">
-        {navItems.map((item) => {
+        {visibleNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
           return (

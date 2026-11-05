@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { getSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { getDefaultRouteForRole } from "@/main/utils/permissions";
 import { LoginSubmitValues } from "../usecases/auth";
 
 export function useLogin() {
@@ -16,7 +17,7 @@ export function useLogin() {
 
     try {
       const res = await signIn("credentials", {
-        username: values.username,
+        username: values.username.trim(),
         password: values.password,
         redirect: false,
       });
@@ -27,7 +28,10 @@ export function useLogin() {
         return false;
       }
 
-      router.push("/");
+      const session = await getSession();
+      const targetRoute = getDefaultRouteForRole(session?.user?.role);
+
+      router.push(targetRoute);
       router.refresh();
       return true;
     } catch {

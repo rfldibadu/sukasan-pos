@@ -46,17 +46,17 @@ class Order(Base):
     
     # Payment Details (native_enum=False keeps database columns as standard VARCHAR)
     payment_method: Mapped[Optional[PaymentMethod]] = mapped_column(
-        SQLEnum(PaymentMethod, native_enum=False), nullable=True, default=None
+        SQLEnum(PaymentMethod, native_enum=False, values_callable=lambda x: [e.value for e in x]), nullable=True, default=None
     )
     payment_status: Mapped[PaymentStatus] = mapped_column(
-        SQLEnum(PaymentStatus, native_enum=False), default=PaymentStatus.UNPAID
+        SQLEnum(PaymentStatus, native_enum=False, values_callable=lambda x: [e.value for e in x]), default=PaymentStatus.UNPAID
     )
     cash_amount_received: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     change_given: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     
     # Context & Status
     order_type: Mapped[OrderType] = mapped_column(
-        SQLEnum(OrderType, native_enum=False), default=OrderType.DINE_IN
+        SQLEnum(OrderType, native_enum=False, values_callable=lambda x: [e.value for e in x]), default=OrderType.DINE_IN
     )
     cashier_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     cashier: Mapped["User"] = relationship("User")
@@ -64,7 +64,7 @@ class Order(Base):
     table_number: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     daily_order_number: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     status: Mapped[OrderStatus] = mapped_column(
-        SQLEnum(OrderStatus, native_enum=False), default=OrderStatus.QUEUED
+        SQLEnum(OrderStatus, native_enum=False, values_callable=lambda x: [e.value for e in x]), default=OrderStatus.QUEUED
     )
     void_reason: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sukasan POS - Staff Terminal Login</title>
+  <title>Sukasan POS - Unified Staff &amp; Manager Login</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -35,168 +35,131 @@
   <!-- Prototype Banner -->
   <div class="bg-amber-800 text-amber-50 text-xs py-1.5 px-4 flex items-center justify-between">
     <div class="flex items-center gap-2">
-      <span class="w-2 h-2 rounded-full bg-blue-400"></span>
-      <span class="font-medium">PROTOTYPE: Staff Terminal Login &bull; PIN Numpad</span>
+      <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+      <span class="font-medium">PROTOTYPE: Unified Staff &amp; Manager Login &bull; Role-Based Redirect</span>
     </div>
     <a href="../index.html" class="underline hover:text-white font-semibold">Back to Design Hub</a>
   </div>
 
-  <main class="max-w-md w-full mx-auto px-4 py-8 flex-1 flex flex-col justify-center">
+  <main class="max-w-md w-full mx-auto px-4 py-8 flex-1 flex flex-col justify-center space-y-4">
 
     <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6">
 
       <!-- Brand Logo Header -->
       <div class="text-center space-y-1">
-        <div class="w-14 h-14 rounded-2xl bg-amber-700 text-white mx-auto flex items-center justify-center shadow-md">
-          <i data-lucide="coffee" class="w-8 h-8"></i>
+        <div class="w-14 h-14 rounded-2xl bg-amber-800 text-white mx-auto flex items-center justify-center shadow-md ring-4 ring-slate-100">
+          <i data-lucide="coffee" class="w-7 h-7"></i>
         </div>
-        <h1 class="text-xl font-black text-slate-900 pt-2">Sukasan Coffee</h1>
-        <p class="text-xs text-slate-500">Jl. Achmad Nadjamuddin No.20 &bull; POS Terminal</p>
+        <h1 class="text-2xl font-extrabold text-slate-900 pt-2">Sukasan Coffee</h1>
+        <p class="text-xs font-medium text-slate-500">Unified Staff &amp; Manager Portal</p>
       </div>
 
-      <!-- Mode Toggle: Cashier PIN vs Manager Email -->
-      <div class="grid grid-cols-2 p-1 bg-slate-100 rounded-2xl text-xs font-semibold">
-        <button id="btnPinMode" onclick="setLoginMode('pin')" class="py-2 rounded-xl bg-white text-slate-900 shadow-2xs">
-          Cashier PIN
-        </button>
-        <button id="btnEmailMode" onclick="setLoginMode('email')" class="py-2 rounded-xl text-slate-600 hover:text-slate-900">
-          Manager Email
-        </button>
-      </div>
-
-      <!-- Cashier PIN Numpad View -->
-      <div id="pinSection" class="space-y-5">
-        <div class="text-center space-y-2" id="pinDotsWrapper">
-          <p class="text-xs font-medium text-slate-500">Enter your 4-digit Cashier PIN</p>
-          <!-- PIN Dots Indicator -->
-          <div class="flex justify-center gap-3">
-            <div id="dot0" class="w-4 h-4 rounded-full border-2 border-slate-300 transition-all"></div>
-            <div id="dot1" class="w-4 h-4 rounded-full border-2 border-slate-300 transition-all"></div>
-            <div id="dot2" class="w-4 h-4 rounded-full border-2 border-slate-300 transition-all"></div>
-            <div id="dot3" class="w-4 h-4 rounded-full border-2 border-slate-300 transition-all"></div>
+      <!-- Unified Credential Login Form -->
+      <form onsubmit="handleUnifiedLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Username or Email</label>
+          <div class="relative flex items-center">
+            <i data-lucide="user" class="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none"></i>
+            <input id="loginUsername" type="text" required value="cashier" placeholder="e.g. cashier or admin" class="w-full h-11 pl-10 pr-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-amber-700 transition-all">
           </div>
         </div>
 
-        <!-- Touch Numpad Grid -->
-        <div class="grid grid-cols-3 gap-2.5 max-w-xs mx-auto">
-          <button onclick="pressKey('1')" class="h-14 rounded-2xl bg-slate-50 hover:bg-slate-100 active:bg-amber-100 text-base font-bold text-slate-800 transition-colors shadow-2xs">1</button>
-          <button onclick="pressKey('2')" class="h-14 rounded-2xl bg-slate-50 hover:bg-slate-100 active:bg-amber-100 text-base font-bold text-slate-800 transition-colors shadow-2xs">2</button>
-          <button onclick="pressKey('3')" class="h-14 rounded-2xl bg-slate-50 hover:bg-slate-100 active:bg-amber-100 text-base font-bold text-slate-800 transition-colors shadow-2xs">3</button>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Password</label>
+          <div class="relative flex items-center">
+            <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none"></i>
+            <input id="loginPassword" type="password" required value="!cashier123" placeholder="Enter your password" class="w-full h-11 pl-10 pr-10 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-amber-700 transition-all">
+            <button type="button" onclick="togglePassVisibility()" class="absolute right-2.5 p-1.5 text-slate-400 hover:text-slate-600">
+              <i id="passEyeIcon" data-lucide="eye" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
 
-          <button onclick="pressKey('4')" class="h-14 rounded-2xl bg-slate-50 hover:bg-slate-100 active:bg-amber-100 text-base font-bold text-slate-800 transition-colors shadow-2xs">4</button>
-          <button onclick="pressKey('5')" class="h-14 rounded-2xl bg-slate-50 hover:bg-slate-100 active:bg-amber-100 text-base font-bold text-slate-800 transition-colors shadow-2xs">5</button>
-          <button onclick="pressKey('6')" class="h-14 rounded-2xl bg-slate-50 hover:bg-slate-100 active:bg-amber-100 text-base font-bold text-slate-800 transition-colors shadow-2xs">6</button>
+        <button type="submit" class="w-full h-11 bg-amber-800 hover:bg-amber-900 text-white rounded-xl text-xs font-bold shadow-sm flex items-center justify-center gap-2 transition-all">
+          <span>Sign In</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
 
-          <button onclick="pressKey('7')" class="h-14 rounded-2xl bg-slate-50 hover:bg-slate-100 active:bg-amber-100 text-base font-bold text-slate-800 transition-colors shadow-2xs">7</button>
-          <button onclick="pressKey('8')" class="h-14 rounded-2xl bg-slate-50 hover:bg-slate-100 active:bg-amber-100 text-base font-bold text-slate-800 transition-colors shadow-2xs">8</button>
-          <button onclick="pressKey('9')" class="h-14 rounded-2xl bg-slate-50 hover:bg-slate-100 active:bg-amber-100 text-base font-bold text-slate-800 transition-colors shadow-2xs">9</button>
+        <div class="pt-1 flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
+          <i data-lucide="shield-check" class="w-3.5 h-3.5 text-amber-700"></i>
+          <span>Permissions &amp; landing page adapt automatically by role</span>
+        </div>
+      </form>
 
-          <button onclick="clearPin()" class="h-14 rounded-2xl bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-600 transition-colors">Clear</button>
-          <button onclick="pressKey('0')" class="h-14 rounded-2xl bg-slate-50 hover:bg-slate-100 active:bg-amber-100 text-base font-bold text-slate-800 transition-colors shadow-2xs">0</button>
-          <button onclick="backspacePin()" class="h-14 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-colors">
-            <i data-lucide="delete" class="w-5 h-5"></i>
+      <!-- Quick Prototype Role Switcher (For Design Review) -->
+      <div class="pt-4 border-t border-slate-100 space-y-2.5">
+        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">Quick Role Demo Presets</p>
+        <div class="grid grid-cols-2 gap-2.5">
+          <button type="button" onclick="fillAndLogin('cashier', '!cashier123', 'cashier')" class="p-2.5 rounded-2xl border border-blue-200 bg-blue-50/60 hover:bg-blue-100/70 text-left transition-all space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-blue-900">Cashier Login</span>
+              <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">POS Only</span>
+            </div>
+            <p class="text-[10px] text-blue-700/80 leading-tight">Lands on <strong>POS Register</strong> &bull; Nav: POS, Orders, Menu</p>
+          </button>
+
+          <button type="button" onclick="fillAndLogin('admin', '!admin123', 'manager')" class="p-2.5 rounded-2xl border border-amber-200 bg-amber-50/60 hover:bg-amber-100/70 text-left transition-all space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-amber-900">Manager Login</span>
+              <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">Full Admin</span>
+            </div>
+            <p class="text-[10px] text-amber-800/80 leading-tight">Lands on <strong>Dashboard</strong> &bull; All 6 Modules</p>
           </button>
         </div>
-
-        <div class="text-center pt-2">
-          <p class="text-[11px] text-slate-400">Demo PIN: <strong class="text-amber-800">1 2 3 4</strong></p>
-        </div>
       </div>
 
-      <!-- Manager Email/Password View (Hidden by default) -->
-      <div id="emailSection" class="space-y-4 hidden">
-        <div class="space-y-1">
-          <label class="text-xs font-semibold text-slate-700">Manager Email / Username</label>
-          <input type="email" placeholder="manager@sukasan.com" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-amber-600">
-        </div>
-        <div class="space-y-1">
-          <label class="text-xs font-semibold text-slate-700">Password</label>
-          <input type="password" placeholder="••••••••" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-amber-600">
-        </div>
-        <button onclick="window.location.href='dashboard.html'" class="w-full py-3 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold shadow-xs">
-          Sign In to Backoffice
-        </button>
-      </div>
+    </div>
 
+    <!-- Role Permissions Reference Card -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs text-xs space-y-2">
+      <div class="flex items-center gap-1.5 font-bold text-slate-800">
+        <i data-lucide="key-round" class="w-3.5 h-3.5 text-amber-700"></i>
+        <span>Role-Based Access Control (RBAC) Summary</span>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+        <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+          <span class="font-bold text-amber-800">Admin / Manager:</span>
+          <p class="text-slate-600 mt-0.5">Dashboard &amp; Cashflow, POS, Orders, Full Menu Catalog, Raw Stocks &amp; Receipts, Staff Management.</p>
+        </div>
+        <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+          <span class="font-bold text-blue-700">Cashier:</span>
+          <p class="text-slate-600 mt-0.5">POS Register, Orders &amp; Voids (with reason), Menu View &amp; Stock Availability only.</p>
+        </div>
+      </div>
     </div>
 
   </main>
 
   <footer class="py-4 text-center text-xs text-slate-400">
-    Sukasan POS &bull; Shift Login Gateway
+    Sukasan Coffee &bull; Jl. Achmad Nadjamuddin No.20
   </footer>
 
   <script src="../assets/js/prototype.js"></script>
   <script>
-    let currentPin = '';
+    function togglePassVisibility() {
+      const input = document.getElementById('loginPassword');
+      input.type = input.type === 'password' ? 'text' : 'password';
+    }
 
-    function setLoginMode(mode) {
-      const bPin = document.getElementById('btnPinMode');
-      const bEmail = document.getElementById('btnEmailMode');
-      const pSec = document.getElementById('pinSection');
-      const eSec = document.getElementById('emailSection');
-
-      if (mode === 'pin') {
-        bPin.className = 'py-2 rounded-xl bg-white text-slate-900 shadow-2xs';
-        bEmail.className = 'py-2 rounded-xl text-slate-600 hover:text-slate-900';
-        pSec.classList.remove('hidden');
-        eSec.classList.add('hidden');
+    function fillAndLogin(user, pass, role) {
+      document.getElementById('loginUsername').value = user;
+      document.getElementById('loginPassword').value = pass;
+      if (role === 'manager') {
+        showToast('Signed in as Manager! Redirecting to Executive Dashboard...', 'success');
+        setTimeout(() => { window.location.href = 'dashboard.html'; }, 600);
       } else {
-        bEmail.className = 'py-2 rounded-xl bg-white text-slate-900 shadow-2xs';
-        bPin.className = 'py-2 rounded-xl text-slate-600 hover:text-slate-900';
-        eSec.classList.remove('hidden');
-        pSec.classList.add('hidden');
+        showToast('Signed in as Cashier! Redirecting to POS Register...', 'success');
+        setTimeout(() => { window.location.href = 'pos.html'; }, 600);
       }
     }
 
-    function pressKey(key) {
-      if (currentPin.length < 4) {
-        currentPin += key;
-        updateDots();
-        if (currentPin.length === 4) {
-          setTimeout(() => {
-            if (currentPin === '1234') {
-              showToast('PIN Verified! Cashier shift opened.', 'success');
-              setTimeout(() => {
-                window.location.href = 'pos.html';
-              }, 600);
-            } else {
-              // Shake and reset
-              shakeElement('pinDotsWrapper');
-              showToast('Incorrect PIN! Try 1234 for demo.', 'error');
-              for (let i = 0; i < 4; i++) {
-                const dot = document.getElementById('dot' + i);
-                dot.className = 'w-4 h-4 rounded-full bg-rose-600 border-2 border-rose-600';
-              }
-              setTimeout(() => {
-                clearPin();
-              }, 600);
-            }
-          }, 200);
-        }
-      }
-    }
-
-    function clearPin() {
-      currentPin = '';
-      updateDots();
-    }
-
-    function backspacePin() {
-      if (currentPin.length > 0) {
-        currentPin = currentPin.slice(0, -1);
-        updateDots();
-      }
-    }
-
-    function updateDots() {
-      for (let i = 0; i < 4; i++) {
-        const dot = document.getElementById('dot' + i);
-        if (i < currentPin.length) {
-          dot.className = 'w-4 h-4 rounded-full bg-amber-700 border-2 border-amber-700 scale-110 transition-all';
-        } else {
-          dot.className = 'w-4 h-4 rounded-full border-2 border-slate-300 transition-all';
-        }
+    function handleUnifiedLogin(e) {
+      e.preventDefault();
+      const user = document.getElementById('loginUsername').value.trim().toLowerCase();
+      if (user.includes('admin') || user.includes('manager') || user.includes('fajar')) {
+        fillAndLogin(user, '••••••••', 'manager');
+      } else {
+        fillAndLogin(user, '••••••••', 'cashier');
       }
     }
   </script>

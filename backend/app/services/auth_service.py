@@ -29,7 +29,8 @@ class AuthService:
                 detail="A manager account already exists. Use /auth/register with manager credentials instead.",
             )
 
-        existing_username = db.query(User).filter(User.username == user_in.username).first()
+        clean_username = user_in.username.strip()
+        existing_username = db.query(User).filter(User.username == clean_username).first()
         if existing_username:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -37,7 +38,7 @@ class AuthService:
             )
 
         new_manager = User(
-            username=user_in.username,
+            username=clean_username,
             full_name=user_in.full_name,
             password_hash=hash_password(user_in.password),
             profile_picture_url=user_in.profile_picture_url,
@@ -49,6 +50,15 @@ class AuthService:
         return new_manager
 
     @staticmethod
+    def list_users(db: Session, current_user: User) -> list[User]:
+        if current_user.role != UserRole.MANAGER:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only managers can list staff accounts",
+            )
+        return db.query(User).order_by(User.created_at.asc()).all()
+
+    @staticmethod
     def register_staff(db: Session, user_in: UserCreate, current_user: User) -> User:
         if current_user.role != UserRole.MANAGER:
             raise HTTPException(
@@ -56,7 +66,8 @@ class AuthService:
                 detail="Only managers can register new staff accounts",
             )
 
-        existing_user = db.query(User).filter(User.username == user_in.username).first()
+        clean_username = user_in.username.strip()
+        existing_user = db.query(User).filter(User.username == clean_username).first()
         if existing_user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -64,7 +75,7 @@ class AuthService:
             )
 
         new_user = User(
-            username=user_in.username,
+            username=clean_username,
             full_name=user_in.full_name,
             password_hash=hash_password(user_in.password),
             profile_picture_url=user_in.profile_picture_url,
@@ -77,7 +88,8 @@ class AuthService:
 
     @staticmethod
     def login(db: Session, login_data: LoginRequest) -> TokenResponse:
-        user = db.query(User).filter(User.username == login_data.username, User.is_active == True).first()
+        clean_username = login_data.username.strip()
+        user = db.query(User).filter(User.username == clean_username, User.is_active == True).first()
         if not user or not verify_password(login_data.password, user.password_hash):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,

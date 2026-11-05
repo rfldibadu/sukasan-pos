@@ -1,32 +1,52 @@
 import enum
 from datetime import UTC, datetime
 import uuid
-from sqlalchemy import String, Float, DateTime, Enum
+from typing import Optional
+from sqlalchemy import String, Float, DateTime, ForeignKey, Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.database import Base
+from app.models.stocks import ExpensePaymentMethod
+
 
 class CostCategory(str, enum.Enum):
-    ELECTRICITY_INDOOR = "electricity_indoor"
-    ELECTRICITY_BOOTH = "electricity_booth"
-    STAFF_SALARY = "staff_salary"
+    ELECTRICITY_INDOOR = "electricity_indoor"  # Token Ruko / Listrik Ruko
+    ELECTRICITY_BOOTH = "electricity_booth"    # Token Booth / Listrik Booth
+    STAFF_SALARY = "staff_salary"              # Gaji, Insentif, Kasbon, Pesangon
+    CONSIGNMENT_PAYOUT = "consignment_payout"  # Payouts to consignment vendors (Rafid, Letu, Palmer, etc.)
     RENT = "rent"
     OTHER = "other"
 
+
 class OperationalCost(Base):
-    """Tracks recurring and one-off operational expenses for monthly P&L calculations"""
+    """Tracks recurring and one-off operational expenses for daily/monthly cashflow & P&L calculations"""
     __tablename__ = "operational_costs"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), 
-        primary_key=True, 
-        default=uuid.uuid4, 
-        index=True
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        index=True,
     )
-    title: Mapped[str] = mapped_column(String, index=True) # e.g. "July Staff Salary - Staff 1"
-    category: Mapped[CostCategory] = mapped_column(Enum(CostCategory), nullable=False)
-    amount: Mapped[float] = mapped_column(Float, nullable=False) # e.g. 1500000.0
-    
-    # Allows you to filter expenses by month/year
-    expense_date: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(UTC))
-    notes: Mapped[str | None] = mapped_column(String, nullable=True)
+    title: Mapped[str] = mapped_column(String, index=True, nullable=False)  # e.g. "Token Ruko", "Gaji Wirya"
+    category: Mapped[CostCategory] = mapped_column(
+        SQLEnum(CostCategory, native_enum=False, values_callable=lambda x: [e.value for e in x]), nullable=False
+    )
+    amount: Mapped[float] = mapped_column(Float, nullable=False)
+    payment_method: Mapped[Optional[ExpensePaymentMethod]] = mapped_column(
+        SQLEnum(ExpensePaymentMethod, native_enum=False, values_callable=lambda x: [e.value for e in x]),
+        default=ExpensePaymentMethod.M_BANKING,
+        nullable=True,
+    )
+    receipt_image_url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+
+    # Allows filtering expenses by day/month/year
+    expense_date: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), index=True
+    )
+    notes: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+
+    created_by_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id"), nullable=True
+    )
+    created_by = relationship("User")

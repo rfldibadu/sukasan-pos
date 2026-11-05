@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sukasan POS - Raw Stocks &amp; Receipt Purchases</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            amber: {
+              50: '#fffbeb',
+              100: '#fef3c7',
+              200: '#fde68a',
+              300: '#fcd34d',
+              400: '#fbbf24',
+              500: '#f59e0b',
+              600: '#d97706',
+              700: '#b45309',
+              800: '#92400e',
+              900: '#78350f',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="../assets/css/design-system.css">
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen pb-24 md:pb-8">
+
+  <!-- Prototype Banner -->
+  <div class="bg-amber-800 text-amber-50 text-xs py-1.5 px-4 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+      <span class="font-medium">PROTOTYPE: Raw Stocks, Receipt Purchases &amp; Operational Bills (Manager Only)</span>
+    </div>
+    <a href="../index.html" class="underline hover:text-white font-semibold">Back to Design Hub</a>
+  </div>
+
+  <!-- Top Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-amber-700 flex items-center justify-center text-white">
+          <i data-lucide="boxes" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h1 class="text-sm font-bold text-slate-900 leading-tight">Raw Stocks &amp; Expenses</h1>
+          <p class="text-[11px] text-slate-500">Beans, Milks, Syrups, Ice Crystals &amp; Operational Bills</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="openModal('operationalModal')" class="px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors">
+          <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-700"></i>
+          <span class="hidden sm:inline">Log Operational Bill</span>
+          <span class="sm:hidden">+ Bill</span>
+        </button>
+        <button onclick="openModal('purchaseModal')" class="px-3.5 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors">
+          <i data-lucide="camera" class="w-3.5 h-3.5"></i>
+          <span>+ Restock with Receipt</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-5 space-y-5">
+
+    <!-- Summary KPI Strip -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-1">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-medium text-slate-500">Raw Stock Catalog</span>
+          <div class="w-7 h-7 rounded-lg bg-amber-600 text-white flex items-center justify-center">
+            <i data-lucide="layers" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="text-base sm:text-xl font-bold font-mono text-slate-900">30 Items</div>
+        <p class="text-[10px] text-slate-400">Beans, milks, syrups, ice, cups</p>
+      </div>
+
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-1">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-medium text-slate-500">Low Stock Alerts</span>
+          <div class="w-7 h-7 rounded-lg bg-rose-600 text-white flex items-center justify-center">
+            <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="text-base sm:text-xl font-bold font-mono text-rose-600">3 Items</div>
+        <p class="text-[10px] text-rose-600 font-medium">Es Kristal, UHT Indomilk, Sirup Peach</p>
+      </div>
+
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-1">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-medium text-slate-500">Stock Bought (Month)</span>
+          <div class="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center">
+            <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="text-base sm:text-xl font-bold font-mono text-slate-900">Rp 3.120.450</div>
+        <p class="text-[10px] text-slate-400">24 verified store/m-banking receipts</p>
+      </div>
+
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-1">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-medium text-slate-500">Operational Bills (Month)</span>
+          <div class="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center">
+            <i data-lucide="zap" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="text-base sm:text-xl font-bold font-mono text-slate-900">Rp 2.506.893</div>
+        <p class="text-[10px] text-slate-400">PLN Token, Staff Salary &amp; Consignment</p>
+      </div>
+    </div>
+
+    <!-- Main View Switcher Tabs -->
+    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
+      <div class="inline-flex p-1 bg-slate-200/70 rounded-xl text-xs font-semibold" id="stockMainTabs">
+        <button onclick="switchStockView('catalog', this)" class="px-3.5 py-2 rounded-lg bg-white text-slate-900 shadow-2xs transition-all">
+          📦 Raw Stock Inventory (30)
+        </button>
+        <button onclick="switchStockView('purchases', this)" class="px-3.5 py-2 rounded-lg text-slate-600 hover:text-slate-900 transition-all">
+          🧾 Purchase Receipts Log
+        </button>
+        <button onclick="switchStockView('operationals', this)" class="px-3.5 py-2 rounded-lg text-slate-600 hover:text-slate-900 transition-all">
+          ⚡ Operational &amp; Consignment Bills
+        </button>
+      </div>
+
+      <div class="relative w-full sm:w-64">
+        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+        <input type="text" id="rawStockSearch" onkeyup="filterRawStocks()" placeholder="Search beans, milk, syrup, ice..." class="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-amber-600">
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- VIEW 1: RAW STOCK INVENTORY CATALOG        -->
+    <!-- ========================================== -->
+    <section id="view-catalog" class="space-y-4">
+      <!-- Category Pills -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-semibold" id="rawCatPills">
+        <button onclick="filterRawCategory('all', this)" class="px-3 py-1.5 rounded-xl bg-amber-100 text-amber-800 whitespace-nowrap">All Raw Stocks</button>
+        <button onclick="filterRawCategory('beans', this)" class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-600 whitespace-nowrap">☕ Coffee Beans</button>
+        <button onclick="filterRawCategory('milk_dairy', this)" class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-600 whitespace-nowrap">🥛 Milks &amp; Dairy</button>
+        <button onclick="filterRawCategory('creamer_sweetener', this)" class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-600 whitespace-nowrap">🍯 Creamer &amp; SKM</button>
+        <button onclick="filterRawCategory('syrup_beverage', this)" class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-600 whitespace-nowrap">🍓 Syrups &amp; Juices</button>
+        <button onclick="filterRawCategory('powder_spread', this)" class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-600 whitespace-nowrap">🍵 Powders &amp; Spreads</button>
+        <button onclick="filterRawCategory('ice', this)" class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-600 whitespace-nowrap">🧊 Ice Crystals</button>
+        <button onclick="filterRawCategory('packaging_supply', this)" class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-600 whitespace-nowrap">🥤 Cups, Straws &amp; Tissue</button>
+      </div>
+
+      <!-- Raw Stocks Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="rawStocksGrid">
+
+        <!-- Card 1: Beans -->
+        <div data-cat="beans" data-name="house blend coffee beans arabica" class="raw-stock-card bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs space-y-3">
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-800 flex items-center justify-center">
+                <i data-lucide="coffee" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <span class="text-[10px] font-semibold bg-amber-50 text-amber-800 px-2 py-0.5 rounded">Beans</span>
+                <h3 class="text-xs font-bold text-slate-900 mt-0.5">House Blend Coffee Beans</h3>
+                <p class="text-[11px] text-slate-400">Latest cost: Rp 234.000 / kg</p>
+              </div>
+            </div>
+            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">In Stock</span>
+          </div>
+          <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+            <div>
+              <span class="text-[10px] text-slate-400">Remaining Stock</span>
+              <p class="text-sm font-bold font-mono text-slate-900">2.5 <span class="text-xs font-normal text-slate-500">kg</span></p>
+            </div>
+            <button onclick="openAdjustStockModal('House Blend Coffee Beans', 2.5, 'kg')" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px]">
+              Opname / Adjust
+            </button>
+          </div>
+        </div>
+
+        <!-- Card 2: Es Kristal (Low Stock) -->
+        <div data-cat="ice" data-name="es kristal ice crystals cubes" class="raw-stock-card bg-white rounded-2xl border-2 border-rose-200 p-4 shadow-2xs space-y-3">
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center">
+                <i data-lucide="snowflake" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <span class="text-[10px] font-semibold bg-blue-50 text-blue-700 px-2 py-0.5 rounded">Ice</span>
+                <h3 class="text-xs font-bold text-slate-900 mt-0.5">Es Kristal (Ice Crystals)</h3>
+                <p class="text-[11px] text-slate-400">Latest cost: Rp 14.000 / bag</p>
+              </div>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">Low Stock</span>
+          </div>
+          <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+            <div>
+              <span class="text-[10px] text-slate-400">Remaining Stock</span>
+              <p class="text-sm font-bold font-mono text-rose-600">1 <span class="text-xs font-normal text-slate-500">bag</span></p>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button onclick="openAdjustStockModal('Es Kristal (Ice Crystals)', 1, 'bag')" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px]">
+                Adjust
+              </button>
+              <button onclick="openModal('purchaseModal')" class="px-2.5 py-1.5 rounded-lg bg-amber-700 hover:bg-amber-800 text-white font-semibold text-[11px]">
+                + Buy
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: UHT Indomilk -->
+        <div data-cat="milk_dairy" data-name="uht indomilk full cream milk" class="raw-stock-card bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs space-y-3">
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center">
+                <i data-lucide="milk" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <span class="text-[10px] font-semibold bg-sky-50 text-sky-700 px-2 py-0.5 rounded">Milk &amp; Dairy</span>
+                <h3 class="text-xs font-bold text-slate-900 mt-0.5">UHT Indomilk Full Cream</h3>
+                <p class="text-[11px] text-slate-400">Latest cost: Rp 19.000 / liter</p>
+              </div>
+            </div>
+            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">In Stock</span>
+          </div>
+          <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+            <div>
+              <span class="text-[10px] text-slate-400">Remaining Stock</span>
+              <p class="text-sm font-bold font-mono text-slate-900">12 <span class="text-xs font-normal text-slate-500">liter</span></p>
+            </div>
+            <button onclick="openAdjustStockModal('UHT Indomilk Full Cream', 12, 'liter')" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px]">
+              Opname / Adjust
+            </button>
+          </div>
+        </div>
+
+        <!-- Card 4: Omela SKM / Creamer -->
+        <div data-cat="creamer_sweetener" data-name="omela skm creamer kental carnation" class="raw-stock-card bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs space-y-3">
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center">
+                <i data-lucide="droplet" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <span class="text-[10px] font-semibold bg-amber-50 text-amber-800 px-2 py-0.5 rounded">Creamer &amp; Sweetener</span>
+                <h3 class="text-xs font-bold text-slate-900 mt-0.5">Omela SKM / Creamer Kental</h3>
+                <p class="text-[11px] text-slate-400">Latest cost: Rp 11.200 / can</p>
+              </div>
+            </div>
+            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">In Stock</span>
+          </div>
+          <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+            <div>
+              <span class="text-[10px] text-slate-400">Remaining Stock</span>
+              <p class="text-sm font-bold font-mono text-slate-900">6 <span class="text-xs font-normal text-slate-500">cans</span></p>
+            </div>
+            <button onclick="openAdjustStockModal('Omela SKM / Creamer Kental', 6, 'cans')" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px]">
+              Opname / Adjust
+            </button>
+          </div>
+        </div>
+
+        <!-- Card 5: Sirup Mango & Pandan -->
+        <div data-cat="syrup_beverage" data-name="sirup mango pandan peach vanilla buavita" class="raw-stock-card bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs space-y-3">
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center">
+                <i data-lucide="wine" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <span class="text-[10px] font-semibold bg-purple-50 text-purple-700 px-2 py-0.5 rounded">Syrups &amp; Juices</span>
+                <h3 class="text-xs font-bold text-slate-900 mt-0.5">Sirup Mango / Pandan / Peach</h3>
+                <p class="text-[11px] text-slate-400">Latest cost: Rp 96.750 / bottle</p>
+              </div>
+            </div>
+            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">In Stock</span>
+          </div>
+          <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+            <div>
+              <span class="text-[10px] text-slate-400">Remaining Stock</span>
+              <p class="text-sm font-bold font-mono text-slate-900">5 <span class="text-xs font-normal text-slate-500">bottles</span></p>
+            </div>
+            <button onclick="openAdjustStockModal('Sirup Mango / Pandan / Peach', 5, 'bottles')" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px]">
+              Opname / Adjust
+            </button>
+          </div>
+        </div>
+
+        <!-- Card 6: Cups & Straws -->
+        <div data-cat="packaging_supply" data-name="cup lid sedotan straws tissue" class="raw-stock-card bg-white rounded-2xl border border-slate-200 p-4 shadow-2xs space-y-3">
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                <i data-lucide="cup-soda" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <span class="text-[10px] font-semibold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded">Packaging &amp; Supplies</span>
+                <h3 class="text-xs font-bold text-slate-900 mt-0.5">Cup + Lid &amp; Sedotan 500pcs</h3>
+                <p class="text-[11px] text-slate-400">Latest cost: Rp 45.000 / pack</p>
+              </div>
+            </div>
+            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">In Stock</span>
+          </div>
+          <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+            <div>
+              <span class="text-[10px] text-slate-400">Remaining Stock</span>
+              <p class="text-sm font-bold font-mono text-slate-900">5 <span class="text-xs font-normal text-slate-500">packs</span></p>
+            </div>
+            <button onclick="openAdjustStockModal('Cup + Lid (Cold/Hot)', 5, 'packs')" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px]">
+              Opname / Adjust
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- VIEW 2: PURCHASE RECEIPTS LOG              -->
+    <!-- ========================================== -->
+    <section id="view-purchases" class="space-y-4 hidden">
+      <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs">
+        <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-bold text-slate-900">Raw Stock Purchase History (with Receipts)</h3>
+            <p class="text-xs text-slate-500">Supports both single-item bills and multi-item store receipts</p>
+          </div>
+          <button onclick="openModal('purchaseModal')" class="px-3 py-1.5 bg-amber-700 text-white rounded-xl text-xs font-semibold">
+            + Upload Receipt
+          </button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
+              <tr>
+                <th class="px-4 py-3">Date</th>
+                <th class="px-4 py-3">Receipt Type</th>
+                <th class="px-4 py-3">Items Bought (Keterangan)</th>
+                <th class="px-4 py-3">Payment</th>
+                <th class="px-4 py-3 text-right">Total Cost</th>
+                <th class="px-4 py-3 text-center">Proof / Receipt</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-slate-700">
+              <tr class="hover:bg-slate-50/60">
+                <td class="px-4 py-3 font-mono text-[11px]">17/10/2026</td>
+                <td class="px-4 py-3"><span class="px-2 py-0.5 rounded bg-purple-50 text-purple-700 font-semibold text-[10px]">Multi-Item Receipt (6)</span></td>
+                <td class="px-4 py-3 font-medium">Beans 1kg, Beans 200gr, SKM 480gr, Buavita, Es Kristal, Sedotan 500pcs</td>
+                <td class="px-4 py-3"><span class="px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold text-[10px]">M-Banking</span></td>
+                <td class="px-4 py-3 font-mono font-bold text-rose-600 text-right">-Rp 479.600</td>
+                <td class="px-4 py-3 text-center">
+                  <button onclick="openReceiptPreview('Multi-Item Store Receipt (17/10/2026)', 'Rp 479.600', 'M-Banking BCA', 'Beans 1kg (Rp234.000), Beans 200gr (Rp37.000), SKM 480gr (Rp46.000), Buavita (Rp90.600), Es Kristal (Rp32.000), Sedotan 500pcs (Rp40.000)')" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 font-semibold text-[11px] hover:bg-amber-100">
+                    <i data-lucide="image" class="w-3.5 h-3.5"></i> View Bill
+                  </button>
+                </td>
+              </tr>
+              <tr class="hover:bg-slate-50/60">
+                <td class="px-4 py-3 font-mono text-[11px]">15/10/2026</td>
+                <td class="px-4 py-3"><span class="px-2 py-0.5 rounded bg-purple-50 text-purple-700 font-semibold text-[10px]">Multi-Item Receipt (2)</span></td>
+                <td class="px-4 py-3 font-medium">Matcha Powder + Cup Pack</td>
+                <td class="px-4 py-3"><span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-semibold text-[10px]">E-Wallet</span></td>
+                <td class="px-4 py-3 font-mono font-bold text-rose-600 text-right">-Rp 582.316</td>
+                <td class="px-4 py-3 text-center">
+                  <button onclick="openReceiptPreview('Tokopedia / E-Wallet Bill (15/10/2026)', 'Rp 582.316', 'E-Wallet / GoPay', 'Ceremonial Matcha Powder + Cup Cold/Hot')" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 font-semibold text-[11px] hover:bg-amber-100">
+                    <i data-lucide="image" class="w-3.5 h-3.5"></i> View Bill
+                  </button>
+                </td>
+              </tr>
+              <tr class="hover:bg-slate-50/60">
+                <td class="px-4 py-3 font-mono text-[11px]">09/10/2026</td>
+                <td class="px-4 py-3"><span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-semibold text-[10px]">Single-Item</span></td>
+                <td class="px-4 py-3 font-medium">Es Kristal (1 bag)</td>
+                <td class="px-4 py-3"><span class="px-2 py-0.5 rounded bg-amber-50 text-amber-800 font-semibold text-[10px]">Cash</span></td>
+                <td class="px-4 py-3 font-mono font-bold text-rose-600 text-right">-Rp 16.000</td>
+                <td class="px-4 py-3 text-center">
+                  <span class="text-[11px] text-slate-400 italic">No Receipt</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- VIEW 3: OPERATIONAL & CONSIGNMENT BILLS    -->
+    <!-- ========================================== -->
+    <section id="view-operationals" class="space-y-4 hidden">
+      <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs">
+        <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-bold text-slate-900">Operational Costs &amp; Consignment Payouts</h3>
+            <p class="text-xs text-slate-500">Electricity (Token Ruko / Booth), Staff Salary/Kasbon &amp; Vendor Payouts</p>
+          </div>
+          <button onclick="openModal('operationalModal')" class="px-3 py-1.5 bg-amber-700 text-white rounded-xl text-xs font-semibold">
+            + Log Expense
+          </button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
+              <tr>
+                <th class="px-4 py-3">Date</th>
+                <th class="px-4 py-3">Category</th>
+                <th class="px-4 py-3">Description (Keterangan)</th>
+                <th class="px-4 py-3 text-right">Amount</th>
+                <th class="px-4 py-3 text-center">Payment Proof</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-slate-700">
+              <tr>
+                <td class="px-4 py-3 font-mono text-[11px]">29/10/2026</td>
+                <td class="px-4 py-3"><span class="px-2 py-0.5 rounded bg-amber-50 text-amber-800 font-semibold text-[10px]">electricity_indoor</span></td>
+                <td class="px-4 py-3 font-medium">Token Listrik Ruko</td>
+                <td class="px-4 py-3 font-mono font-bold text-rose-600 text-right">-Rp 103.500</td>
+                <td class="px-4 py-3 text-center">
+                  <button onclick="openReceiptPreview('PLN Token Ruko (29/10/2026)', 'Rp 103.500', 'M-Banking', 'Token Listrik Ruko 100k + Admin')" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-semibold text-[11px]">
+                    <i data-lucide="image" class="w-3.5 h-3.5"></i> Proof
+                  </button>
+                </td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-mono text-[11px]">10/10/2026</td>
+                <td class="px-4 py-3"><span class="px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold text-[10px]">electricity_booth</span></td>
+                <td class="px-4 py-3 font-medium">Token Listrik Booth</td>
+                <td class="px-4 py-3 font-mono font-bold text-rose-600 text-right">-Rp 103.500</td>
+                <td class="px-4 py-3 text-center">
+                  <button onclick="openReceiptPreview('PLN Token Booth (10/10/2026)', 'Rp 103.500', 'M-Banking', 'Token Listrik Booth 100k + Admin')" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-semibold text-[11px]">
+                    <i data-lucide="image" class="w-3.5 h-3.5"></i> Proof
+                  </button>
+                </td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-mono text-[11px]">02/10/2026</td>
+                <td class="px-4 py-3"><span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-semibold text-[10px]">consignment_payout</span></td>
+                <td class="px-4 py-3 font-medium">Cheesecake Palmer Payout</td>
+                <td class="px-4 py-3 font-mono font-bold text-rose-600 text-right">-Rp 140.000</td>
+                <td class="px-4 py-3 text-center">
+                  <button onclick="openReceiptPreview('Consignment Payout - Palmer (02/10/2026)', 'Rp 140.000', 'M-Banking Transfer', 'Settlement for sold Palmer Cheesecakes')" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-semibold text-[11px]">
+                    <i data-lucide="image" class="w-3.5 h-3.5"></i> Proof
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Bottom Navigation Bar (Realme Note 50 Mobile Layout) -->
+  <nav class="fixed bottom-0 inset-x-0 flex items-center justify-around bg-white border-t border-slate-200 z-40 py-1">
+    <a href="dashboard.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
+      <i data-lucide="layout-dashboard" class="w-5 h-5 mb-0.5"></i>
+      <span>Home</span>
+    </a>
+    <a href="pos.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
+      <i data-lucide="shopping-bag" class="w-5 h-5 mb-0.5"></i>
+      <span>POS</span>
+    </a>
+    <a href="orders.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
+      <i data-lucide="receipt" class="w-5 h-5 mb-0.5"></i>
+      <span>Orders</span>
+    </a>
+    <a href="menu.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
+      <i data-lucide="package" class="w-5 h-5 mb-0.5"></i>
+      <span>Menu</span>
+    </a>
+    <a href="stocks.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-semibold text-amber-800 bg-amber-100/70">
+      <i data-lucide="boxes" class="w-5 h-5 mb-0.5"></i>
+      <span>Stocks</span>
+    </a>
+    <a href="staff.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
+      <i data-lucide="users" class="w-5 h-5 mb-0.5"></i>
+      <span>Staff</span>
+    </a>
+  </nav>
+
+  <!-- ========================================================= -->
+  <!-- MODAL 1: ADD RAW STOCK PURCHASE WITH RECEIPT / BILL IMAGE -->
+  <!-- ========================================================= -->
+  <div id="purchaseModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center">
+            <i data-lucide="camera" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-900 text-sm">Record Raw Stock Purchase</h3>
+            <p class="text-[11px] text-slate-500">Manager Only &bull; Store Receipt or M-Banking / E-Wallet Bill (Optional)</p>
+          </div>
+        </div>
+        <button onclick="closeModal('purchaseModal')" class="p-1 text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Mode Switcher: Single-Item vs Multi-Item Store Receipt -->
+      <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl text-xs font-semibold">
+        <button id="btnModeSingle" onclick="setPurchaseMode('single')" class="py-2 rounded-lg bg-white text-slate-900 shadow-2xs transition-all">
+          Single-Item Bill (e.g. Es Kristal)
+        </button>
+        <button id="btnModeMulti" onclick="setPurchaseMode('multi')" class="py-2 rounded-lg text-slate-600 hover:text-slate-900 transition-all">
+          Multi-Item Receipt (e.g. Cup, Kopi, Susu)
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-semibold text-slate-700">Payment Method</label>
+            <select class="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+              <option value="m_banking">M-Banking Transfer (BCA/Mandiri/BRI)</option>
+              <option value="e_wallet">E-Wallet (GoPay/OVO/Dana/ShopeePay)</option>
+              <option value="qris">QRIS</option>
+              <option value="cash">Store Cash Receipt</option>
+            </select>
+          </div>
+          <div>
+            <label class="font-semibold text-slate-700">Store / Supplier</label>
+            <input type="text" placeholder="e.g. Indogrosir / Tokopedia / Depot Es" class="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+          </div>
+        </div>
+
+        <!-- Dynamic Line Items Container -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="font-semibold text-slate-700">Purchased Raw Stock Item(s)</label>
+            <button id="btnAddLineItem" onclick="addPurchaseLineItem()" type="button" class="hidden text-[11px] font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1">
+              <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> Add Another Item
+            </button>
+          </div>
+
+          <div id="purchaseLineItems" class="space-y-2">
+            <!-- Default Row 1 -->
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 grid grid-cols-12 gap-2 items-end">
+              <div class="col-span-5">
+                <label class="text-[10px] text-slate-500">Raw Stock Item</label>
+                <select class="w-full mt-0.5 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs">
+                  <option>Es Kristal (Ice Crystals)</option>
+                  <option>House Blend Coffee Beans</option>
+                  <option>UHT Indomilk Full Cream</option>
+                  <option>Omela SKM / Creamer Kental</option>
+                  <option>Sirup Mango / Pandan / Peach</option>
+                  <option>Ceremonial Matcha Powder</option>
+                  <option>Cup + Lid (Cold/Hot)</option>
+                  <option>Sedotan (Straws 500pcs)</option>
+                </select>
+              </div>
+              <div class="col-span-3">
+                <label class="text-[10px] text-slate-500">Qty + Unit</label>
+                <input type="number" value="1" min="0.1" step="0.5" class="w-full mt-0.5 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-mono">
+              </div>
+              <div class="col-span-4">
+                <label class="text-[10px] text-slate-500">Subtotal (Rp)</label>
+                <input type="number" placeholder="14000" class="w-full mt-0.5 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-mono">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-semibold text-slate-700">Total Bill Amount (Rp)</label>
+            <input type="number" placeholder="e.g. 14000 or 1048240" class="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold text-slate-900">
+          </div>
+          <div>
+            <label class="font-semibold text-slate-700">Notes (Keterangan)</label>
+            <input type="text" placeholder="e.g. Cup, Kopi, Creamer" class="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+          </div>
+        </div>
+
+        <!-- Optional Receipt / M-Banking Bill Image Upload -->
+        <div>
+          <label class="font-semibold text-slate-700 flex items-center justify-between">
+            <span>Receipt / Payment Proof Image <span class="text-slate-400 font-normal">(Optional)</span></span>
+            <span class="text-[10px] text-amber-700 font-normal">JPG, PNG, WEBP or PDF</span>
+          </label>
+          <label class="mt-1 border-2 border-dashed border-amber-300 bg-amber-50/40 hover:bg-amber-50 rounded-2xl p-4 flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-colors text-center">
+            <i data-lucide="upload-cloud" class="w-6 h-6 text-amber-700"></i>
+            <span class="text-xs font-bold text-amber-900">Tap to attach store receipt or M-Banking / E-Wallet screenshot (if available)</span>
+            <span class="text-[10px] text-slate-500">Leave blank for warung/cash purchases without a receipt (e.g. Es Kristal)</span>
+            <input type="file" accept="image/*" class="hidden" onchange="showToast('Receipt image attached!', 'success')">
+          </label>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+        <button onclick="closeModal('purchaseModal')" class="px-3.5 py-2 text-slate-600 hover:bg-slate-100 rounded-xl text-xs font-semibold">
+          Cancel
+        </button>
+        <button onclick="closeModal('purchaseModal'); showToast('Stock purchase logged &amp; cashflow updated!', 'success')" class="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold">
+          Save Purchase &amp; Update Stock
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL 2: LOG OPERATIONAL EXPENSE (PLN / SALARY / CONSIGN) -->
+  <!-- ========================================================= -->
+  <div id="operationalModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center">
+            <i data-lucide="zap" class="w-4 h-4"></i>
+          </div>
+          <h3 class="font-bold text-slate-900 text-sm">Log Operational Expense</h3>
+        </div>
+        <button onclick="closeModal('operationalModal')" class="p-1 text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="font-semibold text-slate-700">Expense Category</label>
+          <select class="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+            <option value="electricity_indoor">Electricity Indoor (Token Listrik Ruko)</option>
+            <option value="electricity_booth">Electricity Booth (Token Listrik Booth)</option>
+            <option value="staff_salary">Staff Salary / Kasbon / Insentif</option>
+            <option value="consignment_payout">Consignment Vendor Payout (Rafid / Palmer / Letu)</option>
+            <option value="rent">Rent / Sewa</option>
+            <option value="other">Other Operational Expense</option>
+          </select>
+        </div>
+        <div>
+          <label class="font-semibold text-slate-700">Title / Description (Keterangan)</label>
+          <input type="text" placeholder="e.g. Token Ruko / Gaji Wirya / Consignment Palmer" class="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-semibold text-slate-700">Amount (Rp)</label>
+            <input type="number" placeholder="103500" class="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono">
+          </div>
+          <div>
+            <label class="font-semibold text-slate-700">Payment Method</label>
+            <select class="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
+              <option value="m_banking">M-Banking</option>
+              <option value="e_wallet">E-Wallet</option>
+              <option value="cash">Cash</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="font-semibold text-slate-700">Payment Proof / PLN Receipt (Optional)</label>
+          <input type="file" accept="image/*" class="w-full mt-1 text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-800 hover:file:bg-amber-100">
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+        <button onclick="closeModal('operationalModal')" class="px-3.5 py-2 text-slate-600 hover:bg-slate-100 rounded-xl text-xs font-semibold">Cancel</button>
+        <button onclick="closeModal('operationalModal'); showToast('Operational expense recorded into Cashflow!', 'success')" class="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold">Save Expense</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL 3: STOCK OPNAME / QUANTITY ADJUSTMENT               -->
+  <!-- ========================================================= -->
+  <div id="adjustStockModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 id="adjustStockTitle" class="font-bold text-slate-900 text-sm">Adjust Remaining Stock</h3>
+        <button onclick="closeModal('adjustStockModal')" class="p-1 text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div class="space-y-2 text-xs">
+        <label class="font-semibold text-slate-700">Actual Remaining Quantity (<span id="adjustStockUnit">unit</span>)</label>
+        <input type="number" id="adjustStockInput" step="0.1" min="0" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono text-sm font-bold">
+        <p class="text-[11px] text-slate-400">Used for end-of-shift or weekly stock opname checks.</p>
+      </div>
+      <div class="flex items-center justify-end gap-2 pt-2">
+        <button onclick="closeModal('adjustStockModal')" class="px-3 py-2 text-slate-600 rounded-xl text-xs font-semibold">Cancel</button>
+        <button onclick="closeModal('adjustStockModal'); showToast('Raw stock quantity updated!', 'success')" class="px-4 py-2 bg-amber-700 text-white rounded-xl text-xs font-bold">Update Quantity</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- MODAL 4: RECEIPT / M-BANKING BILL PREVIEW                 -->
+  <!-- ========================================================= -->
+  <div id="receiptPreviewModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div>
+          <h3 id="previewReceiptTitle" class="font-bold text-slate-900 text-sm">Receipt Proof</h3>
+          <p id="previewReceiptChannel" class="text-[11px] text-slate-500">M-Banking Transfer</p>
+        </div>
+        <button onclick="closeModal('receiptPreviewModal')" class="p-1 text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2 text-xs">
+        <div class="flex justify-between">
+          <span class="text-slate-500">Total Bill Paid:</span>
+          <span id="previewReceiptAmount" class="font-mono font-bold text-rose-600">Rp 0</span>
+        </div>
+        <div>
+          <span class="text-slate-500">Items / Description:</span>
+          <p id="previewReceiptItems" class="font-semibold text-slate-800 mt-0.5"></p>
+        </div>
+        <div class="h-44 bg-amber-50/70 border border-dashed border-amber-300 rounded-lg flex flex-col items-center justify-center text-amber-800 gap-1 mt-2">
+          <i data-lucide="file-check-2" class="w-8 h-8"></i>
+          <span class="font-bold">Verified Receipt / M-Banking Screenshot</span>
+          <span class="text-[10px] text-amber-700">/static/uploads/receipts/stocks/...</span>
+        </div>
+      </div>
+      <div class="flex justify-end">
+        <button onclick="closeModal('receiptPreviewModal')" class="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold">Close Preview</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/js/prototype.js"></script>
+  <script>
+    function switchStockView(view, btn) {
+      ['catalog', 'purchases', 'operationals'].forEach(v => {
+        document.getElementById('view-' + v).classList.add('hidden');
+      });
+      document.getElementById('view-' + view).classList.remove('hidden');
+
+      document.getElementById('stockMainTabs').querySelectorAll('button').forEach(b => {
+        b.className = 'px-3.5 py-2 rounded-lg text-slate-600 hover:text-slate-900 transition-all';
+      });
+      btn.className = 'px-3.5 py-2 rounded-lg bg-white text-slate-900 shadow-2xs transition-all';
+    }
+
+    function filterRawCategory(cat, btn) {
+      document.getElementById('rawCatPills').querySelectorAll('button').forEach(b => {
+        b.className = 'px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-600 whitespace-nowrap';
+      });
+      btn.className = 'px-3 py-1.5 rounded-xl bg-amber-100 text-amber-800 whitespace-nowrap';
+
+      document.querySelectorAll('.raw-stock-card').forEach(card => {
+        if (cat === 'all' || card.getAttribute('data-cat') === cat) {
+          card.classList.remove('hidden');
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+    }
+
+    function filterRawStocks() {
+      const q = document.getElementById('rawStockSearch').value.toLowerCase();
+      document.querySelectorAll('.raw-stock-card').forEach(card => {
+        const name = card.getAttribute('data-name') || '';
+        card.classList.toggle('hidden', !name.includes(q));
+      });
+    }
+
+    function setPurchaseMode(mode) {
+      const btnSingle = document.getElementById('btnModeSingle');
+      const btnMulti = document.getElementById('btnModeMulti');
+      const btnAdd = document.getElementById('btnAddLineItem');
+
+      if (mode === 'multi') {
+        btnMulti.className = 'py-2 rounded-lg bg-white text-slate-900 shadow-2xs transition-all';
+        btnSingle.className = 'py-2 rounded-lg text-slate-600 hover:text-slate-900 transition-all';
+        btnAdd.classList.remove('hidden');
+        if (document.getElementById('purchaseLineItems').children.length === 1) {
+          addPurchaseLineItem();
+        }
+      } else {
+        btnSingle.className = 'py-2 rounded-lg bg-white text-slate-900 shadow-2xs transition-all';
+        btnMulti.className = 'py-2 rounded-lg text-slate-600 hover:text-slate-900 transition-all';
+        btnAdd.classList.add('hidden');
+        const container = document.getElementById('purchaseLineItems');
+        while (container.children.length > 1) {
+          container.removeChild(container.lastChild);
+        }
+      }
+    }
+
+    function addPurchaseLineItem() {
+      const container = document.getElementById('purchaseLineItems');
+      const firstRow = container.firstElementChild.cloneNode(true);
+      container.appendChild(firstRow);
+    }
+
+    function openAdjustStockModal(name, qty, unit) {
+      document.getElementById('adjustStockTitle').innerText = 'Opname: ' + name;
+      document.getElementById('adjustStockInput').value = qty;
+      document.getElementById('adjustStockUnit').innerText = unit;
+      openModal('adjustStockModal');
+    }
+
+    function openReceiptPreview(title, amount, channel, items) {
+      document.getElementById('previewReceiptTitle').innerText = title;
+      document.getElementById('previewReceiptAmount').innerText = amount;
+      document.getElementById('previewReceiptChannel').innerText = channel;
+      document.getElementById('previewReceiptItems').innerText = items;
+      openModal('receiptPreviewModal');
+    }
+  </script>
+</body>
+</html>

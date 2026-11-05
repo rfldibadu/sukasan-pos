@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sukasan POS - Staff &amp; User Access</title>
+  <title>Sukasan POS - Staff &amp; Role Management</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -36,7 +36,7 @@
   <div class="bg-amber-800 text-amber-50 text-xs py-1.5 px-4 flex items-center justify-between">
     <div class="flex items-center gap-2">
       <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
-      <span class="font-medium">PROTOTYPE: Staff &amp; Access Page &bull; Ready for Review</span>
+      <span class="font-medium">PROTOTYPE: Staff &amp; Role Permissions (Manager Only) &bull; Unified Credentials</span>
     </div>
     <a href="../index.html" class="underline hover:text-white font-semibold">Back to Design Hub</a>
   </div>
@@ -50,7 +50,7 @@
         </div>
         <div>
           <h1 class="text-sm font-bold text-slate-900 leading-tight">Sukasan Coffee</h1>
-          <p class="text-[11px] text-slate-500">Staff &amp; Role Management</p>
+          <p class="text-[11px] text-slate-500">Staff Accounts &amp; Role Permissions</p>
         </div>
       </div>
       <div class="flex items-center gap-2">
@@ -67,15 +67,15 @@
     <!-- Title & Summary -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       <div>
-        <h2 class="text-lg font-bold text-slate-900">Staff Directory &amp; Permissions</h2>
-        <p class="text-xs text-slate-500">Manage cashier PINs, shift authorizations, and access roles.</p>
+        <h2 class="text-lg font-bold text-slate-900">Staff Directory &amp; Role Permissions</h2>
+        <p class="text-xs text-slate-500">Unified Username/Email + Password login with role-based access control (Manager vs. Cashier).</p>
       </div>
       <div class="flex items-center gap-2 text-xs">
         <span class="bg-white px-3 py-1.5 rounded-xl border border-slate-200 font-medium text-slate-600">
-          Total Team: <strong class="text-slate-900">5 Members</strong>
+          Total Team: <strong class="text-slate-900">3 Members</strong>
         </span>
         <span class="bg-white px-3 py-1.5 rounded-xl border border-slate-200 font-medium text-emerald-700">
-          On Duty Now: <strong class="text-emerald-800">2</strong>
+          Active Accounts: <strong class="text-emerald-800">3</strong>
         </span>
       </div>
     </div>
@@ -84,14 +84,13 @@
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
       <div class="sm:col-span-2 relative">
         <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-        <input type="text" id="staffSearch" onkeyup="filterStaff()" placeholder="Search staff by name, username, or role..." class="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-amber-600 shadow-2xs">
+        <input type="text" id="staffSearch" onkeyup="filterStaff()" placeholder="Search staff by name, username/email, or role..." class="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-amber-600 shadow-2xs">
       </div>
       <div>
         <select id="roleFilter" onchange="filterStaff()" class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-amber-600 shadow-2xs text-slate-700">
           <option value="all">All Roles</option>
-          <option value="Admin">Admin / Manager</option>
-          <option value="Cashier">Cashier</option>
-          <option value="Barista">Barista</option>
+          <option value="manager">Admin / Manager</option>
+          <option value="cashier">Cashier</option>
         </select>
       </div>
     </div>
@@ -100,52 +99,56 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="staffGrid">
 
       <!-- Staff Member 1: Manager -->
-      <div data-role="Admin" data-name="fajar santoso fajar admin manager" class="staff-card bg-white rounded-2xl border-2 border-amber-200/80 p-5 shadow-2xs space-y-4">
+      <div data-role="manager" data-name="rifaldi badu admin manager" class="staff-card bg-white rounded-2xl border-2 border-amber-200/80 p-5 shadow-2xs space-y-4">
         <div class="flex items-start justify-between">
           <div class="flex items-center gap-3">
             <div class="w-12 h-12 rounded-2xl bg-amber-700 text-white flex items-center justify-center font-bold text-base shadow-sm">
-              FS
+              RB
             </div>
             <div>
               <div class="flex items-center gap-2">
-                <h3 class="text-sm font-bold text-slate-900">Fajar Santoso</h3>
+                <h3 class="text-sm font-bold text-slate-900">Rifaldi Badu</h3>
                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-300">
                   <i data-lucide="shield" class="w-3 h-3"></i> Admin / Manager
                 </span>
               </div>
-              <p class="text-xs text-slate-500">@fajar.manager &bull; Store Owner</p>
+              <p class="text-xs text-slate-500">@admin &bull; Store Manager</p>
             </div>
           </div>
           <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> On Duty
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Active
           </span>
         </div>
 
         <div class="bg-slate-50 rounded-xl p-3 text-xs space-y-1.5 border border-slate-100">
           <div class="flex justify-between text-slate-600">
-            <span>Terminal PIN:</span>
-            <span class="font-mono font-bold text-slate-800">&bull;&bull;&bull;&bull;&bull;&bull; (6 Digits)</span>
+            <span>Login Credential:</span>
+            <span class="font-mono font-semibold text-slate-800">admin (Password Protected)</span>
+          </div>
+          <div class="flex justify-between text-slate-600">
+            <span>Default Landing:</span>
+            <span class="font-medium text-amber-800">/ (Executive Dashboard)</span>
           </div>
           <div class="flex justify-between text-slate-600">
             <span>Permissions:</span>
-            <span class="font-medium text-slate-800">All (Financials, Voids, Staff)</span>
+            <span class="font-medium text-slate-800">All (Dashboard, POS, Orders, Menu, Stocks, Staff)</span>
           </div>
         </div>
 
         <div class="flex items-center justify-between pt-1">
-          <button onclick="openResetPinModal('Fajar Santoso')" class="text-xs font-semibold text-amber-800 hover:text-amber-900 flex items-center gap-1">
-            <i data-lucide="key" class="w-3.5 h-3.5"></i> Reset PIN
+          <button onclick="openResetPasswordModal('Rifaldi Badu (@admin)')" class="text-xs font-semibold text-amber-800 hover:text-amber-900 flex items-center gap-1">
+            <i data-lucide="key-round" class="w-3.5 h-3.5"></i> Reset Password
           </button>
           <div class="flex items-center gap-2">
-            <button onclick="showToast('Editing profile settings', 'info')" class="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100">
+            <button onclick="showToast('Editing staff account', 'info')" class="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100">
               <i data-lucide="edit-3" class="w-4 h-4"></i>
             </button>
           </div>
         </div>
       </div>
 
-      <!-- Staff Member 2: Cashier (On Duty) -->
-      <div data-role="Cashier" data-name="clarissa putri clarissa cashier" class="staff-card bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-4">
+      <!-- Staff Member 2: Cashier 1 -->
+      <div data-role="cashier" data-name="clarissa putri cashier" class="staff-card bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-4">
         <div class="flex items-start justify-between">
           <div class="flex items-center gap-3">
             <div class="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-bold text-base shadow-sm">
@@ -158,84 +161,43 @@
                   <i data-lucide="shopping-bag" class="w-3 h-3"></i> Cashier
                 </span>
               </div>
-              <p class="text-xs text-slate-500">@clarissa.pos &bull; Shift 1 (Morning)</p>
+              <p class="text-xs text-slate-500">@cashier &bull; Shift 1 (Morning)</p>
             </div>
           </div>
           <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Active Shift
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Active
           </span>
         </div>
 
         <div class="bg-slate-50 rounded-xl p-3 text-xs space-y-1.5 border border-slate-100">
           <div class="flex justify-between text-slate-600">
-            <span>Terminal PIN:</span>
-            <span class="font-mono font-bold text-slate-800">&bull;&bull;&bull;&bull; (4 Digits)</span>
+            <span>Login Credential:</span>
+            <span class="font-mono font-semibold text-slate-800">cashier (Password Protected)</span>
           </div>
           <div class="flex justify-between text-slate-600">
-            <span>Total Orders Today:</span>
-            <span class="font-mono font-bold text-emerald-600">24 Orders</span>
+            <span>Default Landing:</span>
+            <span class="font-medium text-blue-700">/pos (POS Register)</span>
+          </div>
+          <div class="flex justify-between text-slate-600">
+            <span>Permissions:</span>
+            <span class="font-medium text-slate-800">POS, Orders &amp; Voids, Menu Stock Only</span>
           </div>
         </div>
 
         <div class="flex items-center justify-between pt-1">
-          <button onclick="openResetPinModal('Clarissa Putri')" class="text-xs font-semibold text-amber-800 hover:text-amber-900 flex items-center gap-1">
-            <i data-lucide="key" class="w-3.5 h-3.5"></i> Reset PIN
+          <button onclick="openResetPasswordModal('Clarissa Putri (@cashier)')" class="text-xs font-semibold text-amber-800 hover:text-amber-900 flex items-center gap-1">
+            <i data-lucide="key-round" class="w-3.5 h-3.5"></i> Reset Password
           </button>
           <div class="flex items-center gap-2">
-            <button onclick="showToast('Deactivating account', 'info')" class="text-xs font-semibold text-slate-500 hover:text-rose-600">
-              End Shift
+            <button onclick="showToast('Account status toggled', 'info')" class="text-xs font-semibold text-slate-500 hover:text-rose-600">
+              Deactivate
             </button>
           </div>
         </div>
       </div>
 
-      <!-- Staff Member 3: Barista -->
-      <div data-role="Barista" data-name="rizky firmansyah rizky barista" class="staff-card bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-4">
-        <div class="flex items-start justify-between">
-          <div class="flex items-center gap-3">
-            <div class="w-12 h-12 rounded-2xl bg-amber-600 text-white flex items-center justify-center font-bold text-base shadow-sm">
-              RF
-            </div>
-            <div>
-              <div class="flex items-center gap-2">
-                <h3 class="text-sm font-bold text-slate-900">Rizky Firmansyah</h3>
-                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  <i data-lucide="coffee" class="w-3 h-3"></i> Head Barista
-                </span>
-              </div>
-              <p class="text-xs text-slate-500">@rizky.barista</p>
-            </div>
-          </div>
-          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-500">
-            Off Duty
-          </span>
-        </div>
-
-        <div class="bg-slate-50 rounded-xl p-3 text-xs space-y-1.5 border border-slate-100">
-          <div class="flex justify-between text-slate-600">
-            <span>Terminal PIN:</span>
-            <span class="font-mono font-bold text-slate-800">&bull;&bull;&bull;&bull; (4 Digits)</span>
-          </div>
-          <div class="flex justify-between text-slate-600">
-            <span>Assigned Role:</span>
-            <span class="font-medium text-slate-800">Kitchen Display &amp; Brewing</span>
-          </div>
-        </div>
-
-        <div class="flex items-center justify-between pt-1">
-          <button onclick="openResetPinModal('Rizky Firmansyah')" class="text-xs font-semibold text-amber-800 hover:text-amber-900 flex items-center gap-1">
-            <i data-lucide="key" class="w-3.5 h-3.5"></i> Reset PIN
-          </button>
-          <div class="flex items-center gap-2">
-            <button onclick="showToast('Editing profile settings', 'info')" class="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100">
-              <i data-lucide="edit-3" class="w-4 h-4"></i>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Staff Member 4: Cashier 2 -->
-      <div data-role="Cashier" data-name="dewi lestari dewi cashier" class="staff-card bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-4">
+      <!-- Staff Member 3: Cashier 2 -->
+      <div data-role="cashier" data-name="dewi lestari dewi.pos cashier" class="staff-card bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-4">
         <div class="flex items-start justify-between">
           <div class="flex items-center gap-3">
             <div class="w-12 h-12 rounded-2xl bg-purple-600 text-white flex items-center justify-center font-bold text-base shadow-sm">
@@ -251,28 +213,32 @@
               <p class="text-xs text-slate-500">@dewi.pos &bull; Shift 2 (Evening)</p>
             </div>
           </div>
-          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-500">
-            Scheduled (4 PM)
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Active
           </span>
         </div>
 
         <div class="bg-slate-50 rounded-xl p-3 text-xs space-y-1.5 border border-slate-100">
           <div class="flex justify-between text-slate-600">
-            <span>Terminal PIN:</span>
-            <span class="font-mono font-bold text-slate-800">&bull;&bull;&bull;&bull; (4 Digits)</span>
+            <span>Login Credential:</span>
+            <span class="font-mono font-semibold text-slate-800">dewi.pos (Password Protected)</span>
+          </div>
+          <div class="flex justify-between text-slate-600">
+            <span>Default Landing:</span>
+            <span class="font-medium text-blue-700">/pos (POS Register)</span>
           </div>
           <div class="flex justify-between text-slate-600">
             <span>Permissions:</span>
-            <span class="font-medium text-slate-800">POS Register, QRIS, Cash</span>
+            <span class="font-medium text-slate-800">POS, Orders &amp; Voids, Menu Stock Only</span>
           </div>
         </div>
 
         <div class="flex items-center justify-between pt-1">
-          <button onclick="openResetPinModal('Dewi Lestari')" class="text-xs font-semibold text-amber-800 hover:text-amber-900 flex items-center gap-1">
-            <i data-lucide="key" class="w-3.5 h-3.5"></i> Reset PIN
+          <button onclick="openResetPasswordModal('Dewi Lestari (@dewi.pos)')" class="text-xs font-semibold text-amber-800 hover:text-amber-900 flex items-center gap-1">
+            <i data-lucide="key-round" class="w-3.5 h-3.5"></i> Reset Password
           </button>
           <div class="flex items-center gap-2">
-            <button onclick="showToast('Editing profile settings', 'info')" class="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100">
+            <button onclick="showToast('Editing staff account', 'info')" class="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100">
               <i data-lucide="edit-3" class="w-4 h-4"></i>
             </button>
           </div>
@@ -283,7 +249,7 @@
 
   </main>
 
-  <!-- Bottom Navigation Bar (Realme Note 50 Mobile Layout) -->
+  <!-- Bottom Navigation Bar (Realme Note 50 Mobile Layout - Manager 6 Tabs) -->
   <nav class="fixed bottom-0 inset-x-0 flex items-center justify-around bg-white border-t border-slate-200 z-40 py-1">
     <a href="dashboard.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
       <i data-lucide="layout-dashboard" class="w-5 h-5 mb-0.5"></i>
@@ -301,6 +267,10 @@
       <i data-lucide="package" class="w-5 h-5 mb-0.5"></i>
       <span>Menu</span>
     </a>
+    <a href="stocks.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
+      <i data-lucide="boxes" class="w-5 h-5 mb-0.5"></i>
+      <span>Stocks</span>
+    </a>
     <a href="staff.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-semibold text-amber-800 bg-amber-100/70">
       <i data-lucide="users" class="w-5 h-5 mb-0.5"></i>
       <span>Staff</span>
@@ -315,7 +285,7 @@
           <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center">
             <i data-lucide="user-plus" class="w-4 h-4"></i>
           </div>
-          <h3 class="font-bold text-slate-900 text-sm">Add Team Member</h3>
+          <h3 class="font-bold text-slate-900 text-sm">Add Staff Account</h3>
         </div>
         <button onclick="closeModal('addStaffModal')" class="p-1 text-slate-400 hover:text-slate-600">
           <i data-lucide="x" class="w-4 h-4"></i>
@@ -330,28 +300,21 @@
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="font-semibold text-slate-700">Username</label>
+            <label class="font-semibold text-slate-700">Username or Email</label>
             <input type="text" placeholder="e.g. bayu.pos" class="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:border-amber-600">
           </div>
           <div>
             <label class="font-semibold text-slate-700">Assigned Role</label>
             <select class="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
-              <option>Cashier</option>
-              <option>Barista</option>
-              <option>Admin / Manager</option>
+              <option value="cashier">Cashier (POS, Orders, Menu Stock)</option>
+              <option value="manager">Manager / Admin (Full Access)</option>
             </select>
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="font-semibold text-slate-700">Terminal PIN (4-6 digits)</label>
-            <input type="password" maxlength="6" placeholder="••••" class="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono text-center tracking-widest">
-          </div>
-          <div>
-            <label class="font-semibold text-slate-700">Phone / WA</label>
-            <input type="tel" placeholder="08xxxxxxxxxx" class="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
-          </div>
+        <div>
+          <label class="font-semibold text-slate-700">Initial Password</label>
+          <input type="password" placeholder="Enter strong initial password" class="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">
         </div>
       </div>
 
@@ -359,43 +322,43 @@
         <button onclick="closeModal('addStaffModal')" class="px-3.5 py-2 text-slate-600 hover:bg-slate-100 rounded-xl text-xs font-semibold">
           Cancel
         </button>
-        <button onclick="closeModal('addStaffModal'); showToast('New staff member added!', 'success')" class="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-semibold">
+        <button onclick="closeModal('addStaffModal'); showToast('New staff account created!', 'success')" class="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-semibold">
           Create Account
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Reset PIN Modal -->
-  <div id="resetPinModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+  <!-- Reset Password Modal -->
+  <div id="resetPasswordModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center">
-          <i data-lucide="key" class="w-5 h-5"></i>
+          <i data-lucide="key-round" class="w-5 h-5"></i>
         </div>
         <div>
-          <h3 class="text-sm font-bold text-slate-900">Reset Cashier PIN</h3>
-          <p id="resetPinTargetName" class="text-xs text-slate-500">Clarissa Putri</p>
+          <h3 class="text-sm font-bold text-slate-900">Reset Staff Password</h3>
+          <p id="resetPasswordTargetName" class="text-xs text-slate-500">Clarissa Putri (@cashier)</p>
         </div>
       </div>
 
       <div class="space-y-3">
         <div>
-          <label class="text-xs font-semibold text-slate-700">New 4-Digit Quick PIN</label>
-          <input type="password" maxlength="4" placeholder="••••" class="w-full mt-1 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono tracking-widest text-center">
+          <label class="text-xs font-semibold text-slate-700">New Password</label>
+          <input type="password" placeholder="Enter new password" class="w-full mt-1 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
         </div>
         <div>
-          <label class="text-xs font-semibold text-slate-700">Manager Authorization PIN</label>
-          <input type="password" maxlength="6" placeholder="Enter Manager PIN" class="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-center">
+          <label class="text-xs font-semibold text-slate-700">Confirm New Password</label>
+          <input type="password" placeholder="Re-enter new password" class="w-full mt-1 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
         </div>
       </div>
 
       <div class="flex gap-2 pt-2">
-        <button onclick="closeModal('resetPinModal')" class="flex-1 py-2 text-xs font-semibold text-slate-600 rounded-xl hover:bg-slate-100">
+        <button onclick="closeModal('resetPasswordModal')" class="flex-1 py-2 text-xs font-semibold text-slate-600 rounded-xl hover:bg-slate-100">
           Cancel
         </button>
-        <button onclick="closeModal('resetPinModal'); showToast('PIN updated successfully!', 'success')" class="flex-1 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-semibold">
-          Save New PIN
+        <button onclick="closeModal('resetPasswordModal'); showToast('Password updated successfully!', 'success')" class="flex-1 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-semibold">
+          Save Password
         </button>
       </div>
     </div>
@@ -423,9 +386,9 @@
       });
     }
 
-    function openResetPinModal(name) {
-      document.getElementById('resetPinTargetName').innerText = 'Staff: ' + name;
-      openModal('resetPinModal');
+    function openResetPasswordModal(name) {
+      document.getElementById('resetPasswordTargetName').innerText = name;
+      openModal('resetPasswordModal');
     }
   </script>
 </body>

@@ -125,6 +125,52 @@
       </div>
     </div>
 
+    <!-- Cashflow Recap Strip (Laporan Keuangan: Total Masuk, Total Keluar, Net Cashflow) -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <i data-lucide="arrow-left-right" class="w-4 h-4 text-emerald-600"></i>
+            Cashflow Recap (Laporan Keuangan)
+          </h3>
+          <p class="text-xs text-slate-500">Combines POS sales (Pemasukan) with Raw Stock receipts &amp; Operational bills (Pengeluaran)</p>
+        </div>
+        <a href="stocks.html" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-semibold transition-colors">
+          <i data-lucide="camera" class="w-3.5 h-3.5"></i>
+          <span>Manage Raw Stocks &amp; Receipts</span>
+        </a>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div class="p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-200 flex items-center justify-between">
+          <div>
+            <span class="text-[11px] font-semibold text-emerald-800">Total Masuk (Cash In)</span>
+            <p class="text-base font-bold font-mono text-emerald-900 mt-0.5">Rp 1.840.000</p>
+            <span class="text-[10px] text-emerald-700">42 paid orders (+3 Open Bills)</span>
+          </div>
+          <i data-lucide="arrow-down-left" class="w-5 h-5 text-emerald-600"></i>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-rose-50/60 border border-rose-200 flex items-center justify-between">
+          <div>
+            <span class="text-[11px] font-semibold text-rose-800">Total Keluar (Cash Out)</span>
+            <p class="text-base font-bold font-mono text-rose-900 mt-0.5">-Rp 493.100</p>
+            <span class="text-[10px] text-rose-700">Stocks: Rp 389.600 &bull; PLN/Ops: Rp 103.500</span>
+          </div>
+          <i data-lucide="arrow-up-right" class="w-5 h-5 text-rose-600"></i>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-slate-900 text-white flex items-center justify-between">
+          <div>
+            <span class="text-[11px] font-semibold text-amber-300">Net Cashflow Today</span>
+            <p class="text-base font-bold font-mono text-emerald-400 mt-0.5">+Rp 1.346.900</p>
+            <span class="text-[10px] text-slate-400">Rekap Harian &amp; Bulanan synced</span>
+          </div>
+          <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400"></i>
+        </div>
+      </div>
+    </div>
+
     <!-- Hourly Sales Rush Bar Chart -->
     <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-4">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -285,6 +331,10 @@
     <a href="menu.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
       <i data-lucide="package" class="w-5 h-5 mb-0.5"></i>
       <span>Menu</span>
+    </a>
+    <a href="stocks.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
+      <i data-lucide="boxes" class="w-5 h-5 mb-0.5"></i>
+      <span>Stocks</span>
     </a>
     <a href="staff.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
       <i data-lucide="users" class="w-5 h-5 mb-0.5"></i>

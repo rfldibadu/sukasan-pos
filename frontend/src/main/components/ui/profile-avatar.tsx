@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
-import { User, LogOut, LogIn } from "lucide-react";
+import { User, LogOut, LogIn, Shield } from "lucide-react";
 
 export function ProfileAvatar() {
   const { data: session, status } = useSession();
@@ -38,13 +38,15 @@ export function ProfileAvatar() {
     );
   }
 
-const rawPhoto = session.user?.profile_picture_url || session.user?.image;
+  const rawPhoto = session.user?.profile_picture_url || session.user?.image;
 
-// Ensure relative FastAPI backend paths resolve to http://localhost:8000
-const userPhoto = rawPhoto?.startsWith("/")
-  ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}${rawPhoto}`
-  : rawPhoto;
+  // Ensure relative FastAPI backend paths resolve to http://localhost:8000
+  const userPhoto = rawPhoto?.startsWith("/")
+    ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}${rawPhoto}`
+    : rawPhoto;
   const displayName = session.user?.full_name || session.user?.email || "Staff";
+  const isManager = session.user?.role === "manager";
+  const roleLabel = isManager ? "Manager" : "Cashier";
 
   // State 2: User is logged in
   return (
@@ -54,9 +56,20 @@ const userPhoto = rawPhoto?.startsWith("/")
         className="flex items-center gap-2.5 p-1 pr-3 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500"
         title="Account menu"
       >
-      <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 hidden sm:inline-block max-w-30 truncate">
-          {displayName}
-        </span>
+        <div className="hidden sm:flex flex-col items-end">
+          <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 max-w-30 truncate leading-tight">
+            {displayName}
+          </span>
+          <span
+            className={`text-[10px] font-semibold px-1.5 py-0.2 rounded-full leading-tight ${
+              isManager
+                ? "bg-amber-100 text-amber-800"
+                : "bg-blue-50 text-blue-700"
+            }`}
+          >
+            {roleLabel}
+          </span>
+        </div>
         <div className="relative flex items-center justify-center w-9 h-9 rounded-full bg-slate-200 text-slate-600 overflow-hidden shrink-0">
           {userPhoto ? (
             <Image
@@ -70,16 +83,26 @@ const userPhoto = rawPhoto?.startsWith("/")
             <User className="w-5 h-5 text-slate-700" />
           )}
         </div>
-        <span className="absolute bottom-px right-3.5 w-1.5 h-1.5 bg-emerald-500 border-0 border-white dark:border-slate-900 rounded-full" />      
+        <span className="absolute bottom-px right-3.5 w-1.5 h-1.5 bg-emerald-500 border-0 border-white dark:border-slate-900 rounded-full" />
       </button>
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 rounded-xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-lg py-1 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
-          <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-700 sm:hidden">
+        <div className="absolute right-0 mt-2 w-52 rounded-xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-lg py-1 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+          <div className="px-4 py-2.5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between gap-2">
             <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
               {displayName}
             </p>
+            <span
+              className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
+                isManager
+                  ? "bg-amber-50 text-amber-800 border border-amber-200"
+                  : "bg-blue-50 text-blue-700 border border-blue-200"
+              }`}
+            >
+              <Shield className="w-2.5 h-2.5" />
+              {roleLabel}
+            </span>
           </div>
           <Link
             href="/profile"
