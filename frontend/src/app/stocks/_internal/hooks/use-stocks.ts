@@ -107,7 +107,7 @@ export function useStocks() {
     isLoading: loadingPurchases,
     mutate: mutatePurchases,
   } = useSWRPrivateRequest<unknown>({
-    url: "/stocks/purchases?limit=100",
+    url: "/stocks/purchases?limit=300",
     method: "GET",
   });
 

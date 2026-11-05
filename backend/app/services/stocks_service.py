@@ -1,11 +1,12 @@
 import uuid
 import shutil
-from datetime import datetime, UTC
+from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 from fastapi import HTTPException, UploadFile, status
 from sqlalchemy import extract
 from sqlalchemy.orm import Session, joinedload
+from app.core.timezone import now_wita, to_wita
 
 from app.models.stocks import (
     RawStock,
@@ -105,7 +106,7 @@ def update_raw_stock(db: Session, stock_id: uuid.UUID, data: RawStockUpdate) -> 
     for field, value in update_fields.items():
         setattr(db_raw, field, value)
 
-    db_raw.updated_at = datetime.now(UTC)
+    db_raw.updated_at = now_wita()
     db.commit()
     db.refresh(db_raw)
     return RawStockRead.model_validate(db_raw)
@@ -117,7 +118,7 @@ def adjust_raw_stock_quantity(db: Session, stock_id: uuid.UUID, new_quantity: fl
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Raw stock not found")
 
     db_raw.current_quantity = max(0.0, new_quantity)
-    db_raw.updated_at = datetime.now(UTC)
+    db_raw.updated_at = now_wita()
     db.commit()
     db.refresh(db_raw)
     return RawStockRead.model_validate(db_raw)
@@ -174,7 +175,7 @@ def record_stock_purchase(
 
     db_items: List[StockPurchaseItem] = []
     computed_total_cost = 0.0
-    now = datetime.now(UTC)
+    now = now_wita()
 
     for idx, item_in in enumerate(payload.items):
         # 1. Resolve or auto-create RawStock item
@@ -258,7 +259,7 @@ def record_stock_purchase(
         total_cost=final_total_cost,
         receipt_image_url=receipt_image_url,
         notes=notes,
-        purchased_at=payload.purchased_at or now,
+        purchased_at=to_wita(payload.purchased_at) if payload.purchased_at else now,
         created_by_id=current_manager.id,
         items=db_items,
     )
@@ -285,7 +286,7 @@ def list_stock_purchases(
     year: Optional[int] = None,
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
-    limit: int = 100,
+    limit: int = 500,
 ) -> List[StockPurchaseRead]:
     query = db.query(StockPurchase).options(
         joinedload(StockPurchase.items).joinedload(StockPurchaseItem.raw_stock),

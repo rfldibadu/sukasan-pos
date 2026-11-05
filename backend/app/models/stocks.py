@@ -1,11 +1,13 @@
 import enum
 import uuid
-from datetime import datetime, UTC
+from datetime import datetime
 from typing import List, Optional
 from sqlalchemy import String, Float, Boolean, DateTime, ForeignKey, Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.database import Base
+from app.core.timezone import now_wita
+from app.models.users import User
 
 
 class RawStockCategory(str, enum.Enum):
@@ -49,8 +51,8 @@ class RawStock(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=lambda: datetime.now(UTC),
-        onupdate=lambda: datetime.now(UTC),
+        default=now_wita,
+        onupdate=now_wita,
         nullable=False,
     )
 
@@ -80,7 +82,7 @@ class StockPurchase(Base):
     notes: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     purchased_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=lambda: datetime.now(UTC),
+        default=now_wita,
         index=True,
         nullable=False,
     )

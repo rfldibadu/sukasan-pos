@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import {
   AlertCircle,
   Check,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Coffee,
   Printer,
@@ -15,6 +17,8 @@ import {
   formatOrderCode,
   formatOrderTime,
   OrderData,
+  OrderPeriodFilter,
+  OrderStatusFilter,
   useOrders,
 } from "./_internal/hooks/use-orders";
 import { useGetPosProducts } from "@/app/pos/_internal/hooks/use-get-pos-products";
@@ -26,13 +30,19 @@ import {
   VoidOrderModal,
 } from "./_internal/modals/order-action-modals";
 
-type StatusTab = "queued" | "completed" | "voided" | "all";
-type ShiftFilter = "today" | "yesterday" | "all";
+const HISTORY_PAGE_SIZE = 15;
 
 export default function OrdersPage() {
+  const [statusTab, setStatusTab] = useState<OrderStatusFilter>("all");
+  const [shiftFilter, setShiftFilter] = useState<OrderPeriodFilter>("today");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+
   const {
     orders,
     counts,
+    pagination,
     isLoading,
     isValidating,
     isMutating,
@@ -41,14 +51,15 @@ export default function OrdersPage() {
     completeOrder,
     addItemsToOrder,
     voidOrder,
-  } = useOrders();
+  } = useOrders({
+    period: shiftFilter,
+    status: statusTab,
+    search: searchQuery,
+    page,
+    limit: HISTORY_PAGE_SIZE,
+  });
 
   const { allProducts, refreshProducts } = useGetPosProducts();
-
-  const [statusTab, setStatusTab] = useState<StatusTab>("queued");
-  const [shiftFilter, setShiftFilter] = useState<ShiftFilter>("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
   // Modal states
   const [isSettleOpen, setIsSettleOpen] = useState(false);
@@ -92,66 +103,23 @@ export default function OrdersPage() {
     return seqMap;
   }, [orders]);
 
-  // Filtered orders
-  const filteredOrders = useMemo(() => {
-    const now = new Date();
-    const todayStart = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate()
-    ).getTime();
-    const yesterdayStart = todayStart - 24 * 60 * 60 * 1000;
-
-    const list = orders.filter((order) => {
-      if (statusTab !== "all" && order.status !== statusTab) return false;
-
-      if (shiftFilter !== "all") {
-        const createdTime = new Date(order.created_at).getTime();
-        if (shiftFilter === "today" && createdTime < todayStart) return false;
-        if (
-          shiftFilter === "yesterday" &&
-          (createdTime < yesterdayStart || createdTime >= todayStart)
-        ) {
-          return false;
-        }
-      }
-
-      if (searchQuery.trim()) {
-        const term = searchQuery.toLowerCase().trim();
-        const code = formatOrderCode(order).toLowerCase();
-        const customer = (order.customer_name || "").toLowerCase();
-        const table = (order.table_number || "").toLowerCase();
-        const seq = queuedOrderSequenceMap[order.id]
-          ? `#${queuedOrderSequenceMap[order.id]}`
-          : "";
-        return (
-          code.includes(term) ||
-          customer.includes(term) ||
-          table.includes(term) ||
-          seq.includes(term)
-        );
-      }
-
-      return true;
-    });
-
-    // Sort FIFO ascending for active queue, descending for others
-    if (statusTab === "queued") {
-      return [...list].sort(
-        (a, b) =>
-          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-      );
-    }
-    return [...list].sort(
-      (a, b) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
-  }, [orders, statusTab, shiftFilter, searchQuery, queuedOrderSequenceMap]);
-
   const activeOrder: OrderData | null = useMemo(
     () => orders.find((o) => o.id === selectedOrderId) || null,
     [orders, selectedOrderId]
   );
+
+  const handleShiftChange = (nextPeriod: OrderPeriodFilter) => {
+    setShiftFilter(nextPeriod);
+    setPage(1);
+    if (nextPeriod !== "today" && statusTab === "queued") {
+      setStatusTab("all");
+    }
+  };
+
+  const handleStatusTabChange = (nextStatus: OrderStatusFilter) => {
+    setStatusTab(nextStatus);
+    setPage(1);
+  };
 
   const handleConfirmSettle = async (
     method: "cash" | "qris",
@@ -233,6 +201,31 @@ export default function OrdersPage() {
       .join(", ");
   };
 
+  // Compute visible page numbers for History pagination
+  const pageNumbers = useMemo(() => {
+    const total = pagination.totalPages;
+    const current = pagination.page;
+    const delta = 2;
+    const range: number[] = [];
+    for (
+      let i = Math.max(1, current - delta);
+      i <= Math.min(total, current + delta);
+      i++
+    ) {
+      range.push(i);
+    }
+    return range;
+  }, [pagination.page, pagination.totalPages]);
+
+  const startIdx =
+    pagination.totalItems === 0
+      ? 0
+      : (pagination.page - 1) * pagination.limit + 1;
+  const endIdx = Math.min(
+    pagination.page * pagination.limit,
+    pagination.totalItems
+  );
+
   return (
     <div className="space-y-4 pb-24 md:pb-8">
       {/* Toast Notification */}
@@ -258,12 +251,11 @@ export default function OrdersPage() {
               Orders &amp; Open Bills
             </h2>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
-              FIFO Queue
+              FIFO Queue • WITA (UTC+8)
             </span>
           </div>
           <p className="text-xs text-slate-500">
-            Track active prep queue, settle open bills, add items to tabs, and
-            manage voids.
+            Track active prep queue, settle open bills, and browse historical orders.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -298,88 +290,106 @@ export default function OrdersPage() {
           <input
             type="text"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by Table (e.g. Meja 4), Customer, or Order #..."
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setPage(1);
+            }}
+            placeholder="Search by Table, Customer, Order #, or Menu Item..."
             className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-amber-600 shadow-2xs"
           />
         </div>
         <div>
           <select
             value={shiftFilter}
-            onChange={(e) => setShiftFilter(e.target.value as ShiftFilter)}
-            className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-amber-600 shadow-2xs text-slate-700"
+            onChange={(e) =>
+              handleShiftChange(e.target.value as OrderPeriodFilter)
+            }
+            className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-amber-600 shadow-2xs text-slate-700"
           >
-            <option value="all">All Shifts / History</option>
-            <option value="today">Today (Current Shift)</option>
-            <option value="yesterday">Yesterday</option>
+            <option value="today">Today (Current Shift • Show All)</option>
+            <option value="yesterday">Yesterday (WITA • Show All)</option>
+            <option value="history">
+              All Shifts / History (Paginated {HISTORY_PAGE_SIZE}/page)
+            </option>
           </select>
         </div>
       </div>
 
       {/* Streamlined Status Tabs (3 Core Statuses + All) */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-slate-200 text-xs font-semibold">
-        <button
-          type="button"
-          onClick={() => setStatusTab("queued")}
-          className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
-            statusTab === "queued"
-              ? "bg-amber-100 text-amber-800 border border-amber-600 font-semibold shadow-2xs"
-              : "text-slate-600 hover:text-slate-900"
-          }`}
-        >
-          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-          <span>Antrean Aktif (FIFO Queue)</span>
-          <span className="bg-amber-200 text-amber-900 text-[10px] px-1.5 py-0.5 rounded-full font-mono">
-            {counts.queued}
-          </span>
-        </button>
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
+        <div className="flex items-center gap-2 overflow-x-auto text-xs font-semibold">
+          <button
+            type="button"
+            onClick={() => handleStatusTabChange("queued")}
+            className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+              statusTab === "queued"
+                ? "bg-amber-100 text-amber-800 border border-amber-600 font-semibold shadow-2xs"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+            <span>Antrean Aktif (FIFO Queue)</span>
+            <span className="bg-amber-200 text-amber-900 text-[10px] px-1.5 py-0.5 rounded-full font-mono">
+              {counts.queued}
+            </span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setStatusTab("completed")}
-          className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
-            statusTab === "completed"
-              ? "bg-amber-100 text-amber-800 border border-amber-600 font-semibold shadow-2xs"
-              : "text-slate-600 hover:text-slate-900"
-          }`}
-        >
-          <span className="w-2 h-2 rounded-full bg-emerald-500" />
-          <span>Selesai (Completed)</span>
-          <span className="bg-slate-200 text-slate-700 text-[10px] px-1.5 py-0.5 rounded-full font-mono">
-            {counts.completed}
-          </span>
-        </button>
+          <button
+            type="button"
+            onClick={() => handleStatusTabChange("completed")}
+            className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+              statusTab === "completed"
+                ? "bg-amber-100 text-amber-800 border border-amber-600 font-semibold shadow-2xs"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span>Selesai (Completed)</span>
+            <span className="bg-slate-200 text-slate-700 text-[10px] px-1.5 py-0.5 rounded-full font-mono">
+              {counts.completed}
+            </span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setStatusTab("voided")}
-          className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
-            statusTab === "voided"
-              ? "bg-amber-100 text-amber-800 border border-amber-600 font-semibold shadow-2xs"
-              : "text-slate-600 hover:text-slate-900"
-          }`}
-        >
-          <span className="w-2 h-2 rounded-full bg-rose-500" />
-          <span>Dibatalkan (Voided)</span>
-          <span className="bg-slate-200 text-slate-700 text-[10px] px-1.5 py-0.5 rounded-full font-mono">
-            {counts.voided}
-          </span>
-        </button>
+          <button
+            type="button"
+            onClick={() => handleStatusTabChange("voided")}
+            className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+              statusTab === "voided"
+                ? "bg-amber-100 text-amber-800 border border-amber-600 font-semibold shadow-2xs"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <span className="w-2 h-2 rounded-full bg-rose-500" />
+            <span>Dibatalkan (Voided)</span>
+            <span className="bg-slate-200 text-slate-700 text-[10px] px-1.5 py-0.5 rounded-full font-mono">
+              {counts.voided}
+            </span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setStatusTab("all")}
-          className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
-            statusTab === "all"
-              ? "bg-amber-100 text-amber-800 border border-amber-600 font-semibold shadow-2xs"
-              : "text-slate-600 hover:text-slate-900"
-          }`}
-        >
-          <span>Semua (All)</span>
-          <span className="bg-slate-200 text-slate-700 text-[10px] px-1.5 py-0.5 rounded-full font-mono">
-            {counts.all}
-          </span>
-        </button>
+          <button
+            type="button"
+            onClick={() => handleStatusTabChange("all")}
+            className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+              statusTab === "all"
+                ? "bg-amber-100 text-amber-800 border border-amber-600 font-semibold shadow-2xs"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <span>Semua (All)</span>
+            <span className="bg-slate-200 text-slate-700 text-[10px] px-1.5 py-0.5 rounded-full font-mono">
+              {counts.all}
+            </span>
+          </button>
+        </div>
+
+        {/* Mode Badge */}
+        <span className="text-[11px] text-slate-500 font-medium">
+          {shiftFilter === "history"
+            ? `Showing ${startIdx}–${endIdx} of ${pagination.totalItems} historical orders`
+            : `Showing all ${orders.length} orders for ${
+                shiftFilter === "today" ? "Today (WITA)" : "Yesterday (WITA)"
+              }`}
+        </span>
       </div>
 
       {/* Orders Feed List */}
@@ -387,18 +397,34 @@ export default function OrdersPage() {
         <div className="py-12 text-center text-xs text-slate-400">
           Loading orders queue...
         </div>
-      ) : filteredOrders.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-dashed border-slate-200 p-10 text-center space-y-1">
+      ) : orders.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-dashed border-slate-200 p-10 text-center space-y-2">
           <p className="text-xs font-bold text-slate-700">
-            No orders in this view
+            No orders found for{" "}
+            {shiftFilter === "today"
+              ? "Today (WITA)"
+              : shiftFilter === "yesterday"
+              ? "Yesterday (WITA)"
+              : "All Shifts / History"}
           </p>
           <p className="text-[11px] text-slate-400">
-            New POS orders and Open Bills will appear here automatically.
+            {shiftFilter !== "history"
+              ? "Switch the filter to 'All Shifts / History' to browse past seeded orders."
+              : "Try clearing your search or status filter."}
           </p>
+          {shiftFilter !== "history" && (
+            <button
+              type="button"
+              onClick={() => handleShiftChange("history")}
+              className="mt-1 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-semibold cursor-pointer"
+            >
+              Browse All Shifts / History &rarr;
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
-          {filteredOrders.map((order) => {
+          {orders.map((order) => {
             const isQueued = order.status === "queued";
             const isVoided = order.status === "voided";
             const isUnpaid = order.payment_status === "unpaid";
@@ -529,13 +555,103 @@ export default function OrdersPage() {
                       </span>
                     )}
                     <p className="text-[10px] text-slate-400 font-medium">
-                      {formatOrderTime(order.created_at)}
+                      {formatOrderTime(order.created_at, shiftFilter === "history")}
                     </p>
                   </div>
                 </div>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Conditional Pagination Controls (ONLY shown when shiftFilter === 'history') */}
+      {shiftFilter === "history" && pagination.totalPages > 1 && (
+        <div className="bg-white rounded-2xl border border-slate-200 p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs text-xs">
+          <div className="text-slate-500">
+            Page{" "}
+            <strong className="text-slate-900">{pagination.page}</strong> of{" "}
+            <strong className="text-slate-900">{pagination.totalPages}</strong>{" "}
+            &bull; Showing{" "}
+            <span className="font-mono font-semibold text-slate-800">
+              {startIdx}–{endIdx}
+            </span>{" "}
+            of{" "}
+            <span className="font-mono font-semibold text-slate-800">
+              {pagination.totalItems}
+            </span>{" "}
+            orders
+          </div>
+
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              disabled={!pagination.hasPrev}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none flex items-center gap-1 font-semibold text-slate-700 cursor-pointer"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+              <span>Prev</span>
+            </button>
+
+            {pageNumbers[0] > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setPage(1)}
+                  className="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 font-mono text-slate-700 cursor-pointer"
+                >
+                  1
+                </button>
+                {pageNumbers[0] > 2 && (
+                  <span className="px-1 text-slate-400">&hellip;</span>
+                )}
+              </>
+            )}
+
+            {pageNumbers.map((num) => (
+              <button
+                key={num}
+                type="button"
+                onClick={() => setPage(num)}
+                className={`px-2.5 py-1.5 rounded-lg font-mono font-bold transition-colors cursor-pointer ${
+                  num === pagination.page
+                    ? "bg-amber-700 text-white border border-amber-700"
+                    : "border border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
+                }`}
+              >
+                {num}
+              </button>
+            ))}
+
+            {pageNumbers[pageNumbers.length - 1] < pagination.totalPages && (
+              <>
+                {pageNumbers[pageNumbers.length - 1] <
+                  pagination.totalPages - 1 && (
+                  <span className="px-1 text-slate-400">&hellip;</span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setPage(pagination.totalPages)}
+                  className="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 font-mono text-slate-700 cursor-pointer"
+                >
+                  {pagination.totalPages}
+                </button>
+              </>
+            )}
+
+            <button
+              type="button"
+              disabled={!pagination.hasNext}
+              onClick={() =>
+                setPage((p) => Math.min(pagination.totalPages, p + 1))
+              }
+              className="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none flex items-center gap-1 font-semibold text-slate-700 cursor-pointer"
+            >
+              <span>Next</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       )}
 

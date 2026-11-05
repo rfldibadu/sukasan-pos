@@ -25,6 +25,18 @@ export const HourlySalesBucketSchema = z.object({
   is_peak: z.boolean().optional(),
 });
 
+export const SalesTrendBucketSchema = z.object({
+  label: z.string(),
+  sublabel: z.string().nullable().optional(),
+  gross_sales: z.number(),
+  cash_out: z.number().optional().default(0),
+  net_cashflow: z.number().optional().default(0),
+  order_count: z.number(),
+  is_peak: z.boolean().optional(),
+});
+
+export const DashboardPeriodSchema = z.enum(["today", "week", "month", "year"]);
+
 export const TopSellingProductsResponseSchema = z.object({
   success: z.boolean(),
   message: z.string(),
@@ -32,6 +44,9 @@ export const TopSellingProductsResponseSchema = z.object({
 });
 
 export const DashboardReportSchema = z.object({
+  period: DashboardPeriodSchema.optional().default("today"),
+  period_label: z.string().optional().default(""),
+  timezone: z.string().optional().default("WITA (UTC+8)"),
   start_date: z.string(),
   end_date: z.string(),
   total_orders_count: z.number(),
@@ -55,4 +70,5 @@ export const DashboardReportSchema = z.object({
   payment_breakdown: z.array(PaymentMethodSchema),
   top_selling_products: z.array(TopSellingProductSchema),
   hourly_sales: z.array(HourlySalesBucketSchema).optional().default([]),
+  trend_buckets: z.array(SalesTrendBucketSchema).optional().default([]),
 });

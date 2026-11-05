@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Literal, Optional
 from pydantic import BaseModel, Field, ConfigDict
 from app.models.orders import PaymentMethod, PaymentStatus, OrderType, OrderStatus
 
@@ -69,3 +69,25 @@ class OrderRead(BaseModel):
     items: List[OrderItemRead] = []
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class OrderCounts(BaseModel):
+    queued: int = 0
+    completed: int = 0
+    voided: int = 0
+    all: int = 0
+
+
+class PaginatedOrdersResponse(BaseModel):
+    items: List[OrderRead]
+    period: Literal["today", "yesterday", "history"] = "today"
+    is_paginated: bool = False
+    page: int = 1
+    limit: Optional[int] = None
+    total_items: int = 0
+    total_pages: int = 1
+    has_next: bool = False
+    has_prev: bool = False
+    counts: OrderCounts = Field(default_factory=OrderCounts)
+    timezone: str = "WITA (UTC+8)"
+

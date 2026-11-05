@@ -26,19 +26,19 @@ class VendorResponse(VendorBase):
 class ProductBase(BaseModel):
     name: str
     item_type: ItemType
-    retail_price: float = Field(..., gt=0)
+    retail_price: float = Field(..., ge=0)
     main_category: Optional[MainCategory] = None
     stock_quantity: Optional[int] = Field(None, ge=0)
     consignment_fee: Optional[float] = Field(None, ge=0)
     vendor_id: Optional[uuid.UUID] = None
 
 class ProductIn(ProductBase):
-    pass
+    retail_price: float = Field(..., gt=0)
 
 class ProductUpdate(BaseModel):
     name: Optional[str] = None
     item_type: Optional[ItemType] = None
-    retail_price: Optional[float] = Field(None, gt=0)
+    retail_price: Optional[float] = Field(None, ge=0)
     main_category: Optional[MainCategory] = None
     stock_quantity: Optional[int] = Field(None, ge=0)
     consignment_fee: Optional[float] = Field(None, ge=0)

@@ -106,10 +106,10 @@
         <input type="text" id="orderSearch" onkeyup="filterOrdersBySearch()" placeholder="Search by Table (e.g. Meja 4), Customer, or Order #..." class="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-amber-600 shadow-2xs">
       </div>
       <div class="relative">
-        <select class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-amber-600 shadow-2xs text-slate-700">
-          <option>Shift 1 (Current Shift)</option>
-          <option>Today (All Shifts)</option>
-          <option>Yesterday</option>
+        <select id="shiftPeriodSelect" onchange="handleShiftPeriodChange(this.value)" class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-amber-600 shadow-2xs text-slate-700">
+          <option value="today">Today (WITA • Show All)</option>
+          <option value="yesterday">Yesterday (WITA • Show All)</option>
+          <option value="history">All Shifts / History (Paginated 15/page)</option>
         </select>
       </div>
     </div>
@@ -300,6 +300,24 @@
         </div>
       </div>
 
+    </div>
+
+    <!-- Conditional Pagination Controls (Shown ONLY when 'All Shifts / History' is selected) -->
+    <div id="historyPaginationBar" class="bg-white rounded-2xl border border-slate-200 p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs text-xs hidden">
+      <div class="text-slate-500">
+        Page <strong class="text-slate-900">1</strong> of <strong class="text-slate-900">47</strong> &bull;
+        Showing <span class="font-mono font-semibold text-slate-800">1–15</span> of
+        <span class="font-mono font-semibold text-slate-800">691</span> historical orders (WITA UTC+8)
+      </div>
+      <div class="flex items-center gap-1">
+        <button disabled class="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white opacity-40 font-semibold text-slate-700">Prev</button>
+        <button class="px-2.5 py-1.5 rounded-lg font-mono font-bold bg-amber-700 text-white border border-amber-700">1</button>
+        <button onclick="showToast('Loaded Page 2 of History (Orders 16–30)', 'info')" class="px-2.5 py-1.5 rounded-lg font-mono font-bold border border-slate-200 bg-white hover:bg-slate-50 text-slate-700">2</button>
+        <button onclick="showToast('Loaded Page 3 of History (Orders 31–45)', 'info')" class="px-2.5 py-1.5 rounded-lg font-mono font-bold border border-slate-200 bg-white hover:bg-slate-50 text-slate-700">3</button>
+        <span class="px-1 text-slate-400">&hellip;</span>
+        <button onclick="showToast('Loaded Page 47 of History', 'info')" class="px-2.5 py-1.5 rounded-lg font-mono font-bold border border-slate-200 bg-white hover:bg-slate-50 text-slate-700">47</button>
+        <button onclick="showToast('Loaded Page 2 of History (Orders 16–30)', 'info')" class="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 font-semibold text-slate-700">Next</button>
+      </div>
     </div>
 
   </main>
@@ -671,6 +689,17 @@
           card.classList.add('hidden');
         }
       });
+    }
+
+    function handleShiftPeriodChange(period) {
+      const pagBar = document.getElementById('historyPaginationBar');
+      if (period === 'history') {
+        pagBar.classList.remove('hidden');
+        showToast('History mode: Paginated to 15 orders per page (WITA)', 'info');
+      } else {
+        pagBar.classList.add('hidden');
+        showToast(`${period === 'today' ? 'Today' : 'Yesterday'} mode: Showing all orders without pagination (WITA)`, 'info');
+      }
     }
 
     function filterOrdersBySearch() {

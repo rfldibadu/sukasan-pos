@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from app.core.security import get_current_user
@@ -11,7 +11,8 @@ from app.schemas.orders_schema import (
     OrderRead, 
     OrderSettleIn, 
     OrderVoidIn, 
-    OrderAddItemsIn
+    OrderAddItemsIn,
+    PaginatedOrdersResponse,
 )
 from app.services.orders_service import (
     process_checkout, 
@@ -20,7 +21,7 @@ from app.services.orders_service import (
     add_items_to_order, 
     void_order, 
     get_order_by_id, 
-    list_orders_service
+    list_orders_with_pagination,
 )
 
 router = APIRouter()
@@ -43,20 +44,29 @@ def create_order(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/orders", response_model=list[OrderRead])
+@router.get("/orders", response_model=PaginatedOrdersResponse)
 def list_orders(
+    period: Literal["today", "yesterday", "history"] = Query(
+        "today",
+        description="Filter by shift/period in WITA (UTC+8): 'today' and 'yesterday' return all orders unpaginated; 'history' returns paginated results.",
+    ),
     status: Optional[OrderStatus] = Query(None, description="Filter by order status (queued, completed, voided)"),
-    limit: int = Query(50, ge=1, le=200),
+    search: Optional[str] = Query(None, description="Search by customer, table, order #, or item name"),
+    page: int = Query(1, ge=1, description="Page number (used when period='history')"),
+    limit: int = Query(15, ge=1, le=200, description="Items per page (used when period='history')"),
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
     current_user: User = Depends(get_current_user)
 ):
     try:
-        return list_orders_service(
+        return list_orders_with_pagination(
+            period=period,
             status=status,
+            search=search,
+            page=page,
             limit=limit,
             start_date=start_date,
-            end_date=end_date
+            end_date=end_date,
         )
     except HTTPException as he:
         raise he

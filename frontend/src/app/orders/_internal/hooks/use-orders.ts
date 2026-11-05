@@ -4,6 +4,9 @@ import { useMemo, useState } from "react";
 import type { AxiosResponse } from "axios";
 import { axiosHttpPrivate, useSWRPrivateRequest } from "@/main/lib/axios";
 
+export type OrderPeriodFilter = "today" | "yesterday" | "history";
+export type OrderStatusFilter = "queued" | "completed" | "voided" | "all";
+
 export interface OrderItemData {
   id: string;
   product_id: string;
@@ -41,15 +44,68 @@ export interface OrderData {
   items: OrderItemData[];
 }
 
-function toOrderArray(
-  data: AxiosResponse<OrderData[]> | OrderData[] | undefined
-): OrderData[] {
-  if (!data) return [];
-  if (Array.isArray(data)) return data;
-  if (typeof data === "object" && "data" in data && Array.isArray(data.data)) {
-    return data.data;
+export interface OrderCounts {
+  queued: number;
+  completed: number;
+  voided: number;
+  all: number;
+}
+
+export interface PaginatedOrdersPayload {
+  items: OrderData[];
+  period: OrderPeriodFilter;
+  is_paginated: boolean;
+  page: number;
+  limit?: number | null;
+  total_items: number;
+  total_pages: number;
+  has_next: boolean;
+  has_prev: boolean;
+  counts: OrderCounts;
+  timezone?: string;
+}
+
+function normalizeOrdersResponse(
+  raw: AxiosResponse<PaginatedOrdersPayload | OrderData[]> | PaginatedOrdersPayload | OrderData[] | undefined
+): PaginatedOrdersPayload {
+  const empty: PaginatedOrdersPayload = {
+    items: [],
+    period: "today",
+    is_paginated: false,
+    page: 1,
+    limit: null,
+    total_items: 0,
+    total_pages: 1,
+    has_next: false,
+    has_prev: false,
+    counts: { queued: 0, completed: 0, voided: 0, all: 0 },
+    timezone: "WITA (UTC+8)",
+  };
+
+  if (!raw) return empty;
+
+  const payload =
+    typeof raw === "object" && "data" in raw && "status" in raw
+      ? (raw as AxiosResponse<PaginatedOrdersPayload | OrderData[]>).data
+      : raw;
+
+  if (Array.isArray(payload)) {
+    const queued = payload.filter((o) => o.status === "queued").length;
+    const completed = payload.filter((o) => o.status === "completed").length;
+    const voided = payload.filter((o) => o.status === "voided").length;
+    return {
+      ...empty,
+      items: payload,
+      total_items: payload.length,
+      counts: { queued, completed, voided, all: payload.length },
+    };
   }
-  return [];
+
+  if (payload && typeof payload === "object" && "items" in payload && Array.isArray(payload.items)) {
+    return payload as PaginatedOrdersPayload;
+  }
+
+  return empty;
 }
 
 export function formatOrderCode(order: OrderData): string {
@@ -59,40 +115,72 @@ export function formatOrderCode(order: OrderData): string {
   return `ORD-${order.id.slice(0, 4).toUpperCase()}`;
 }
 
-export function formatOrderTime(isoString: string): string {
+export function formatOrderTime(isoString: string, includeDate = true): string {
   try {
     const d = new Date(isoString);
-    return d.toLocaleTimeString("en-US", {
+    const timePart = d.toLocaleTimeString("id-ID", {
+      timeZone: "Asia/Makassar",
       hour: "2-digit",
       minute: "2-digit",
+      hour12: false,
     });
+    if (!includeDate) {
+      return `${timePart} WITA`;
+    }
+    const datePart = d.toLocaleDateString("id-ID", {
+      timeZone: "Asia/Makassar",
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+    return `${datePart} • ${timePart} WITA`;
   } catch {
     return isoString;
   }
 }
 
-export function useOrders() {
+export interface UseOrdersParams {
+  period?: OrderPeriodFilter;
+  status?: OrderStatusFilter;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export function useOrders(params: UseOrdersParams = {}) {
+  const {
+    period = "today",
+    status = "all",
+    search = "",
+    page = 1,
+    limit = 15,
+  } = params;
+
   const [isMutating, setIsMutating] = useState(false);
 
+  const queryString = useMemo(() => {
+    const q = new URLSearchParams();
+    q.set("period", period);
+    if (status && status !== "all") {
+      q.set("status", status);
+    }
+    if (search.trim()) {
+      q.set("search", search.trim());
+    }
+    if (period === "history") {
+      q.set("page", String(page));
+      q.set("limit", String(limit));
+    }
+    return q.toString();
+  }, [period, status, search, page, limit]);
+
   const { data, isLoading, isValidating, error, mutate } =
-    useSWRPrivateRequest<OrderData[]>({
-      url: "/orders?limit=200",
+    useSWRPrivateRequest<PaginatedOrdersPayload>({
+      url: `/orders?${queryString}`,
       method: "GET",
     });
 
-  const orders = useMemo(() => toOrderArray(data), [data]);
-
-  const counts = useMemo(() => {
-    const queued = orders.filter((o) => o.status === "queued").length;
-    const completed = orders.filter((o) => o.status === "completed").length;
-    const voided = orders.filter((o) => o.status === "voided").length;
-    return {
-      queued,
-      completed,
-      voided,
-      all: orders.length,
-    };
-  }, [orders]);
+  const normalized = useMemo(() => normalizeOrdersResponse(data), [data]);
 
   // Settle an open bill (POST /orders/{id}/settle)
   const settleOrder = async (
@@ -169,8 +257,18 @@ export function useOrders() {
   };
 
   return {
-    orders,
-    counts,
+    orders: normalized.items,
+    counts: normalized.counts,
+    pagination: {
+      isPaginated: normalized.is_paginated,
+      page: normalized.page,
+      limit: normalized.limit || limit,
+      totalItems: normalized.total_items,
+      totalPages: normalized.total_pages,
+      hasNext: normalized.has_next,
+      hasPrev: normalized.has_prev,
+      timezone: normalized.timezone || "WITA (UTC+8)",
+    },
     isLoading,
     isValidating,
     isMutating,

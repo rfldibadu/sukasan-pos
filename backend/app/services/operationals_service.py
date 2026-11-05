@@ -1,12 +1,13 @@
 import uuid
 import shutil
-from datetime import datetime, UTC
+from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 from fastapi import HTTPException, UploadFile, status
 from sqlalchemy import extract
 from sqlalchemy.orm import Session
 
+from app.core.timezone import now_wita, to_wita
 from app.models.operationals import OperationalCost, CostCategory
 from app.models.users import User
 from app.schemas.operationals_schema import OperationalCostIn, OperationalCostRead
@@ -44,7 +45,7 @@ def create_operational_cost(
         amount=data.amount,
         payment_method=data.payment_method,
         receipt_image_url=data.receipt_image_url,
-        expense_date=data.expense_date or datetime.now(UTC),
+        expense_date=to_wita(data.expense_date) if data.expense_date else now_wita(),
         notes=data.notes,
         created_by_id=current_manager.id if current_manager else None,
     )

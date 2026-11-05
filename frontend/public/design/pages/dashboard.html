@@ -63,15 +63,37 @@
 
   <main class="max-w-6xl mx-auto px-4 py-5 space-y-5">
 
-    <!-- Header & Refresh -->
-    <div class="flex items-center justify-between">
+    <!-- Header, Period Filter (Today | Week | Month | Year) & Refresh -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       <div>
-        <h2 class="text-lg font-bold text-slate-900">Today's Performance</h2>
-        <p class="text-xs text-slate-500">Live operational figures updated in real-time</p>
+        <div class="flex items-center gap-2">
+          <h2 id="dashPeriodTitle" class="text-lg font-bold text-slate-900">Today's Performance (Daily)</h2>
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+            WITA (UTC+8)
+          </span>
+        </div>
+        <p class="text-xs text-slate-500">Switch between Daily (default), Weekly, Monthly, and Yearly cashflow views</p>
       </div>
-      <button onclick="showToast('Dashboard metrics refreshed!', 'info')" class="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors" title="Refresh">
-        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-      </button>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="inline-flex p-1 bg-slate-200/80 rounded-xl text-xs font-semibold" id="periodFilterTabs">
+          <button onclick="setDashboardPeriod('today', this)" class="px-3 py-1.5 rounded-lg bg-amber-700 text-white font-bold shadow-2xs transition-all">
+            Today
+          </button>
+          <button onclick="setDashboardPeriod('week', this)" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-all">
+            Week
+          </button>
+          <button onclick="setDashboardPeriod('month', this)" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-all">
+            Month
+          </button>
+          <button onclick="setDashboardPeriod('year', this)" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-all">
+            Year
+          </button>
+        </div>
+        <button onclick="showToast('Dashboard metrics refreshed (WITA UTC+8)!', 'info')" class="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors" title="Refresh">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+        </button>
+      </div>
     </div>
 
     <!-- 4 KPI Metrics Grid -->
@@ -145,8 +167,8 @@
         <div class="p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-200 flex items-center justify-between">
           <div>
             <span class="text-[11px] font-semibold text-emerald-800">Total Masuk (Cash In)</span>
-            <p class="text-base font-bold font-mono text-emerald-900 mt-0.5">Rp 1.840.000</p>
-            <span class="text-[10px] text-emerald-700">42 paid orders (+3 Open Bills)</span>
+            <p id="cfMasukVal" class="text-base font-bold font-mono text-emerald-900 mt-0.5">Rp 1.840.000</p>
+            <span id="cfMasukSub" class="text-[10px] text-emerald-700">42 paid orders (+3 Open Bills)</span>
           </div>
           <i data-lucide="arrow-down-left" class="w-5 h-5 text-emerald-600"></i>
         </div>
@@ -154,17 +176,17 @@
         <div class="p-3.5 rounded-xl bg-rose-50/60 border border-rose-200 flex items-center justify-between">
           <div>
             <span class="text-[11px] font-semibold text-rose-800">Total Keluar (Cash Out)</span>
-            <p class="text-base font-bold font-mono text-rose-900 mt-0.5">-Rp 493.100</p>
-            <span class="text-[10px] text-rose-700">Stocks: Rp 389.600 &bull; PLN/Ops: Rp 103.500</span>
+            <p id="cfKeluarVal" class="text-base font-bold font-mono text-rose-900 mt-0.5">-Rp 493.100</p>
+            <span id="cfKeluarSub" class="text-[10px] text-rose-700">Stocks: Rp 389.600 &bull; PLN/Ops: Rp 103.500</span>
           </div>
           <i data-lucide="arrow-up-right" class="w-5 h-5 text-rose-600"></i>
         </div>
 
         <div class="p-3.5 rounded-xl bg-slate-900 text-white flex items-center justify-between">
           <div>
-            <span class="text-[11px] font-semibold text-amber-300">Net Cashflow Today</span>
-            <p class="text-base font-bold font-mono text-emerald-400 mt-0.5">+Rp 1.346.900</p>
-            <span class="text-[10px] text-slate-400">Rekap Harian &amp; Bulanan synced</span>
+            <span id="cfNetLabel" class="text-[11px] font-semibold text-amber-300">Net Cashflow (Daily)</span>
+            <p id="cfNetVal" class="text-base font-bold font-mono text-emerald-400 mt-0.5">+Rp 1.346.900</p>
+            <span id="cfNetSub" class="text-[10px] text-slate-400">Rekap Harian &amp; Bulanan synced (WITA)</span>
           </div>
           <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400"></i>
         </div>
@@ -343,5 +365,70 @@
   </nav>
 
   <script src="../assets/js/prototype.js"></script>
+  <script>
+    const PERIOD_PRESETS = {
+      today: {
+        title: "Today's Performance (Daily)",
+        masuk: "Rp 1.840.000",
+        masukSub: "42 paid orders today (WITA)",
+        keluar: "-Rp 493.100",
+        keluarSub: "Stocks: Rp 389.600 • PLN/Ops: Rp 103.500",
+        netLabel: "Net Cashflow (Daily)",
+        netVal: "+Rp 1.346.900",
+        netClass: "text-base font-bold font-mono text-emerald-400 mt-0.5"
+      },
+      week: {
+        title: "Weekly Performance (This Week)",
+        masuk: "Rp 1.245.000",
+        masukSub: "58 paid orders this week (WITA)",
+        keluar: "-Rp 984.330",
+        keluarSub: "Stocks: Rp 780.830 • PLN/Ops: Rp 203.500",
+        netLabel: "Net Cashflow (Weekly)",
+        netVal: "+Rp 260.670",
+        netClass: "text-base font-bold font-mono text-emerald-400 mt-0.5"
+      },
+      month: {
+        title: "Monthly Financial Recap (Oktober 2026)",
+        masuk: "Rp 4.687.000",
+        masukSub: "184 paid orders in Oktober 2026 (WITA)",
+        keluar: "-Rp 5.627.343",
+        keluarSub: "Raw Stocks + PLN/Salary/Consignment",
+        netLabel: "Net Cashflow (Monthly)",
+        netVal: "-Rp 940.343",
+        netClass: "text-base font-bold font-mono text-amber-400 mt-0.5"
+      },
+      year: {
+        title: "Yearly Cashflow Overview (Tahun 2026)",
+        masuk: "Rp 18.306.000",
+        masukSub: "691 seeded historical orders (Juni–Oktober 2026)",
+        keluar: "-Rp 22.931.248",
+        keluarSub: "189 seeded stock & operational expenses",
+        netLabel: "Net Cashflow (Yearly)",
+        netVal: "-Rp 4.625.248",
+        netClass: "text-base font-bold font-mono text-amber-400 mt-0.5"
+      }
+    };
+
+    function setDashboardPeriod(period, btn) {
+      const container = document.getElementById('periodFilterTabs');
+      container.querySelectorAll('button').forEach(b => {
+        b.className = 'px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-all';
+      });
+      btn.className = 'px-3 py-1.5 rounded-lg bg-amber-700 text-white font-bold shadow-2xs transition-all';
+
+      const preset = PERIOD_PRESETS[period];
+      if (!preset) return;
+      document.getElementById('dashPeriodTitle').innerText = preset.title;
+      document.getElementById('cfMasukVal').innerText = preset.masuk;
+      document.getElementById('cfMasukSub').innerText = preset.masukSub;
+      document.getElementById('cfKeluarVal').innerText = preset.keluar;
+      document.getElementById('cfKeluarSub').innerText = preset.keluarSub;
+      document.getElementById('cfNetLabel').innerText = preset.netLabel;
+      const netEl = document.getElementById('cfNetVal');
+      netEl.innerText = preset.netVal;
+      netEl.className = preset.netClass;
+      showToast(`Switched dashboard cashflow view to ${period.toUpperCase()} (WITA)`, 'info');
+    }
+  </script>
 </body>
 </html>

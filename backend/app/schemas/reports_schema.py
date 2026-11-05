@@ -28,7 +28,20 @@ class HourlySalesBucket(BaseModel):
     is_peak: bool = False
 
 
+class SalesTrendBucket(BaseModel):
+    label: str
+    sublabel: Optional[str] = None
+    gross_sales: float = 0.0
+    cash_out: float = 0.0
+    net_cashflow: float = 0.0
+    order_count: int = 0
+    is_peak: bool = False
+
+
 class DashboardReportResponse(BaseModel):
+    period: Literal["today", "week", "month", "year"] = "today"
+    period_label: str = ""
+    timezone: str = "WITA (UTC+8)"
     start_date: datetime
     end_date: datetime
     total_orders_count: int
@@ -56,6 +69,7 @@ class DashboardReportResponse(BaseModel):
     payment_breakdown: List[PaymentMethodBreakdown]
     top_selling_products: List[TopSellingProduct]
     hourly_sales: List[HourlySalesBucket] = []
+    trend_buckets: List[SalesTrendBucket] = []
 
 
 # ==========================================

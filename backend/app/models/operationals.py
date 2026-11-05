@@ -1,5 +1,5 @@
 import enum
-from datetime import UTC, datetime
+from datetime import datetime
 import uuid
 from typing import Optional
 from sqlalchemy import String, Float, DateTime, ForeignKey, Enum as SQLEnum
@@ -7,6 +7,8 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.database import Base
 from app.models.stocks import ExpensePaymentMethod
+from app.core.timezone import now_wita
+from app.models.users import User
 
 
 class CostCategory(str, enum.Enum):
@@ -42,7 +44,7 @@ class OperationalCost(Base):
 
     # Allows filtering expenses by day/month/year
     expense_date: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC), index=True
+        DateTime(timezone=True), default=now_wita, index=True
     )
     notes: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 

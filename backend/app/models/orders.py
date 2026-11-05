@@ -7,6 +7,8 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.database import Base
 from app.models.users import User
+from app.models.products import Product
+from app.core.timezone import now_wita
 
 # String-backed enums
 class PaymentMethod(str, enum.Enum):
@@ -72,8 +74,8 @@ class Order(Base):
     )
     void_reason: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     
-    # Core Metadata (Using timezone-aware standard if needed)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(UTC))
+    # Core Metadata (Using timezone-aware WITA UTC+8 standard)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_wita, index=True)
 
     # Relationships (Using modern Mapped typing)
     items: Mapped[List["OrderItem"]] = relationship("OrderItem", back_populates="order")

@@ -183,7 +183,7 @@ def get_stock_purchases(
     year: Optional[int] = Query(None, ge=2024),
     start_date: Optional[datetime] = Query(None),
     end_date: Optional[datetime] = Query(None),
-    limit: int = Query(100, ge=1, le=500),
+    limit: int = Query(300, ge=1, le=1000),
     current_manager: User = Depends(require_manager),
     db: Session = Depends(get_db),
 ):
