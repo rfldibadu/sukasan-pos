@@ -2,7 +2,7 @@ import uuid
 from fastapi import HTTPException
 from app.db.database import SessionLocal
 from app.models.products import Product, Vendor
-from app.schemas.products_schema import ProductIn, ProductRead, VendorIn, VendorResponse
+from app.schemas.products_schema import ProductIn, ProductUpdate, ProductRead, VendorIn, VendorResponse
 
 # --- Vendor Services ---
 def create_vendor(vendor_data: VendorIn) -> VendorResponse:
@@ -38,21 +38,51 @@ def create_product(product_data: ProductIn) -> ProductRead:
         session.refresh(db_product)
         return ProductRead.model_validate(db_product)
 
-def list_products() -> list[ProductRead]:
+def list_products(include_inactive: bool = False) -> list[ProductRead]:
     with SessionLocal() as session:
-        products = session.query(Product).filter(Product.is_active == True).all()
+        query = session.query(Product)
+        if not include_inactive:
+            query = query.filter(Product.is_active == True)
+        products = query.order_by(Product.name.asc()).all()
         return [ProductRead.model_validate(p) for p in products]
+
+def update_product(product_id: uuid.UUID, payload: ProductUpdate, is_manager: bool = False) -> ProductRead:
+    with SessionLocal() as session:
+        product = session.query(Product).filter(Product.id == product_id).first()
+        if not product:
+            raise HTTPException(status_code=404, detail="Product not found")
+
+        update_data = payload.model_dump(exclude_unset=True)
+        if not is_manager:
+            allowed = {"stock_quantity", "is_active"}
+            update_data = {k: v for k, v in update_data.items() if k in allowed}
+
+        for key, value in update_data.items():
+            setattr(product, key, value)
+
+        session.commit()
+        session.refresh(product)
+        return ProductRead.model_validate(product)
+
+def delete_or_archive_product(product_id: uuid.UUID) -> ProductRead:
+    with SessionLocal() as session:
+        product = session.query(Product).filter(Product.id == product_id).first()
+        if not product:
+            raise HTTPException(status_code=404, detail="Product not found")
+        product.is_active = False
+        session.commit()
+        session.refresh(product)
+        return ProductRead.model_validate(product)
 
 def update_product_stock(product_id: uuid.UUID, new_stock: int) -> ProductRead:
     """Explicitly update stock level for consignment items."""
     with SessionLocal() as session:
         product = session.query(Product).filter(
-            Product.id == product_id, 
-            Product.is_active == True
+            Product.id == product_id
         ).first()
         
         if not product:
-            raise HTTPException(status_code=404, detail="Product not found or inactive")
+            raise HTTPException(status_code=404, detail="Product not found")
             
         product.stock_quantity = max(0, new_stock)
         session.commit()

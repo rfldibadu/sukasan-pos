@@ -436,20 +436,61 @@
         </div>
 
         <!-- Consignment specific fields (hidden by default) -->
-        <div id="consignmentFields" class="bg-indigo-50/60 border border-indigo-100 rounded-xl p-3 space-y-2 hidden">
-          <p class="font-semibold text-indigo-900 text-[11px]">Consignment Details</p>
+        <div id="consignmentFields" class="bg-indigo-50/60 border border-indigo-100 rounded-xl p-3 space-y-2.5 hidden">
+          <div class="flex items-center justify-between">
+            <p class="font-semibold text-indigo-900 text-[11px] flex items-center gap-1.5">
+              <i data-lucide="handshake" class="w-3.5 h-3.5 text-indigo-600"></i>
+              <span>Consignment Details</span>
+            </p>
+            <button type="button" id="btnToggleNewVendor" onclick="toggleNewVendorForm(true)" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-semibold shadow-2xs transition-colors">
+              <i data-lucide="plus" class="w-3 h-3"></i>
+              <span>New Vendor</span>
+            </button>
+          </div>
+
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="text-[11px] text-slate-600">Vendor Partner</label>
-              <select class="w-full mt-1 px-2.5 py-1.5 bg-white border border-indigo-200 rounded-lg text-xs">
-                <option>Bakehouse No.7</option>
-                <option>Sweet Tooth Bakery</option>
-                <option>Donut Corner</option>
+              <label class="text-[11px] text-slate-600 font-medium">Vendor Partner</label>
+              <select id="modalVendorSelect" class="w-full mt-1 px-2.5 py-1.5 bg-white border border-indigo-200 rounded-lg text-xs focus:outline-none focus:border-indigo-500">
+                <option value="Bakehouse No.7">Bakehouse No.7</option>
+                <option value="Sweet Tooth Bakery">Sweet Tooth Bakery</option>
+                <option value="Donut Corner">Donut Corner</option>
+                <option value="Palmer Cheesecake">Palmer Cheesecake</option>
               </select>
             </div>
             <div>
-              <label class="text-[11px] text-slate-600">Vendor Fee / Share (Rp)</label>
-              <input type="number" placeholder="e.g. 2500" class="w-full mt-1 px-2.5 py-1.5 bg-white border border-indigo-200 rounded-lg text-xs font-mono">
+              <label class="text-[11px] text-slate-600 font-medium">Vendor Fee / Share (Rp)</label>
+              <input type="number" id="modalVendorFee" placeholder="e.g. 2500" class="w-full mt-1 px-2.5 py-1.5 bg-white border border-indigo-200 rounded-lg text-xs font-mono focus:outline-none focus:border-indigo-500">
+            </div>
+          </div>
+
+          <!-- Inline Quick-Add New Vendor Partner Sub-Form (POST /vendors) -->
+          <div id="newVendorInlineForm" class="hidden bg-white border border-indigo-200 rounded-xl p-3 space-y-2.5 shadow-2xs">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-1.5">
+              <span class="text-[11px] font-bold text-indigo-950 flex items-center gap-1">
+                <i data-lucide="store" class="w-3.5 h-3.5 text-indigo-600"></i>
+                Register New Vendor Partner
+              </span>
+              <span class="text-[10px] font-mono text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">POST /vendors</span>
+            </div>
+            <div class="space-y-2">
+              <div>
+                <label class="text-[11px] font-semibold text-slate-700">Vendor Partner Name <span class="text-rose-500">*</span></label>
+                <input type="text" id="newVendorName" placeholder="e.g. Kue Balok Kang Didin" class="w-full mt-0.5 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:bg-white focus:outline-none focus:border-indigo-600">
+              </div>
+              <div>
+                <label class="text-[11px] font-semibold text-slate-700">Contact / Payout Info <span class="text-slate-400 font-normal">(Optional)</span></label>
+                <input type="text" id="newVendorContact" placeholder="e.g. 0812-3456-7890 (WA) / BCA 8291029" class="w-full mt-0.5 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:bg-white focus:outline-none focus:border-indigo-600">
+              </div>
+            </div>
+            <div class="flex items-center justify-end gap-1.5 pt-1">
+              <button type="button" onclick="toggleNewVendorForm(false)" class="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-slate-600 hover:bg-slate-100 transition-colors">
+                Cancel
+              </button>
+              <button type="button" onclick="saveNewVendorInline()" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-semibold flex items-center gap-1 shadow-2xs transition-colors">
+                <i data-lucide="check" class="w-3 h-3"></i>
+                <span>Save &amp; Select</span>
+              </button>
             </div>
           </div>
         </div>
@@ -460,7 +501,7 @@
         <button onclick="closeModal('addProductModal')" class="px-3.5 py-2 text-slate-600 hover:bg-slate-100 rounded-xl text-xs font-semibold">
           Cancel
         </button>
-        <button onclick="closeModal('addProductModal'); showToast('New product added to catalog!', 'success')" class="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-semibold">
+        <button onclick="saveProductFromModal()" class="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-semibold">
           Save Product
         </button>
       </div>
@@ -552,6 +593,67 @@
         el.classList.remove('hidden');
       } else {
         el.classList.add('hidden');
+        toggleNewVendorForm(false);
+      }
+      if (window.lucide) window.lucide.createIcons();
+    }
+
+    function toggleNewVendorForm(show) {
+      const formEl = document.getElementById('newVendorInlineForm');
+      const btnToggle = document.getElementById('btnToggleNewVendor');
+      if (!formEl) return;
+
+      if (show) {
+        formEl.classList.remove('hidden');
+        if (btnToggle) btnToggle.classList.add('hidden');
+        const nameInput = document.getElementById('newVendorName');
+        if (nameInput) nameInput.focus();
+      } else {
+        formEl.classList.add('hidden');
+        if (btnToggle) btnToggle.classList.remove('hidden');
+        const nameInput = document.getElementById('newVendorName');
+        const contactInput = document.getElementById('newVendorContact');
+        if (nameInput) nameInput.value = '';
+        if (contactInput) contactInput.value = '';
+      }
+      if (window.lucide) window.lucide.createIcons();
+    }
+
+    function saveNewVendorInline() {
+      const nameInput = document.getElementById('newVendorName');
+      const contactInput = document.getElementById('newVendorContact');
+      const selectEl = document.getElementById('modalVendorSelect');
+      const vendorName = (nameInput ? nameInput.value : '').trim();
+      const vendorContact = (contactInput ? contactInput.value : '').trim();
+
+      if (!vendorName) {
+        showToast('Please enter the Vendor Partner Name first.', 'error');
+        if (nameInput) nameInput.focus();
+        return;
+      }
+
+      if (selectEl) {
+        const option = document.createElement('option');
+        option.value = vendorName;
+        option.textContent = vendorContact ? `${vendorName} (${vendorContact})` : vendorName;
+        selectEl.appendChild(option);
+        selectEl.value = vendorName;
+      }
+
+      toggleNewVendorForm(false);
+      showToast(`Vendor "${vendorName}" registered & selected!`, 'success');
+    }
+
+    function saveProductFromModal() {
+      const prodName = (document.getElementById('modalProdName').value || 'New Product').trim();
+      const source = document.getElementById('modalSourceSelect').value;
+      const vendor = document.getElementById('modalVendorSelect').value;
+
+      closeModal('addProductModal');
+      if (source === 'consignment') {
+        showToast(`Consignment product "${prodName}" added under vendor "${vendor}"!`, 'success');
+      } else {
+        showToast(`Product "${prodName}" added to catalog!`, 'success');
       }
     }
 
@@ -561,6 +663,7 @@
       document.getElementById('modalProdPrice').value = '';
       document.getElementById('modalProdStock').value = '';
       document.getElementById('modalSourceSelect').value = 'in_house';
+      toggleNewVendorForm(false);
       toggleConsignmentFields('in_house');
       openModal('addProductModal');
     }
@@ -572,6 +675,7 @@
       document.getElementById('modalProdStock').value = stock;
       document.getElementById('modalProdCategory').value = cat;
       document.getElementById('modalSourceSelect').value = isConsign ? 'consignment' : 'in_house';
+      toggleNewVendorForm(false);
       toggleConsignmentFields(isConsign ? 'consignment' : 'in_house');
       openModal('addProductModal');
     }

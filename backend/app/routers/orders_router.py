@@ -16,6 +16,7 @@ from app.schemas.orders_schema import (
 from app.services.orders_service import (
     process_checkout, 
     settle_order_payment, 
+    complete_order_service,
     add_items_to_order, 
     void_order, 
     get_order_by_id, 
@@ -82,6 +83,18 @@ def settle_order(
 ):
     try:
         return settle_order_payment(order_id, payload)
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/orders/{order_id}/complete", response_model=OrderRead)
+def complete_order_route(
+    order_id: uuid.UUID,
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        return complete_order_service(order_id)
     except HTTPException as he:
         raise he
     except Exception as e:

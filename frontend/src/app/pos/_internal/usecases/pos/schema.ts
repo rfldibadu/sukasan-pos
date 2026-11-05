@@ -7,8 +7,10 @@ export const POSProductSchema = z.object({
   price: z.number(),
   is_available: z.boolean(),
   item_type: z.enum(["MAIN", "CONSIGNMENT", "ADD_ON"]).or(z.string()).optional(),
+  stock_quantity: z.number().nullable().optional(),
+  consignment_fee: z.number().nullable().optional(),
+  vendor_name: z.string().nullable().optional(),
 });
-
 
 export const POSCartItemSchema = z.object({
   product: POSProductSchema,
@@ -16,7 +18,6 @@ export const POSCartItemSchema = z.object({
   itemNotes: z.string().optional(),
   selectedAddOns: z.array(POSProductSchema).optional(),
 });
-
 
 export const POSProductListResponseSchema = z.object({
   success: z.boolean(),
@@ -39,8 +40,10 @@ export const POSCreateOrderItemSchema = z.object({
 
 export const POSCreateOrderSubmitSchema = z.object({
   customer_name: z.string().nullable().optional(),
+  table_number: z.string().nullable().optional(),
   order_type: z.enum(["takeaway", "dine_in", "TAKEAWAY", "DINE_IN"]),
-  payment_method: z.enum(["qris", "cash", "QRIS", "CASH"]),
+  payment_status: z.enum(["paid", "unpaid", "PAID", "UNPAID"]).optional(),
+  payment_method: z.enum(["qris", "cash", "QRIS", "CASH"]).nullable().optional(),
   discount_amount: z.number().default(0),
   cash_amount_received: z.number().nullable().optional(),
   items: z.array(POSCreateOrderItemSchema),

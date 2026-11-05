@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Coffee, Eye, EyeOff, Lock, User, AlertCircle, Loader2, ShieldCheck } from "lucide-react";
+import Image from "next/image";
+import { Eye, EyeOff, Lock, User, AlertCircle, Loader2, ShieldCheck } from "lucide-react";
 import { LoginSubmitValues } from "../usecases/auth";
 
 interface LoginFormProps {
@@ -22,8 +23,16 @@ export function LoginForm({ onSubmit, isLoading, error }: LoginFormProps) {
     <div className="w-full max-w-sm sm:max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 shadow-md shadow-gray-200/60 dark:shadow-none border border-gray-200 dark:border-slate-800 transition-all">
       {/* Brand & Title */}
       <div className="flex flex-col items-center text-center mb-6">
-        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-amber-800 text-white flex items-center justify-center shadow-lg shadow-amber-800/20 ring-4 ring-gray-100 dark:ring-slate-800 mb-3.5 transition-transform">
-          <Coffee className="w-7 h-7 sm:w-8 sm:h-8" />
+        <div className="mb-3 flex items-center justify-center">
+          <Image
+            src="/logo/sukasan_logogram.png"
+            alt="Sukasan Coffee Logogram"
+            width={120}
+            height={102}
+            priority
+            unoptimized
+            className="h-24 sm:h-28 w-auto object-contain"
+          />
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-50 tracking-tight">
           Sukasan Coffee

@@ -3,11 +3,13 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Query, HTTPException
 from pydantic import BaseModel, Field
 from app.core.security import get_current_user, require_manager
-from app.models.users import User
-from app.schemas.products_schema import ProductIn, VendorIn
+from app.models.users import User, UserRole
+from app.schemas.products_schema import ProductIn, ProductUpdate, VendorIn
 from app.services.products_service import (
     create_product,
     list_products,
+    update_product,
+    delete_or_archive_product,
     create_vendor,
     list_vendors,
     update_product_stock,
@@ -81,16 +83,39 @@ def update_consignment_or_product_stock(
     return success_response(result.model_dump(mode="json"), "Product stock updated successfully")
 
 
+@router.patch("/products/{product_id}")
+def patch_product(
+    product_id: uuid.UUID,
+    payload: ProductUpdate,
+    current_user: User = Depends(get_current_user),
+):
+    """Updates product availability/stock (Cashier & Manager) or full product catalog details (Manager)."""
+    is_manager = current_user.role == UserRole.MANAGER
+    result = update_product(product_id, payload, is_manager=is_manager)
+    return success_response(result.model_dump(mode="json"), "Product updated successfully")
+
+
+@router.delete("/products/{product_id}")
+def archive_product(
+    product_id: uuid.UUID,
+    current_manager: User = Depends(require_manager),
+):
+    """Archives a product (sets is_active=False)."""
+    result = delete_or_archive_product(product_id)
+    return success_response(result.model_dump(mode="json"), "Product archived successfully")
+
+
 @router.get("/products")
 def get_products(
     page: int = Query(1, ge=1),
     limit: int = Query(100, ge=1, le=1000),
     item_type: Optional[str] = Query(None),
     main_category: Optional[str] = Query(None),
+    include_inactive: bool = Query(False),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        results = list_products()
+        results = list_products(include_inactive=include_inactive)
 
         # Apply filters
         if item_type:

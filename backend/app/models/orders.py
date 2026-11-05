@@ -59,8 +59,12 @@ class Order(Base):
         SQLEnum(OrderType, native_enum=False, values_callable=lambda x: [e.value for e in x]), default=OrderType.DINE_IN
     )
     cashier_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    cashier: Mapped["User"] = relationship("User")
+    cashier: Mapped["User"] = relationship("User", lazy="joined")
     customer_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+
+    @property
+    def cashier_name(self) -> Optional[str]:
+        return self.cashier.full_name if self.cashier else None
     table_number: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     daily_order_number: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     status: Mapped[OrderStatus] = mapped_column(
@@ -99,3 +103,20 @@ class OrderItem(Base):
 
     # String literal prevents circular import/declaration errors
     order: Mapped["Order"] = relationship("Order", back_populates="items")
+    product: Mapped[Optional["Product"]] = relationship("Product", lazy="joined")
+
+    @property
+    def product_name(self) -> Optional[str]:
+        return self.product.name if self.product else None
+
+    @property
+    def item_type(self) -> Optional[str]:
+        if self.product and self.product.item_type:
+            return self.product.item_type.value if hasattr(self.product.item_type, "value") else str(self.product.item_type)
+        return None
+
+    @property
+    def vendor_name(self) -> Optional[str]:
+        if self.product and self.product.vendor:
+            return self.product.vendor.name
+        return None

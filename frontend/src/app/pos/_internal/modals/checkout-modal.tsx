@@ -1,3 +1,5 @@
+import { Banknote, QrCode, X } from "lucide-react";
+
 interface CheckoutModalProps {
   isOpen: boolean;
   subtotal: number;
@@ -18,10 +20,6 @@ interface CheckoutModalProps {
 export function CheckoutModal({
   isOpen,
   subtotal,
-  customerName,
-  setCustomerName,
-  orderType,
-  setOrderType,
   paymentMethod,
   setPaymentMethod,
   cashReceived,
@@ -34,137 +32,113 @@ export function CheckoutModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-4 sm:p-5 flex flex-col max-h-[92vh] border border-slate-200 dark:border-slate-800 shadow-xl my-auto">
-        
-        {/* Fixed Header */}
-        <div className="flex justify-between items-center pb-2.5 border-b border-slate-100 dark:border-slate-800 shrink-0">
-          <h3 className="font-bold text-base sm:text-lg text-slate-900 dark:text-slate-100">
-            Checkout
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+          <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+            Payment Checkout
           </h3>
           <button
             type="button"
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 -mr-1"
+            className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
           >
-            ✕
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Scrollable Form Body */}
-        <div className="overflow-y-auto py-3 space-y-3.5 custom-scrollbar flex-1 pr-1 overscroll-contain">
-          
-          {/* Customer Name */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Customer Name
-            </label>
-            <input
-              type="text"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              placeholder="e.g., Guest / John"
-              className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-slate-900 dark:focus:ring-slate-100 transition-all"
-            />
-          </div>
-
-          {/* Order Type */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Order Type
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {(["takeaway", "dine_in"] as const).map((type) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => setOrderType(type)}
-                  className={`py-2 rounded-xl text-xs font-semibold border transition-all ${
-                    orderType === type
-                      ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 border-transparent shadow-sm"
-                      : "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
-                  }`}
-                >
-                  {type === "takeaway" ? "Takeaway" : "Dine In"}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Payment Method */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Payment Method
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {(["qris", "cash"] as const).map((method) => (
-                <button
-                  key={method}
-                  type="button"
-                  onClick={() => setPaymentMethod(method)}
-                  className={`py-2 rounded-xl text-xs font-semibold border transition-all ${
-                    paymentMethod === method
-                      ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 border-transparent shadow-sm"
-                      : "border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
-                  }`}
-                >
-                  {method.toUpperCase()}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Cash Calculation */}
-          {paymentMethod === "cash" && (
-            <div className="space-y-2.5 p-3 bg-slate-50 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800/80 rounded-xl">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Cash Received
-                </label>
-                <input
-                  type="number"
-                  value={cashReceived || ""}
-                  onChange={(e) => setCashReceived(Number(e.target.value))}
-                  placeholder="0"
-                  className="w-full p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs sm:text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-slate-900 dark:focus:ring-slate-100"
-                />
-              </div>
-              <div className="flex justify-between text-xs font-medium text-slate-600 dark:text-slate-400 pt-0.5">
-                <span>Change:</span>
-                <span className="font-bold text-slate-900 dark:text-slate-100">
-                  Rp {changeAmount.toLocaleString("id-ID")}
-                </span>
-              </div>
-            </div>
-          )}
+        <div className="text-center py-1">
+          <p className="text-xs text-slate-500">Total Due</p>
+          <p className="text-2xl font-bold font-mono text-amber-800">
+            Rp {subtotal.toLocaleString("id-ID")}
+          </p>
         </div>
 
-        {/* Fixed Footer Actions */}
-        <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 space-y-2 shrink-0">
-          <div className="flex justify-between items-center text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100">
-            <span>Total:</span>
-            <span>Rp {subtotal.toLocaleString("id-ID")}</span>
-          </div>
-
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              disabled={isSubmitting || (paymentMethod === "cash" && cashReceived < subtotal)}
-              onClick={onSubmit}
-              className="flex-1 py-2.5 rounded-xl bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 text-xs sm:text-sm font-semibold hover:bg-slate-800 dark:hover:bg-slate-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSubmitting ? "Processing..." : "Complete Order"}
-            </button>
-          </div>
+        {/* Payment Method Toggle */}
+        <div className="grid grid-cols-2 gap-2 text-xs font-semibold">
+          <button
+            type="button"
+            onClick={() => setPaymentMethod("qris")}
+            className={`py-2.5 rounded-xl border flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              paymentMethod === "qris"
+                ? "border-amber-600 bg-amber-100 text-amber-800"
+                : "border-slate-200 text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            <QrCode className="w-4 h-4" /> QRIS
+          </button>
+          <button
+            type="button"
+            onClick={() => setPaymentMethod("cash")}
+            className={`py-2.5 rounded-xl border flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              paymentMethod === "cash"
+                ? "border-amber-600 bg-amber-100 text-amber-800"
+                : "border-slate-200 text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            <Banknote className="w-4 h-4" /> Cash
+          </button>
         </div>
 
+        {/* QRIS View */}
+        {paymentMethod === "qris" ? (
+          <div className="p-4 bg-slate-50 rounded-2xl text-center space-y-2 border border-slate-100">
+            <div className="w-36 h-36 bg-white border border-slate-300 mx-auto rounded-xl flex items-center justify-center shadow-xs">
+              <QrCode className="w-24 h-24 text-slate-800" />
+            </div>
+            <p className="text-[11px] text-slate-500">
+              Scan via BCA, Gopay, OVO, ShopeePay
+            </p>
+          </div>
+        ) : (
+          /* Cash View */
+          <div className="p-3 bg-slate-50 rounded-xl space-y-2 border border-slate-100 text-xs">
+            <div>
+              <label className="text-slate-600 font-semibold">
+                Cash Tendered (Rp)
+              </label>
+              <input
+                type="number"
+                value={cashReceived || ""}
+                onChange={(e) => setCashReceived(Number(e.target.value))}
+                placeholder="e.g. 50000"
+                className="w-full mt-1 px-3 py-2 bg-white border border-slate-200 rounded-xl font-mono text-sm text-slate-900 focus:outline-none focus:border-amber-600"
+              />
+              <div className="flex gap-1.5 mt-2">
+                {[subtotal, 50000, 100000].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setCashReceived(preset)}
+                    className="px-2 py-1 rounded-lg bg-white border border-slate-200 text-[10px] font-mono font-semibold text-slate-700 hover:border-amber-500 cursor-pointer"
+                  >
+                    {preset === subtotal
+                      ? "Uang Pas"
+                      : `Rp ${(preset / 1000).toFixed(0)}k`}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex justify-between pt-1">
+              <span className="text-slate-500">Change Due:</span>
+              <span className="font-mono font-bold text-emerald-600">
+                Rp {changeAmount.toLocaleString("id-ID")}
+              </span>
+            </div>
+          </div>
+        )}
+
+        <button
+          type="button"
+          disabled={
+            isSubmitting ||
+            (paymentMethod === "cash" && cashReceived < subtotal)
+          }
+          onClick={onSubmit}
+          className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+        >
+          {isSubmitting ? "Processing..." : "Complete & Print Receipt"}
+        </button>
       </div>
     </div>
   );

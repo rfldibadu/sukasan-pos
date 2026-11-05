@@ -1,64 +1,136 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { LayoutDashboard, ShoppingBag, Package, Receipt, Boxes, Users } from "lucide-react";
+import {
+  Home,
+  ShoppingBag,
+  ClipboardList,
+  Package,
+  Boxes,
+  Users,
+} from "lucide-react";
 import { ProfileAvatar } from "@/main/components/ui/profile-avatar";
-import { canAccessRoute } from "@/main/utils/permissions";
 
-const navItems = [
-  { label: "Home", href: "/", icon: LayoutDashboard },
-  { label: "POS", href: "/pos", icon: ShoppingBag },
-  { label: "Orders", href: "/orders", icon: Receipt },
-  { label: "Menu", href: "/products", icon: Package },
-  { label: "Stocks", href: "/stocks", icon: Boxes },
-  { label: "Staff", href: "/users", icon: Users },
-];
-
-export default function Navigation() {
+export function NavigationHeader() {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const userRole = session?.user?.role || "manager";
 
-  if (pathname === "/login") {
-    return null;
-  }
+  const allNavItems = [
+    { name: "Home", href: "/", icon: Home, roles: ["manager"] },
+    { name: "POS", href: "/pos", icon: ShoppingBag, roles: ["manager", "cashier"] },
+    {
+      name: "Orders",
+      href: "/orders",
+      icon: ClipboardList,
+      roles: ["manager", "cashier"],
+    },
+    {
+      name: "Menu",
+      href: "/products",
+      icon: Package,
+      roles: ["manager", "cashier"],
+    },
+    { name: "Stocks", href: "/stocks", icon: Boxes, roles: ["manager"] },
+    { name: "Staff", href: "/users", icon: Users, roles: ["manager"] },
+  ];
 
-  const userRole = session?.user?.role;
-  const visibleNavItems = navItems.filter((item) =>
-    userRole ? canAccessRoute(item.href, userRole) : item.href !== "/" && item.href !== "/stocks" && item.href !== "/users"
-  );
+  const navItems = allNavItems.filter((item) => item.roles.includes(userRole));
+
+  const subtitleByPath: Record<string, string> = {
+    "/": "Cafe POS & Consignment",
+    "/pos": "Cashier Terminal • Active Shift",
+    "/orders": "Order Queue & Open Bills",
+    "/products": "Menu & Consignment Catalog",
+    "/stocks": "Raw Materials & Purchase Receipts",
+    "/users": "Team & Access Control",
+    "/profile": "Staff Profile & Shift Settings",
+  };
+
+  const subtitle = subtitleByPath[pathname] || "Cafe POS & Consignment";
 
   return (
     <>
-      {/* Top Header */}
-      <header className="flex items-center justify-between p-4 bg-white border-b border-slate-100">
-        <div>
-          <h1 className="font-bold text-slate-900">Sukasan Coffee</h1>
-          <p className="text-xs text-slate-500">POS &amp; Operations</p>
-        </div>
+      {/* Top Bar */}
+      <header className="sticky top-0 z-30 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 px-4 py-2.5 lg:py-3">
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5 shrink-0">
+            <Image
+              src="/logo/sukasan_logo.jpg"
+              alt="Sukasan Coffee"
+              width={52}
+              height={37}
+              priority
+              unoptimized
+              className="h-8 lg:h-9 w-auto object-contain rounded-lg shrink-0"
+            />
+            <div>
+              <span className="font-bold text-sm lg:text-base tracking-tight text-slate-900 dark:text-white block leading-none whitespace-nowrap">
+                Sukasan Coffee
+              </span>
+              <span className="text-[11px] text-slate-400 whitespace-nowrap block md:hidden lg:block mt-0.5">
+                {subtitle}
+              </span>
+            </div>
+          </div>
 
-        {/* Profile Avatar with status badge */}
-        <ProfileAvatar />
+          {/* Desktop & Landscape Navigation */}
+          <nav className="hidden md:flex items-center gap-0.5 lg:gap-1 shrink-0">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`flex items-center gap-1.5 lg:gap-2 px-2.5 py-1.5 lg:px-3.5 lg:py-2 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all ${
+                    isActive
+                      ? "bg-amber-700 text-white shadow-xs"
+                      : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50"
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
+                  <span>{item.name}</span>
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* Right User / Shift Indicator */}
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="hidden lg:inline-flex items-center gap-1.5 text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800 whitespace-nowrap shrink-0">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              Shift Open
+            </span>
+            <ProfileAvatar />
+          </div>
+        </div>
       </header>
 
-      {/* Bottom Bar for Mobile Layout (Realme Note 50 Target) */}
-      <nav className="fixed bottom-0 inset-x-0 flex items-center justify-around bg-white border-t border-slate-200 z-50 py-1">
-        {visibleNavItems.map((item) => {
+      {/* Mobile Bottom Navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 px-2 py-1.5 flex justify-around items-center shadow-lg">
+        {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
           return (
             <Link
-              key={item.href}
+              key={item.name}
               href={item.href}
-              className={`flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium transition-all ${
+              className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl text-[11px] font-medium transition-colors ${
                 isActive
-                  ? "text-amber-800 bg-amber-100/70 font-semibold"
-                  : "text-gray-500 hover:text-gray-900"
+                  ? "text-amber-700 dark:text-amber-400 font-bold"
+                  : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
               }`}
             >
-              <Icon className="w-5 h-5 mb-0.5" />
-              <span>{item.label}</span>
+              <Icon
+                className={`w-5 h-5 ${
+                  isActive ? "stroke-[2.5px]" : "stroke-[1.75px]"
+                }`}
+              />
+              <span>{item.name}</span>
             </Link>
           );
         })}
@@ -66,3 +138,5 @@ export default function Navigation() {
     </>
   );
 }
+
+export default NavigationHeader;

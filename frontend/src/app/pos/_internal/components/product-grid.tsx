@@ -1,111 +1,135 @@
-import { useState, useMemo } from "react";
+import { Coffee, Croissant, CupSoda, Sparkles } from "lucide-react";
 import { POSProduct } from "../usecases/pos";
 
 interface ProductGridProps {
   products: POSProduct[];
+  searchQuery: string;
   onSelectProduct: (product: POSProduct) => void;
 }
 
-export function ProductGrid({ products, onSelectProduct }: ProductGridProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const filteredProducts = useMemo(() => {
-    if (!searchQuery.trim()) return products;
-    return products.filter((product) =>
-      product.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
+export function ProductGrid({
+  products,
+  searchQuery,
+  onSelectProduct,
+}: ProductGridProps) {
+  const filteredProducts = products.filter((product) => {
+    if (!searchQuery.trim()) return true;
+    const term = searchQuery.toLowerCase().trim();
+    return (
+      product.name.toLowerCase().includes(term) ||
+      product.category.toLowerCase().includes(term) ||
+      (product.vendor_name?.toLowerCase().includes(term) ?? false)
     );
-  }, [products, searchQuery]);
+  });
+
+  if (filteredProducts.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-48 text-slate-400 bg-white border border-dashed border-slate-200 rounded-2xl p-6 text-center">
+        <Coffee className="w-8 h-8 mb-2 opacity-30" />
+        <span className="text-xs font-semibold text-slate-600">
+          No menu items found
+        </span>
+        {searchQuery && (
+          <span className="text-[11px] mt-1 text-slate-400">
+            Try searching for another drink or pastry name.
+          </span>
+        )}
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col space-y-3 h-full">
-      {/* Search Input Bar */}
-      <div className="relative w-full">
-        <svg
-          className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-          />
-        </svg>
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search products..."
-          className="w-full pl-9 pr-8 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-medium text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-100 transition-all"
-        />
-        {searchQuery && (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+      {filteredProducts.map((product) => {
+        const price = Number(product?.price ?? 0);
+        const isConsignment =
+          product.item_type === "CONSIGNMENT" ||
+          product.item_type === "consignment";
+        const catUpper = product.category.toUpperCase();
+
+        const isTeaOrNonCoffee = catUpper.includes("NON_COFFEE") || catUpper.includes("TEA");
+        const isFoodOrSnack =
+          isConsignment || catUpper.includes("SNACK") || catUpper.includes("FOOD");
+
+        const iconBoxClass = isConsignment
+          ? "bg-indigo-50 text-indigo-700"
+          : isTeaOrNonCoffee
+          ? "bg-emerald-50 text-emerald-700"
+          : isFoodOrSnack
+          ? "bg-orange-50 text-orange-700"
+          : "bg-amber-50 text-amber-700";
+
+        const badgeClass = isConsignment
+          ? "text-indigo-700 bg-indigo-50"
+          : isTeaOrNonCoffee
+          ? "text-emerald-700 bg-emerald-50"
+          : "text-amber-700 bg-amber-50";
+
+        const badgeText = isConsignment
+          ? "Consign"
+          : isTeaOrNonCoffee
+          ? "Non-Coffee"
+          : isFoodOrSnack
+          ? "Food & Snack"
+          : "Coffee";
+
+        return (
           <button
+            key={product.id}
             type="button"
-            onClick={() => setSearchQuery("")}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs"
+            disabled={!product.is_available}
+            onClick={() => onSelectProduct(product)}
+            className={`p-3 rounded-2xl text-left flex flex-col justify-between transition-all shadow-2xs space-y-2 ${
+              !product.is_available
+                ? "bg-slate-50 border border-slate-200 opacity-55 cursor-not-allowed"
+                : isConsignment
+                ? "bg-white border-2 border-indigo-100 hover:border-amber-500 cursor-pointer"
+                : "bg-white border border-slate-200 hover:border-amber-500 cursor-pointer"
+            }`}
           >
-            ✕
-          </button>
-        )}
-      </div>
+            <div
+              className={`h-24 w-full rounded-xl flex items-center justify-center font-bold relative ${iconBoxClass}`}
+            >
+              {isConsignment || isFoodOrSnack ? (
+                <Croissant className="w-8 h-8 opacity-65" />
+              ) : isTeaOrNonCoffee ? (
+                <CupSoda className="w-8 h-8 opacity-65" />
+              ) : catUpper === "CUSTOM" ? (
+                <Sparkles className="w-8 h-8 opacity-65" />
+              ) : (
+                <Coffee className="w-8 h-8 opacity-65" />
+              )}
 
-      {/* Product List Scroll Container */}
-      <div className="max-h-[calc(100vh-250px)] overflow-y-auto pr-1 custom-scrollbar flex-1">
-        {filteredProducts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-48 text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl p-4 text-center">
-            <span className="text-xs font-medium">No products match standard criteria</span>
-            {searchQuery && (
-              <span className="text-[11px] mt-1 text-slate-500">
-                Try searching for another term.
-              </span>
-            )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-            {filteredProducts.map((product) => {
-              const price = Number(product?.price ?? 0);
-              const isConsignment =
-                product.item_type === "CONSIGNMENT" || product.item_type === "consignment";
-              const statusText = isConsignment ? "Sold Out" : "Unavailable";
+              {product.stock_quantity != null && product.is_available && (
+                <span className="absolute top-1.5 right-1.5 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-white/90 text-slate-700 shadow-2xs">
+                  {product.stock_quantity} left
+                </span>
+              )}
+            </div>
 
-              return (
-                <button
-                  key={product.id}
-                  type="button"
-                  disabled={!product.is_available}
-                  onClick={() => onSelectProduct(product)}
-                  className={`p-3 rounded-xl border border-slate-200 dark:border-slate-800 text-left flex flex-col justify-between transition-all hover:shadow-sm h-28 ${
-                    product.is_available
-                      ? "bg-white dark:bg-slate-900 cursor-pointer hover:border-slate-300 dark:hover:border-slate-700"
-                      : "bg-slate-50 dark:bg-slate-950 opacity-50 cursor-not-allowed"
-                  }`}
+            <div className="w-full">
+              <div className="flex items-center justify-between gap-1">
+                <span
+                  className={`text-[9px] font-semibold px-1.5 py-0.5 rounded ${badgeClass}`}
                 >
-                  <div>
-                    <span className="text-[9px] text-slate-500 uppercase tracking-wider font-semibold">
-                      {product.category}
-                    </span>
-                    <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-xs mt-0.5 line-clamp-2 leading-tight">
-                      {product.name}
-                    </h3>
-                  </div>
-                  <div className="mt-1 flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                      Rp {price.toLocaleString("id-ID")}
-                    </span>
-                    {!product.is_available && (
-                      <span className="text-[9px] text-red-500 font-medium bg-red-50 dark:bg-red-950/50 px-1 py-0.5 rounded">
-                        {statusText}
-                      </span>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                  {badgeText}
+                </span>
+                {!product.is_available && (
+                  <span className="text-[9px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded">
+                    Out of Stock
+                  </span>
+                )}
+              </div>
+              <h4 className="text-xs font-bold text-slate-900 leading-tight mt-1 line-clamp-2">
+                {product.name}
+              </h4>
+              <p className="font-mono font-bold text-amber-800 text-xs mt-1">
+                Rp {price.toLocaleString("id-ID")}
+              </p>
+            </div>
+          </button>
+        );
+      })}
     </div>
   );
 }

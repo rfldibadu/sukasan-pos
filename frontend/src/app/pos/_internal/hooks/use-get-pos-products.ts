@@ -8,11 +8,13 @@ import { POSProductListResponse, POSProduct } from "../usecases/pos";
 type ProductData = AxiosResponse<unknown> | POSProductListResponse | POSProduct[] | undefined;
 type PosProductApi = POSProduct & {
   stock_quantity?: number | null;
+  consignment_fee?: number | null;
   is_active?: boolean;
   main_category?: string | null;
   retail_price?: number;
   price?: number;
   category?: string;
+  vendor?: { id: string; name: string } | null;
 };
 
 function isAxiosResponse(value: ProductData): value is AxiosResponse<unknown> {
@@ -45,21 +47,26 @@ export function useGetPosProducts() {
   const products: POSProduct[] = useMemo(() => {
     const rawProducts = toProductArray(data);
 
-    return rawProducts.map((p) => {
-      const isConsignment = p.item_type === "CONSIGNMENT";
-      const isAvailable = isConsignment
-        ? (p.stock_quantity ?? 0) > 0 && (p.is_active ?? true)
-        : Boolean(p.is_active);
+    return rawProducts
+      .filter((p) => p.item_type !== "ADD_ON")
+      .map((p) => {
+        const isConsignment = p.item_type === "CONSIGNMENT";
+        const isAvailable = isConsignment
+          ? (p.stock_quantity ?? 0) > 0 && (p.is_active ?? true)
+          : Boolean(p.is_active ?? true) && (p.stock_quantity == null || p.stock_quantity > 0);
 
-      return {
-        id: p.id,
-        name: p.name,
-        category: p.main_category ?? p.category ?? "Add-On",
-        price: p.retail_price ?? p.price ?? 0,
-        is_available: isAvailable,
-        item_type: p.item_type,
-      };
-    });
+        return {
+          id: p.id,
+          name: p.name,
+          category: p.main_category ?? p.category ?? "COFFEE",
+          price: p.retail_price ?? p.price ?? 0,
+          is_available: isAvailable,
+          item_type: p.item_type,
+          stock_quantity: p.stock_quantity ?? null,
+          consignment_fee: p.consignment_fee ?? null,
+          vendor_name: p.vendor?.name ?? null,
+        };
+      });
   }, [data]);
 
   const categories = useMemo(() => {
@@ -73,11 +80,12 @@ export function useGetPosProducts() {
 
   const filteredProducts = useMemo(() => {
     if (category === "All") return products;
-    return products.filter((p) => p.category === category);
+    return products.filter((p) => p.category.toUpperCase() === category.toUpperCase());
   }, [products, category]);
 
   return {
     products: filteredProducts,
+    allProducts: products,
     categories,
     category,
     setCategory,

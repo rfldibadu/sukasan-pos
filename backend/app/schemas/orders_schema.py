@@ -34,6 +34,9 @@ class OrderAddItemsIn(BaseModel):
 class OrderItemRead(BaseModel):
     id: uuid.UUID
     product_id: uuid.UUID
+    product_name: Optional[str] = None
+    item_type: Optional[str] = None
+    vendor_name: Optional[str] = None
     quantity: int
     unit_price: float
     addons_price: float
@@ -51,6 +54,7 @@ class OrderRead(BaseModel):
     total_amount: float
     net_cafe_revenue: float
     cashier_id: uuid.UUID
+    cashier_name: Optional[str] = None
     payment_method: Optional[PaymentMethod] = None
     payment_status: PaymentStatus
     cash_amount_received: Optional[float] = None

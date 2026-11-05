@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { X } from "lucide-react";
 import { POSProduct } from "../usecases/pos";
 import { useGetAddOns } from "../hooks/use-get-pos-products";
 
@@ -8,19 +9,24 @@ interface ItemCustomizerModalProps {
   onAddToCart: (notes: string, selectedAddOns?: POSProduct[]) => void;
 }
 
+const SUGAR_OPTIONS = ["Normal 100%", "Less 70%", "No Sugar"] as const;
+
 export function ItemCustomizerModal({
   product,
   onClose,
   onAddToCart,
 }: ItemCustomizerModalProps) {
+  const isConsignmentOrFood =
+    product.item_type === "CONSIGNMENT" ||
+    product.category.toUpperCase().includes("SNACK") ||
+    product.category.toUpperCase().includes("FOOD");
+
+  const [selectedSugar, setSelectedSugar] = useState<string>(
+    isConsignmentOrFood ? "" : "Less 70%"
+  );
   const [notes, setNotes] = useState("");
   const [selectedAddOnIds, setSelectedAddOnIds] = useState<string[]>([]);
   const { addOns, isLoading: loadingAddOns } = useGetAddOns();
-
-  const isStandaloneAddOn =
-    product.item_type === "ADD_ON" ||
-    product.category?.toUpperCase() === "ADD_ON" ||
-    product.category?.toUpperCase() === "ADD-ON";
 
   const availableAddOns = addOns.filter((item) => item.id !== product.id);
 
@@ -37,166 +43,134 @@ export function ItemCustomizerModal({
   const totalPrice = product.price + addOnsTotal;
 
   const handleConfirm = () => {
-    if (isStandaloneAddOn) return;
+    const parts: string[] = [];
+    if (selectedSugar) parts.push(selectedSugar);
+    if (selectedAddOns.length > 0) {
+      parts.push(...selectedAddOns.map((a) => `+${a.name}`));
+    }
+    if (notes.trim()) {
+      parts.push(`(${notes.trim()})`);
+    }
 
-    const formattedNotes = [
-      notes.trim(),
-      selectedAddOns.length > 0
-        ? `Add-ons: ${selectedAddOns.map((a) => a.name).join(", ")}`
-        : "",
-    ]
-      .filter(Boolean)
-      .join(" | ");
-
-    onAddToCart(formattedNotes, selectedAddOns);
+    onAddToCart(parts.join(", "), selectedAddOns);
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-sm w-full p-4 sm:p-5 flex flex-col max-h-[90vh] border border-slate-200 dark:border-slate-800 shadow-xl my-auto">
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
         {/* Header */}
-        <div className="flex justify-between items-start pb-2.5 border-b border-slate-100 dark:border-slate-800 shrink-0">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div>
-            <div className="flex items-center gap-1.5">
-              <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-slate-100 leading-tight">
-                {product.name}
-              </h3>
-              {isStandaloneAddOn && (
-                <span className="text-[9px] font-bold text-amber-600 bg-amber-50 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-200 dark:border-amber-800 px-1 py-0.5 rounded">
-                  Add-On Only
-                </span>
-              )}
-            </div>
-            <p className="text-[11px] text-slate-500 mt-0.5">
-              Base Price: Rp {product.price.toLocaleString("id-ID")}
+            <h3 className="font-bold text-slate-900 text-sm">{product.name}</h3>
+            <p className="text-xs font-mono font-bold text-amber-800">
+              Rp {product.price.toLocaleString("id-ID")}
             </p>
           </div>
           <button
             onClick={onClose}
             type="button"
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 -mr-1 -mt-1"
+            className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
           >
-            ✕
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Scrollable Body Container */}
-        <div className="overflow-y-auto py-3 space-y-3.5 custom-scrollbar flex-1 px-0.5">
-          {/* Caution Notice for Standalone Add-ons */}
-          {isStandaloneAddOn ? (
-            <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-xl space-y-1">
-              <div className="flex items-center gap-1.5 text-amber-800 dark:text-amber-300 font-semibold text-xs">
-                <svg
-                  className="w-4 h-4 text-amber-500 shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                  />
-                </svg>
-                <span>Cannot order stand-alone Add-On</span>
+        <div className="space-y-3 text-xs">
+          {/* Sugar Level */}
+          {!isConsignmentOrFood && (
+            <div>
+              <label className="font-semibold text-slate-700">Sugar Level</label>
+              <div className="grid grid-cols-3 gap-2 mt-1">
+                {SUGAR_OPTIONS.map((level) => {
+                  const active = selectedSugar === level;
+                  return (
+                    <button
+                      key={level}
+                      type="button"
+                      onClick={() =>
+                        setSelectedSugar(active ? "" : level)
+                      }
+                      className={`py-2 rounded-xl border transition-all cursor-pointer ${
+                        active
+                          ? "bg-amber-100 border-amber-600 text-amber-800 font-semibold"
+                          : "border-slate-200 text-slate-600 font-medium hover:bg-slate-50"
+                      }`}
+                    >
+                      {level}
+                    </button>
+                  );
+                })}
               </div>
-              <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-snug">
-                Add-ons must be attached to a main product (Coffee, Non-Coffee, etc.).
-              </p>
             </div>
-          ) : (
-            /* Add-ons Wrapper Card */
-            <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Select Add-ons
-              </label>
+          )}
 
+          {/* Add-ons */}
+          {!isConsignmentOrFood && (
+            <div>
+              <label className="font-semibold text-slate-700">Add-ons</label>
               {loadingAddOns ? (
-                <div className="text-xs text-slate-400 py-2">Loading add-ons...</div>
+                <p className="text-slate-400 py-2">Loading add-ons...</p>
               ) : availableAddOns.length === 0 ? (
-                <div className="text-xs text-slate-400 italic py-1">
+                <p className="text-slate-400 italic py-1">
                   No additional add-ons available
-                </div>
+                </p>
               ) : (
-                <div className="p-1.5 bg-slate-50 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800/80 rounded-xl">
-                  <div className="max-h-24 sm:max-h-26 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar overscroll-contain">
-                    {availableAddOns.map((addOn) => {
-                      const isSelected = selectedAddOnIds.includes(addOn.id);
-                      return (
-                        <button
-                          key={addOn.id}
-                          type="button"
-                          onClick={() => toggleAddOn(addOn.id)}
-                          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all ${
-                            isSelected
-                              ? "bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-100"
-                              : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300"
-                          }`}
-                        >
-                          <span className="truncate max-w-42.5 text-left">
+                <div className="space-y-1.5 mt-1 max-h-40 overflow-y-auto pr-1">
+                  {availableAddOns.map((addOn) => {
+                    const checked = selectedAddOnIds.includes(addOn.id);
+                    return (
+                      <label
+                        key={addOn.id}
+                        className={`flex items-center justify-between p-2.5 rounded-xl border cursor-pointer transition-colors ${
+                          checked
+                            ? "border-amber-500 bg-amber-50/50"
+                            : "border-slate-200 hover:bg-slate-50"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleAddOn(addOn.id)}
+                            className="rounded text-amber-700 accent-amber-700"
+                          />
+                          <span className="font-medium text-slate-800">
                             {addOn.name}
                           </span>
-                          <span className="shrink-0">
-                            +Rp {addOn.price.toLocaleString("id-ID")}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
+                        </div>
+                        <span className="font-mono text-slate-500">
+                          +Rp {addOn.price.toLocaleString("id-ID")}
+                        </span>
+                      </label>
+                    );
+                  })}
                 </div>
               )}
             </div>
           )}
 
-          {/* Order Notes */}
+          {/* Barista Item Notes */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Order Notes
+            <label className="font-semibold text-slate-700">
+              Barista Item Notes
             </label>
-            <textarea
+            <input
+              type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              disabled={isStandaloneAddOn}
-              placeholder={
-                isStandaloneAddOn
-                  ? "Notes disabled for standalone add-ons"
-                  : "Less ice, extra sweet..."
-              }
-              rows={2}
-              className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent text-xs focus:outline-none focus:ring-1 focus:ring-slate-900 dark:focus:ring-slate-100 disabled:opacity-50 disabled:cursor-not-allowed resize-none"
+              placeholder="e.g. Extra ice, serve in glass mug"
+              className="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-amber-600"
             />
           </div>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-2 pt-2.5 border-t border-slate-100 dark:border-slate-800 shrink-0">
+        <div className="pt-2">
           <button
-            onClick={onClose}
             type="button"
-            className="w-1/3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-          >
-            Cancel
-          </button>
-          <button
             onClick={handleConfirm}
-            type="button"
-            disabled={isStandaloneAddOn}
-            className={`w-2/3 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1 transition-all ${
-              isStandaloneAddOn
-                ? "bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-600 cursor-not-allowed"
-                : "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200"
-            }`}
+            className="w-full py-3 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-semibold transition-colors cursor-pointer"
           >
-            {isStandaloneAddOn ? (
-              <span>Add-On Only</span>
-            ) : (
-              <>
-                <span>Add</span>
-                <span>•</span>
-                <span>Rp {totalPrice.toLocaleString("id-ID")}</span>
-              </>
-            )}
+            Add to Cart • Rp {totalPrice.toLocaleString("id-ID")}
           </button>
         </div>
       </div>

@@ -200,6 +200,28 @@ def settle_order_payment(order_id: uuid.UUID, settle_data: OrderSettleIn) -> Ord
         return OrderRead.model_validate(order)
 
 
+def complete_order_service(order_id: uuid.UUID) -> OrderRead:
+    """Marks an already-paid QUEUED order as COMPLETED (Drink/Order Handover)."""
+    with SessionLocal() as session:
+        order = session.query(Order).options(
+            joinedload(Order.items)
+        ).filter(Order.id == order_id).first()
+
+        if not order:
+            raise HTTPException(status_code=404, detail="Order not found")
+
+        if order.status == OrderStatus.VOIDED:
+            raise HTTPException(status_code=400, detail="Cannot complete a voided order")
+
+        if order.payment_status != PaymentStatus.PAID:
+            raise HTTPException(status_code=400, detail="Unpaid open bill must be settled first before marking completed")
+
+        order.status = OrderStatus.COMPLETED
+        session.commit()
+        session.refresh(order)
+        return OrderRead.model_validate(order)
+
+
 def add_items_to_order(order_id: uuid.UUID, items_data: OrderAddItemsIn) -> OrderRead:
     """Adds additional items to an existing QUEUED open bill."""
     with SessionLocal() as session:

@@ -57,4 +57,4 @@ class Product(Base):
     
     vendor_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("vendors.id"), nullable=True)
     
-    vendor: Mapped[Vendor | None] = relationship("Vendor", back_populates="products")
+    vendor: Mapped[Vendor | None] = relationship("Vendor", back_populates="products", lazy="joined")

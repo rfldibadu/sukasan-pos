@@ -12,12 +12,15 @@ from app.models.products import Product
 from app.models.users import User
 
 env = Environment(loader=FileSystemLoader("app/templates"))
-logo_path = Path("app/static/logo/sukasan_logo.png") # Adjust relative to backend directory
+logo_path = Path("app/static/logo/sukasan_logo_B&W.png")
 
-logo_base64 = ""
-if logo_path.exists():
-    with open(logo_path, "rb") as image_file:
-        logo_base64 = base64.b64encode(image_file.read()).decode('utf-8')
+
+def _load_logo_base64() -> str:
+    if logo_path.exists():
+        with open(logo_path, "rb") as image_file:
+            return base64.b64encode(image_file.read()).decode("utf-8")
+    return ""
+
 
 def generate_order_pdf(order_id: uuid.UUID) -> io.BytesIO:
     with SessionLocal() as session:
@@ -31,7 +34,7 @@ def generate_order_pdf(order_id: uuid.UUID) -> io.BytesIO:
         items_data = []
         for item in order.items:
             product = session.query(Product).filter(Product.id == item.product_id).first()
-            
+
             # Resolve Add-ons names & prices
             addons_list = []
             if item.addon_ids:
@@ -61,7 +64,7 @@ def generate_order_pdf(order_id: uuid.UUID) -> io.BytesIO:
             order_type_display=order_type_str.replace('_', ' ').title(),
             cashier_name=cashier_name,
             items=items_data,
-            logo_base64=logo_base64,
+            logo_base64=_load_logo_base64(),
             str=str
         )
 

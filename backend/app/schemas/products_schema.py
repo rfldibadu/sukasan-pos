@@ -35,6 +35,16 @@ class ProductBase(BaseModel):
 class ProductIn(ProductBase):
     pass
 
+class ProductUpdate(BaseModel):
+    name: Optional[str] = None
+    item_type: Optional[ItemType] = None
+    retail_price: Optional[float] = Field(None, gt=0)
+    main_category: Optional[MainCategory] = None
+    stock_quantity: Optional[int] = Field(None, ge=0)
+    consignment_fee: Optional[float] = Field(None, ge=0)
+    vendor_id: Optional[uuid.UUID] = None
+    is_active: Optional[bool] = None
+
 class ProductRead(ProductBase):
     id: uuid.UUID
     is_active: bool
