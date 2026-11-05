@@ -516,6 +516,307 @@
       </div>
     </section>
 
+    <!-- 11. Raw Stock Categories & Measurement Units -->
+    <section class="space-y-4">
+      <div class="border-b border-slate-200 pb-2">
+        <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+          <i data-lucide="boxes" class="w-4 h-4 text-amber-700"></i>
+          Raw Stock Categories &amp; Measurement Units
+        </h2>
+        <p class="text-xs text-slate-500">Inventory taxonomy and standardized packaging units based on backend schema.</p>
+      </div>
+
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 space-y-6">
+        <div>
+          <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">8 Backend Stock Categories</h3>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="flex items-center gap-2.5 p-2.5 rounded-xl border border-amber-200 bg-amber-50/50">
+              <span class="w-7 h-7 rounded-lg bg-amber-800 text-white flex items-center justify-center shrink-0">
+                <i data-lucide="coffee" class="w-3.5 h-3.5"></i>
+              </span>
+              <div>
+                <p class="text-xs font-bold text-amber-900">beans</p>
+                <p class="text-[11px] text-slate-500">Biji Kopi</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2.5 p-2.5 rounded-xl border border-blue-200 bg-blue-50/50">
+              <span class="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0">
+                <i data-lucide="milk" class="w-3.5 h-3.5"></i>
+              </span>
+              <div>
+                <p class="text-xs font-bold text-blue-900">milk_dairy</p>
+                <p class="text-[11px] text-slate-500">Susu &amp; Dairy</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2.5 p-2.5 rounded-xl border border-amber-200 bg-amber-50/50">
+              <span class="w-7 h-7 rounded-lg bg-yellow-600 text-white flex items-center justify-center shrink-0">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+              </span>
+              <div>
+                <p class="text-xs font-bold text-yellow-900">creamer_sweetener</p>
+                <p class="text-[11px] text-slate-500">Krimer &amp; Gula</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2.5 p-2.5 rounded-xl border border-purple-200 bg-purple-50/50">
+              <span class="w-7 h-7 rounded-lg bg-purple-600 text-white flex items-center justify-center shrink-0">
+                <i data-lucide="flask-conical" class="w-3.5 h-3.5"></i>
+              </span>
+              <div>
+                <p class="text-xs font-bold text-purple-900">syrup_beverage</p>
+                <p class="text-[11px] text-slate-500">Sirup &amp; Flavor</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2.5 p-2.5 rounded-xl border border-orange-200 bg-orange-50/50">
+              <span class="w-7 h-7 rounded-lg bg-orange-600 text-white flex items-center justify-center shrink-0">
+                <i data-lucide="cookie" class="w-3.5 h-3.5"></i>
+              </span>
+              <div>
+                <p class="text-xs font-bold text-orange-900">powder_spread</p>
+                <p class="text-[11px] text-slate-500">Bubuk &amp; Selai</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2.5 p-2.5 rounded-xl border border-cyan-200 bg-cyan-50/50">
+              <span class="w-7 h-7 rounded-lg bg-cyan-600 text-white flex items-center justify-center shrink-0">
+                <i data-lucide="snowflake" class="w-3.5 h-3.5"></i>
+              </span>
+              <div>
+                <p class="text-xs font-bold text-cyan-900">ice</p>
+                <p class="text-[11px] text-slate-500">Es Kristal</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2.5 p-2.5 rounded-xl border border-emerald-200 bg-emerald-50/50">
+              <span class="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                <i data-lucide="package" class="w-3.5 h-3.5"></i>
+              </span>
+              <div>
+                <p class="text-xs font-bold text-emerald-900">packaging_supply</p>
+                <p class="text-[11px] text-slate-500">Cup, Sedotan, Tutup</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2.5 p-2.5 rounded-xl border border-slate-200 bg-slate-50">
+              <span class="w-7 h-7 rounded-lg bg-slate-700 text-white flex items-center justify-center shrink-0">
+                <i data-lucide="tag" class="w-3.5 h-3.5"></i>
+              </span>
+              <div>
+                <p class="text-xs font-bold text-slate-900">other</p>
+                <p class="text-[11px] text-slate-500">Lain-lain</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="border-t border-slate-100 pt-4">
+          <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Measurement Unit Badges</h3>
+          <div class="flex flex-wrap gap-2">
+            <span class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-slate-100 text-slate-800 border border-slate-200">kg <span class="font-normal text-slate-400 text-[10px] ml-1">Kilogram</span></span>
+            <span class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-slate-100 text-slate-800 border border-slate-200">liter <span class="font-normal text-slate-400 text-[10px] ml-1">Liter</span></span>
+            <span class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-slate-100 text-slate-800 border border-slate-200">can <span class="font-normal text-slate-400 text-[10px] ml-1">Kaleng</span></span>
+            <span class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-slate-100 text-slate-800 border border-slate-200">pouch <span class="font-normal text-slate-400 text-[10px] ml-1">Pouch</span></span>
+            <span class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-slate-100 text-slate-800 border border-slate-200">roll <span class="font-normal text-slate-400 text-[10px] ml-1">Roll</span></span>
+            <span class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-slate-100 text-slate-800 border border-slate-200">pack <span class="font-normal text-slate-400 text-[10px] ml-1">Pack</span></span>
+            <span class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-slate-100 text-slate-800 border border-slate-200">bag <span class="font-normal text-slate-400 text-[10px] ml-1">Karung</span></span>
+            <span class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-slate-100 text-slate-800 border border-slate-200">btl <span class="font-normal text-slate-400 text-[10px] ml-1">Botol</span></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12. Receipt Proof Upload & Lightbox Preview -->
+    <section class="space-y-4">
+      <div class="border-b border-slate-200 pb-2">
+        <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+          <i data-lucide="receipt" class="w-4 h-4 text-amber-700"></i>
+          Receipt Proof Upload &amp; Lightbox Pattern
+        </h2>
+        <p class="text-xs text-slate-500">File upload dropzone and zoomable receipt audit viewer for stock restocks and operational bills.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <!-- Upload Dropzone Component -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold text-slate-900">Bukti Struk / Faktur Pembelian</h3>
+            <span class="text-[10px] font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Opsional / Disarankan</span>
+          </div>
+          <div class="border-2 border-dashed border-slate-200 hover:border-amber-500 rounded-2xl p-5 text-center cursor-pointer transition-all bg-slate-50/50 hover:bg-amber-50/20 group">
+            <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center mx-auto mb-2 group-hover:scale-105 transition-transform">
+              <i data-lucide="camera" class="w-5 h-5"></i>
+            </div>
+            <p class="text-xs font-bold text-slate-800">Foto atau Ambil dari Galeri</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">JPG, PNG, atau WebP maks. 5MB</p>
+            <p class="text-[10px] text-amber-700 font-medium mt-2">Disimpan di: /static/uploads/receipts/stocks/</p>
+          </div>
+        </div>
+
+        <!-- Attached Receipt Preview Card -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold text-slate-900">Receipt Attached State</h3>
+            <span class="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Terverifikasi</span>
+          </div>
+          <div class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50">
+            <div class="w-14 h-14 rounded-lg bg-amber-100 border border-amber-200 flex items-center justify-center shrink-0 overflow-hidden cursor-pointer hover:opacity-90" onclick="openModal('receiptDemoLightbox')">
+              <i data-lucide="file-text" class="w-6 h-6 text-amber-800"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-xs font-bold text-slate-900 truncate">struk_belanja_susu_indomilk.jpg</p>
+              <p class="text-[10px] text-slate-500 font-mono">1.2 MB &bull; Restock #PUR-20261105-01</p>
+              <button onclick="openModal('receiptDemoLightbox')" class="text-[11px] font-semibold text-amber-700 hover:text-amber-800 flex items-center gap-1 mt-1">
+                <i data-lucide="zoom-in" class="w-3 h-3"></i> Pratinjau Struk (Lightbox)
+              </button>
+            </div>
+            <button onclick="showToast('Receipt unlinked', 'warning')" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-white" title="Hapus Bukti">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 13. Unified Cashflow Summary Cards -->
+    <section class="space-y-4">
+      <div class="border-b border-slate-200 pb-2">
+        <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+          <i data-lucide="trending-up" class="w-4 h-4 text-amber-700"></i>
+          Unified Cashflow Financial Cards
+        </h2>
+        <p class="text-xs text-slate-500">Gross revenue, consolidated operational/stock expenses, and real net profit balance.</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <!-- Total Masuk -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-slate-500 font-medium">Total Masuk (Gross Sales)</span>
+            <div class="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center">
+              <i data-lucide="arrow-down-left" class="w-4 h-4"></i>
+            </div>
+          </div>
+          <div class="text-xl font-bold font-mono text-emerald-700">Rp 2.450.000</div>
+          <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100">
+            <span>Kasir POS (PAID)</span>
+            <span class="font-bold text-slate-700">42 Transaksi</span>
+          </div>
+        </div>
+
+        <!-- Total Keluar -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-slate-500 font-medium">Total Keluar (Pengeluaran)</span>
+            <div class="w-7 h-7 rounded-lg bg-rose-600 text-white flex items-center justify-center">
+              <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+            </div>
+          </div>
+          <div class="text-xl font-bold font-mono text-rose-600">Rp 930.000</div>
+          <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100">
+            <span>Stok: Rp 680rb</span>
+            <span>Operasional: Rp 250rb</span>
+          </div>
+        </div>
+
+        <!-- Net Cashflow -->
+        <div class="bg-white p-4 rounded-2xl border border-amber-300 shadow-2xs space-y-2 bg-gradient-to-br from-white to-amber-50/40">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-amber-900 font-semibold">Net Cashflow (Kas Bersih)</span>
+            <div class="w-7 h-7 rounded-lg bg-amber-700 text-white flex items-center justify-center">
+              <i data-lucide="wallet" class="w-4 h-4"></i>
+            </div>
+          </div>
+          <div class="text-xl font-bold font-mono text-amber-900">+Rp 1.520.000</div>
+          <div class="flex items-center justify-between text-[11px] text-amber-800 pt-1 border-t border-amber-200">
+            <span>Pending Open Bills:</span>
+            <span class="font-mono font-bold">Rp 285.000 (3 meja)</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 14. Role-Based Access & Navigation Hierarchy -->
+    <section class="space-y-4">
+      <div class="border-b border-slate-200 pb-2">
+        <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+          <i data-lucide="shield-check" class="w-4 h-4 text-amber-700"></i>
+          Role-Based Navigation &amp; Access Control (RBAC)
+        </h2>
+        <p class="text-xs text-slate-500">Navigation bar layout differentiation between Manager and Cashier roles.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <!-- Manager 6-tab nav preview -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-600"></span>
+              <h3 class="text-xs font-bold text-slate-900">Manager Navigation (Full Access &bull; 6 Tabs)</h3>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-900">Admin</span>
+          </div>
+          <p class="text-[11px] text-slate-500">Akses penuh ke seluruh modul toko termasuk analitik penjualan, pengadaan stok bahan baku, dan manajemen akun staf.</p>
+          
+          <div class="bg-slate-900 text-white rounded-xl p-2.5 flex items-center justify-around text-center">
+            <div class="flex flex-col items-center gap-1 text-slate-400">
+              <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+              <span class="text-[9px] font-medium">Home</span>
+            </div>
+            <div class="flex flex-col items-center gap-1 text-amber-400">
+              <i data-lucide="monitor" class="w-4 h-4"></i>
+              <span class="text-[9px] font-bold">POS</span>
+            </div>
+            <div class="flex flex-col items-center gap-1 text-slate-400">
+              <i data-lucide="receipt" class="w-4 h-4"></i>
+              <span class="text-[9px] font-medium">Orders</span>
+            </div>
+            <div class="flex flex-col items-center gap-1 text-slate-400">
+              <i data-lucide="coffee" class="w-4 h-4"></i>
+              <span class="text-[9px] font-medium">Menu</span>
+            </div>
+            <div class="flex flex-col items-center gap-1 text-slate-400">
+              <i data-lucide="boxes" class="w-4 h-4"></i>
+              <span class="text-[9px] font-medium">Stocks</span>
+            </div>
+            <div class="flex flex-col items-center gap-1 text-slate-400">
+              <i data-lucide="users" class="w-4 h-4"></i>
+              <span class="text-[9px] font-medium">Staff</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cashier 3-tab nav preview -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+              <h3 class="text-xs font-bold text-slate-900">Cashier Navigation (Focused &bull; 3 Tabs)</h3>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-900">Staff</span>
+          </div>
+          <p class="text-[11px] text-slate-500">Antarmuka ringkas khusus operasional kasir. Modul finansial, laporan laba rugi, stok, dan akun staf disembunyikan (403 Forbidden).</p>
+          
+          <div class="bg-slate-900 text-white rounded-xl p-2.5 flex items-center justify-around text-center">
+            <div class="flex flex-col items-center gap-1 text-amber-400">
+              <i data-lucide="monitor" class="w-4 h-4"></i>
+              <span class="text-[9px] font-bold">POS</span>
+            </div>
+            <div class="flex flex-col items-center gap-1 text-slate-400">
+              <i data-lucide="receipt" class="w-4 h-4"></i>
+              <span class="text-[9px] font-medium">Orders</span>
+            </div>
+            <div class="flex flex-col items-center gap-1 text-slate-400">
+              <i data-lucide="coffee" class="w-4 h-4"></i>
+              <span class="text-[9px] font-medium">Menu</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <!-- Demo Modal -->
@@ -562,6 +863,43 @@
       <button onclick="closeDrawer('demoDrawer')" class="w-full py-3 bg-amber-700 text-white rounded-xl text-xs font-semibold hover:bg-amber-800">
         Got it
       </button>
+    </div>
+  </div>
+
+  <!-- Receipt Proof Lightbox Demo Modal -->
+  <div id="receiptDemoLightbox" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl space-y-0 animate-in fade-in zoom-in-95 duration-150">
+      <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+        <div>
+          <h3 class="font-bold text-slate-900 text-xs">Bukti Struk Pembelian</h3>
+          <p class="text-[10px] text-slate-400 font-mono">struk_belanja_susu_indomilk.jpg</p>
+        </div>
+        <button onclick="closeModal('receiptDemoLightbox')" class="p-1 rounded-lg text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div class="p-6 bg-slate-100 flex flex-col items-center justify-center min-h-[260px] text-center border-y border-slate-200">
+        <div class="w-36 h-48 bg-white border border-slate-300 rounded-lg shadow-md p-3 flex flex-col justify-between text-left font-mono text-[9px] text-slate-600">
+          <div>
+            <p class="font-bold text-center text-slate-900 border-b border-dashed pb-1">TOKO GROSIR BERKAH</p>
+            <p class="mt-1 text-[8px] text-slate-400">Jl. Kaliurang KM 5.2</p>
+            <div class="border-t border-dashed my-1"></div>
+            <p>10x UHT Indomilk Plain @18.500</p>
+            <p>Total: Rp 185.000</p>
+            <p>Bayar: Tunai Kas</p>
+          </div>
+          <div class="border-t border-dashed pt-1 text-center text-[8px] text-slate-400">
+            Terima Kasih
+          </div>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-3 font-medium">Pratinjau Struk Digital &bull; Disimpan di backend /static/uploads/receipts/stocks/</p>
+      </div>
+      <div class="p-3 bg-white flex items-center justify-between">
+        <span class="text-[10px] text-slate-400">Restock #PUR-20261105-01</span>
+        <button onclick="closeModal('receiptDemoLightbox')" class="px-4 py-1.5 bg-slate-900 text-white rounded-lg text-xs font-semibold hover:bg-slate-800">
+          Tutup
+        </button>
+      </div>
     </div>
   </div>
 

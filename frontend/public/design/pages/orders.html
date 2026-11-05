@@ -32,13 +32,23 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen pb-24 md:pb-8">
 
-  <!-- Prototype Banner -->
-  <div class="bg-amber-800 text-amber-50 text-xs py-1.5 px-4 flex items-center justify-between">
+  <!-- Prototype Announcement Banner with Role View Switcher -->
+  <div class="bg-amber-800 text-amber-50 text-xs py-1.5 px-4 flex flex-wrap items-center justify-between gap-2">
     <div class="flex items-center gap-2">
       <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
       <span class="font-medium">PROTOTYPE: Orders &amp; Queue (Open Bill Workflow)</span>
     </div>
-    <a href="../index.html" class="underline hover:text-white font-semibold">Back to Design Hub</a>
+    <div class="flex items-center gap-3">
+      <div class="inline-flex items-center bg-amber-950/60 p-0.5 rounded-lg text-[11px]">
+        <button id="btnRoleManager" onclick="setOrdersRoleView('manager')" class="px-2 py-0.5 rounded-md bg-white text-amber-900 font-bold transition-all">
+          View as: Manager
+        </button>
+        <button id="btnRoleCashier" onclick="setOrdersRoleView('cashier')" class="px-2 py-0.5 rounded-md text-amber-100 hover:text-white transition-all">
+          View as: Cashier
+        </button>
+      </div>
+      <a href="../index.html" class="underline hover:text-white font-semibold">Back to Design Hub</a>
+    </div>
   </div>
 
   <!-- Top Header -->
@@ -50,16 +60,16 @@
         </div>
         <div>
           <h1 class="text-sm font-bold text-slate-900 leading-tight">Sukasan Coffee</h1>
-          <p class="text-[11px] text-slate-500">Orders Queue &bull; Jl. Achmad Nadjamuddin No.20</p>
+          <p id="headerOrdersSubtitle" class="text-[11px] text-slate-500">Orders Queue &bull; Manager Mode (6 Tabs)</p>
         </div>
       </div>
       <div class="flex items-center gap-2">
         <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
           <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Shift Open
         </span>
-        <button class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-xs" title="Cashier Profile">
-          CK
-        </button>
+        <a href="profile.html" id="profileBadge" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-700 font-bold text-xs transition-colors" title="User Profile">
+          FS
+        </a>
       </div>
     </div>
   </header>
@@ -294,14 +304,14 @@
 
   </main>
 
-  <!-- Bottom Navigation Bar (Realme Note 50 Mobile Layout) -->
+  <!-- Bottom Navigation Bar (Realme Note 50 Mobile Layout & Desktop) -->
   <nav class="fixed bottom-0 inset-x-0 flex items-center justify-around bg-white border-t border-slate-200 z-40 py-1">
-    <a href="dashboard.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
+    <a href="dashboard.html" class="manager-only-nav flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
       <i data-lucide="layout-dashboard" class="w-5 h-5 mb-0.5"></i>
       <span>Home</span>
     </a>
     <a href="pos.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
-      <i data-lucide="shopping-bag" class="w-5 h-5 mb-0.5"></i>
+      <i data-lucide="monitor" class="w-5 h-5 mb-0.5"></i>
       <span>POS</span>
     </a>
     <a href="orders.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-semibold text-amber-800 bg-amber-100/70">
@@ -309,10 +319,14 @@
       <span>Orders</span>
     </a>
     <a href="menu.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
-      <i data-lucide="package" class="w-5 h-5 mb-0.5"></i>
+      <i data-lucide="coffee" class="w-5 h-5 mb-0.5"></i>
       <span>Menu</span>
     </a>
-    <a href="staff.html" class="flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
+    <a href="stocks.html" class="manager-only-nav flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
+      <i data-lucide="boxes" class="w-5 h-5 mb-0.5"></i>
+      <span>Stocks</span>
+    </a>
+    <a href="staff.html" class="manager-only-nav flex flex-col items-center py-1.5 px-3 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900">
       <i data-lucide="users" class="w-5 h-5 mb-0.5"></i>
       <span>Staff</span>
     </a>
@@ -830,6 +844,29 @@
         card.setAttribute('data-status', 'voided');
         card.classList.add('opacity-70');
       }
+    }
+
+    function setOrdersRoleView(role) {
+      const btnManager = document.getElementById('btnRoleManager');
+      const btnCashier = document.getElementById('btnRoleCashier');
+      const subtitle = document.getElementById('headerOrdersSubtitle');
+      const profileBadge = document.getElementById('profileBadge');
+      const managerNavs = document.querySelectorAll('.manager-only-nav');
+
+      if (role === 'cashier') {
+        btnCashier.className = 'px-2 py-0.5 rounded-md bg-white text-amber-900 font-bold transition-all';
+        btnManager.className = 'px-2 py-0.5 rounded-md text-amber-100 hover:text-white transition-all';
+        if (subtitle) subtitle.innerText = 'Orders Queue • Cashier Mode (POS, Orders, Menu)';
+        if (profileBadge) profileBadge.innerText = 'CP';
+        managerNavs.forEach(el => el.classList.add('hidden'));
+      } else {
+        btnManager.className = 'px-2 py-0.5 rounded-md bg-white text-amber-900 font-bold transition-all';
+        btnCashier.className = 'px-2 py-0.5 rounded-md text-amber-100 hover:text-white transition-all';
+        if (subtitle) subtitle.innerText = 'Orders Queue • Manager Mode (6 Tabs)';
+        if (profileBadge) profileBadge.innerText = 'FS';
+        managerNavs.forEach(el => el.classList.remove('hidden'));
+      }
+      if (window.lucide) window.lucide.createIcons();
     }
   </script>
 </body>
