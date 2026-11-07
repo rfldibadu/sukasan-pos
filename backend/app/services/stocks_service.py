@@ -103,6 +103,30 @@ def update_raw_stock(db: Session, stock_id: uuid.UUID, data: RawStockUpdate) -> 
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Raw stock not found")
 
     update_fields = data.model_dump(exclude_unset=True)
+    if "name" in update_fields and update_fields["name"] is not None:
+        clean_name = update_fields["name"].strip()
+        if not clean_name:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Raw stock name cannot be empty")
+        
+        # Check if name is taken by another raw stock
+        existing = (
+            db.query(RawStock)
+            .filter(RawStock.name.ilike(clean_name), RawStock.id != stock_id)
+            .first()
+        )
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Raw stock with name '{clean_name}' already exists",
+            )
+        update_fields["name"] = clean_name
+
+    if "unit" in update_fields and update_fields["unit"] is not None:
+        clean_unit = update_fields["unit"].strip()
+        if not clean_unit:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unit cannot be empty")
+        update_fields["unit"] = clean_unit
+
     for field, value in update_fields.items():
         setattr(db_raw, field, value)
 

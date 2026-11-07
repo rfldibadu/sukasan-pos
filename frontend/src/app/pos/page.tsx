@@ -5,10 +5,10 @@ import {
   ChevronUp,
   Clock,
   CreditCard,
-  Search,
   ShoppingBag,
   X,
 } from "lucide-react";
+import { SearchBar } from "@/main/components/ui/search-bar";
 import { useGetPosProducts } from "./_internal/hooks/use-get-pos-products";
 import { POSProduct } from "./_internal/usecases/pos";
 
@@ -239,25 +239,11 @@ export default function POSPage() {
         {/* Left Column: Search, Categories & Product Grid */}
         <div className="md:col-span-7 lg:col-span-8 space-y-4">
           {/* Search Bar */}
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search menu items..."
-              className="w-full pl-9 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-amber-600 shadow-2xs"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs"
-              >
-                ✕
-              </button>
-            )}
-          </div>
+          <SearchBar
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Search menu items..."
+          />
 
           {/* Category Chips */}
           <CategoryFilter
@@ -339,7 +325,7 @@ export default function POSPage() {
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
                 placeholder="e.g. Meja 04 - Budi / Takeaway"
-                className="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                className="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-amber-600 transition-colors"
               />
             </div>
 
@@ -379,7 +365,7 @@ export default function POSPage() {
                           >
                             -
                           </button>
-                          <span className="font-mono font-bold">
+                          <span className="font-mono font-bold text-slate-900">
                             {item.quantity}
                           </span>
                           <button

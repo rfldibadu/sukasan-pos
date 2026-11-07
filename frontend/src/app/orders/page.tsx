@@ -10,9 +10,9 @@ import {
   Coffee,
   Printer,
   RefreshCw,
-  Search,
   ShoppingBag,
 } from "lucide-react";
+import { SearchBar } from "@/main/components/ui/search-bar";
 import {
   formatOrderCode,
   formatOrderTime,
@@ -21,7 +21,10 @@ import {
   OrderStatusFilter,
   useOrders,
 } from "./_internal/hooks/use-orders";
-import { useGetPosProducts } from "@/app/pos/_internal/hooks/use-get-pos-products";
+import {
+  useGetAddOns,
+  useGetPosProducts,
+} from "@/app/pos/_internal/hooks/use-get-pos-products";
 import { OrderDetailsDrawer } from "./_internal/modals/order-details-drawer";
 import {
   AddItemsModal,
@@ -60,6 +63,7 @@ export default function OrdersPage() {
   });
 
   const { allProducts, refreshProducts } = useGetPosProducts();
+  const { addOns } = useGetAddOns();
 
   // Modal states
   const [isSettleOpen, setIsSettleOpen] = useState(false);
@@ -85,8 +89,11 @@ export default function OrdersPage() {
     allProducts.forEach((p) => {
       map[p.id] = p.name;
     });
+    addOns.forEach((a) => {
+      map[a.id] = a.name;
+    });
     return map;
-  }, [allProducts]);
+  }, [allProducts, addOns]);
 
   // Compute FIFO sequence numbers for active queued orders (earliest first)
   const queuedOrderSequenceMap = useMemo(() => {
@@ -156,7 +163,8 @@ export default function OrdersPage() {
   const handleConfirmAddItem = async (
     productId: string,
     quantity: number,
-    notes: string
+    notes: string,
+    addonIds: string[] = []
   ) => {
     if (!activeOrder) return;
     try {
@@ -164,7 +172,7 @@ export default function OrdersPage() {
         {
           product_id: productId,
           quantity,
-          addon_ids: [],
+          addon_ids: addonIds,
           item_notes: notes.trim() || null,
         },
       ]);
@@ -285,19 +293,15 @@ export default function OrdersPage() {
 
       {/* Search & Shift Filter Bar */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="sm:col-span-2 relative">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setPage(1);
-            }}
-            placeholder="Search by Table, Customer, Order #, or Menu Item..."
-            className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-amber-600 shadow-2xs"
-          />
-        </div>
+        <SearchBar
+          className="sm:col-span-2"
+          value={searchQuery}
+          onChange={(val) => {
+            setSearchQuery(val);
+            setPage(1);
+          }}
+          placeholder="Search by Table, Customer, Order #, or Menu Item..."
+        />
         <div>
           <select
             value={shiftFilter}

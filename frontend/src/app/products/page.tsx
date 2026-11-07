@@ -10,9 +10,9 @@ import {
   Edit3,
   Milk,
   Plus,
-  Search,
   Trash2,
 } from "lucide-react";
+import { SearchBar } from "@/main/components/ui/search-bar";
 import { Permissions } from "@/main/utils/permissions";
 import {
   MenuProductItem,
@@ -242,16 +242,12 @@ export default function MenuProductsPage() {
 
       {/* Search & Filter Controls */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="sm:col-span-2 relative">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search menu item by name, category, or vendor..."
-            className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-amber-600 shadow-2xs"
-          />
-        </div>
+        <SearchBar
+          className="sm:col-span-2"
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="Search menu item by name, category, or vendor..."
+        />
         <div>
           <select
             value={sourceFilter}

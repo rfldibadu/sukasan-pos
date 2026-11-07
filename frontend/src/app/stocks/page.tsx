@@ -7,22 +7,27 @@ import {
   Coffee,
   CupSoda,
   Droplet,
+  Edit2,
   Image as ImageIcon,
   Layers,
   Milk,
-  Search,
+  Plus,
   ShoppingCart,
   Snowflake,
   Wine,
   Zap,
 } from "lucide-react";
+import { SearchBar } from "@/main/components/ui/search-bar";
 import {
   RawStockCategory,
+  RawStockCreatePayload,
   RawStockItem,
+  RawStockUpdatePayload,
   useStocks,
 } from "./_internal/hooks/use-stocks";
 import {
   AdjustStockModal,
+  EditRawStockModal,
   ExpenseReceiptPreviewModal,
   OperationalModal,
   PurchaseModal,
@@ -53,6 +58,8 @@ export default function StocksPage() {
     metrics,
     isLoading,
     isMutating,
+    createRawStock,
+    updateRawStock,
     adjustRawStockQuantity,
     recordStockPurchase,
     recordOperationalCost,
@@ -75,6 +82,9 @@ export default function StocksPage() {
   );
   const [receiptPreview, setReceiptPreview] =
     useState<ReceiptPreviewInfo | null>(null);
+
+  const [isEditStockOpen, setIsEditStockOpen] = useState(false);
+  const [editingStock, setEditingStock] = useState<RawStockItem | null>(null);
 
   const [toast, setToast] = useState<{
     text: string;
@@ -136,6 +146,44 @@ export default function StocksPage() {
       showNotice("Operational expense recorded into Cashflow!", "success");
     } catch {
       showNotice("Failed to record operational expense.", "error");
+    }
+  };
+
+  const handleSaveRawStock = async (
+    stockId: string,
+    payload: RawStockUpdatePayload
+  ) => {
+    try {
+      await updateRawStock(stockId, payload);
+      setIsEditStockOpen(false);
+      setEditingStock(null);
+      showNotice("Raw stock details updated!", "success");
+    } catch (err: unknown) {
+      const msg =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response?: { data?: { detail?: string } } }).response?.data
+              ?.detail || "Failed to update raw stock"
+          : "Failed to update raw stock";
+      showNotice(String(msg), "error");
+      throw err;
+    }
+  };
+
+  const handleCreateRawStock = async (payload: RawStockCreatePayload) => {
+    try {
+      const created = await createRawStock(payload);
+      setIsEditStockOpen(false);
+      setEditingStock(null);
+      showNotice(`Raw stock "${created.name}" created!`, "success");
+      return created;
+    } catch (err: unknown) {
+      const msg =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response?: { data?: { detail?: string } } }).response?.data
+              ?.detail || "Failed to create raw stock"
+          : "Failed to create raw stock";
+      showNotice(String(msg), "error");
+      throw err;
     }
   };
 
@@ -341,15 +389,25 @@ export default function StocksPage() {
         </div>
 
         {mainView === "catalog" && (
-          <div className="relative w-full sm:w-64">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <SearchBar
+              className="flex-1 sm:w-64"
+              inputClassName="py-2"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={setSearchQuery}
               placeholder="Search beans, milk, syrup, ice..."
-              className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-amber-600"
             />
+            <button
+              type="button"
+              onClick={() => {
+                setEditingStock(null);
+                setIsEditStockOpen(true);
+              }}
+              className="px-3 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors shadow-2xs"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>+ New Item</span>
+            </button>
           </div>
         )}
       </div>
@@ -441,6 +499,17 @@ export default function StocksPage() {
                         </p>
                       </div>
                       <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingStock(stock);
+                            setIsEditStockOpen(true);
+                          }}
+                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
+                          title={`Edit ${stock.name}`}
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
                         <button
                           type="button"
                           onClick={() => setAdjustingStock(stock)}
@@ -697,6 +766,7 @@ export default function StocksPage() {
           setPreselectedStockId(null);
         }}
         onSubmitPurchase={handleSubmitPurchase}
+        onCreateRawStock={handleCreateRawStock}
       />
 
       <OperationalModal
@@ -711,6 +781,18 @@ export default function StocksPage() {
         isMutating={isMutating}
         onClose={() => setAdjustingStock(null)}
         onConfirmAdjust={handleConfirmAdjust}
+      />
+
+      <EditRawStockModal
+        isOpen={isEditStockOpen}
+        stock={editingStock}
+        isMutating={isMutating}
+        onClose={() => {
+          setIsEditStockOpen(false);
+          setEditingStock(null);
+        }}
+        onSaveRawStock={handleSaveRawStock}
+        onCreateRawStock={handleCreateRawStock}
       />
 
       <ExpenseReceiptPreviewModal

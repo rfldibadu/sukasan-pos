@@ -58,7 +58,7 @@ def process_checkout(order_data: OrderCreateIn, current_user: User) -> OrderRead
             subtotal_amount += line_total
 
             # 4. Net revenue split logic
-            if product.item_type == ItemType.MAIN:
+            if product.item_type in (ItemType.MAIN, ItemType.ADD_ON):
                 item_cafe_revenue = line_total
             else:
                 # Consignment item: cafe only keeps consignment_fee * quantity
@@ -265,7 +265,7 @@ def add_items_to_order(order_id: uuid.UUID, items_data: OrderAddItemsIn) -> Orde
             line_total = single_unit_price * item.quantity
             added_subtotal += line_total
 
-            if product.item_type == ItemType.MAIN:
+            if product.item_type in (ItemType.MAIN, ItemType.ADD_ON):
                 item_cafe_revenue = line_total
             else:
                 fee = product.consignment_fee or 0.0

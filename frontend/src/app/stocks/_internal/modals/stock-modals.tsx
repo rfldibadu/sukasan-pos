@@ -1,8 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
+  AlertCircle,
   Camera,
+  Check,
+  Edit2,
+  PackagePlus,
+  Plus,
   PlusCircle,
   Trash2,
   UploadCloud,
@@ -12,10 +17,42 @@ import {
 import {
   CostCategory,
   ExpensePaymentMethod,
+  RawStockCategory,
+  RawStockCreatePayload,
   RawStockItem,
+  RawStockUpdatePayload,
 } from "../hooks/use-stocks";
+import { SearchableSelect } from "@/main/components/ui/searchable-select";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api/backend";
+
+const RAW_STOCK_CATEGORIES: Array<{
+  value: RawStockCategory;
+  label: string;
+}> = [
+  { value: "beans", label: "☕ Coffee Beans (Biji Kopi)" },
+  { value: "milk_dairy", label: "🥛 Milks & Dairy" },
+  { value: "creamer_sweetener", label: "🍯 Creamer & Sweetener" },
+  { value: "syrup_beverage", label: "🍓 Syrups & Flavoring" },
+  { value: "powder_spread", label: "🍵 Powders & Spreads" },
+  { value: "ice", label: "🧊 Ice Crystals (Es Kristal)" },
+  { value: "packaging_supply", label: "🥤 Packaging & Cups" },
+  { value: "other", label: "📦 Other Raw Supply" },
+];
+
+const COMMON_UNITS = [
+  "kg",
+  "gr",
+  "liter",
+  "ml",
+  "can",
+  "pouch",
+  "bag",
+  "pack",
+  "pcs",
+  "roll",
+  "btl",
+];
 
 /* =========================================================
    MODAL 1: ADD RAW STOCK PURCHASE WITH RECEIPT / BILL IMAGE
@@ -27,6 +64,7 @@ interface PurchaseModalProps {
   isMutating: boolean;
   onClose: () => void;
   onSubmitPurchase: (formData: FormData) => Promise<void>;
+  onCreateRawStock?: (payload: RawStockCreatePayload) => Promise<RawStockItem>;
 }
 
 interface LineItemDraft {
@@ -45,6 +83,7 @@ export function PurchaseModal({
   isMutating,
   onClose,
   onSubmitPurchase,
+  onCreateRawStock,
 }: PurchaseModalProps) {
   const [mode, setMode] = useState<"single" | "multi">("single");
   const [paymentMethod, setPaymentMethod] =
@@ -68,7 +107,67 @@ export function PurchaseModal({
     },
   ]);
 
+  // Options for SearchableSelect
+  const stockOptions = useMemo(
+    () =>
+      rawStocks.map((s) => ({
+        value: s.id,
+        label: s.name,
+        sublabel: `${s.category.replace("_", " ")} • Current: ${
+          s.current_quantity
+        } ${s.unit}`,
+        badge: s.unit,
+      })),
+    [rawStocks]
+  );
+
+  // Inline "Register New Raw Stock Item" sub-form state
+  const [showNewStockForm, setShowNewStockForm] = useState(false);
+  const [targetLineIdxForNew, setTargetLineIdxForNew] = useState<number>(0);
+  const [newStockName, setNewStockName] = useState("");
+  const [newStockCategory, setNewStockCategory] =
+    useState<RawStockCategory>("beans");
+  const [newStockUnit, setNewStockUnit] = useState("kg");
+  const [newStockThreshold, setNewStockThreshold] = useState("1");
+  const [inlineCreateError, setInlineCreateError] = useState("");
+
   if (!isOpen) return null;
+
+  const handleOpenInlineNewStock = (idx: number, initialQuery = "") => {
+    setTargetLineIdxForNew(idx);
+    setNewStockName(initialQuery);
+    setInlineCreateError("");
+    setShowNewStockForm(true);
+  };
+
+  const handleSaveInlineNewStock = async () => {
+    if (!newStockName.trim()) {
+      setInlineCreateError("Please enter a raw stock name.");
+      return;
+    }
+    if (!onCreateRawStock) return;
+
+    try {
+      setInlineCreateError("");
+      const created = await onCreateRawStock({
+        name: newStockName.trim(),
+        category: newStockCategory,
+        unit: newStockUnit.trim() || "pcs",
+        low_stock_threshold: Math.max(0, parseFloat(newStockThreshold) || 1),
+      });
+
+      handleSelectLineStock(targetLineIdxForNew, created.id);
+      setShowNewStockForm(false);
+      setNewStockName("");
+    } catch (err: unknown) {
+      const msg =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response?: { data?: { detail?: string } } }).response?.data
+              ?.detail || "Failed to create raw stock item"
+          : "Failed to create raw stock item";
+      setInlineCreateError(String(msg));
+    }
+  };
 
   const handleAddLine = () => {
     const first = rawStocks[0];
@@ -251,16 +350,158 @@ export function PurchaseModal({
               <label className="font-semibold text-slate-700">
                 Purchased Raw Stock Item(s)
               </label>
-              {mode === "multi" && (
-                <button
-                  type="button"
-                  onClick={handleAddLine}
-                  className="text-[11px] font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1 cursor-pointer"
-                >
-                  <PlusCircle className="w-3.5 h-3.5" /> Add Another Item
-                </button>
-              )}
+              <div className="flex items-center gap-2">
+                {onCreateRawStock && !showNewStockForm && (
+                  <button
+                    type="button"
+                    onClick={() => handleOpenInlineNewStock(0, "")}
+                    className="text-[11px] font-bold text-amber-800 hover:text-amber-900 bg-amber-50 hover:bg-amber-100 px-2.5 py-1 rounded-lg border border-amber-200 flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>New Stock Item</span>
+                  </button>
+                )}
+                {mode === "multi" && (
+                  <button
+                    type="button"
+                    onClick={handleAddLine}
+                    className="text-[11px] font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1 cursor-pointer"
+                  >
+                    <PlusCircle className="w-3.5 h-3.5" /> Add Row
+                  </button>
+                )}
+              </div>
             </div>
+
+            {/* Inline New Raw Stock Quick-Add Sub-Form */}
+            {showNewStockForm && (
+              <div className="p-3.5 bg-amber-50/70 border border-amber-200 rounded-xl space-y-2.5 shadow-2xs animate-in fade-in zoom-in-95 duration-150">
+                <div className="flex items-center justify-between border-b border-amber-200/60 pb-1.5">
+                  <span className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                    <PackagePlus className="w-4 h-4 text-amber-700" />
+                    Register New Raw Stock Item
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowNewStockForm(false)}
+                    className="p-1 text-slate-400 hover:text-slate-600 rounded cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {inlineCreateError && (
+                  <div className="p-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-[11px] flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{inlineCreateError}</span>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-700">
+                      Item Name <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={newStockName}
+                      onChange={(e) => setNewStockName(e.target.value)}
+                      placeholder="e.g. Arabica Puntang Natural - Kopi Kultur"
+                      className="w-full mt-0.5 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-amber-600"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-700">
+                        Category
+                      </label>
+                      <select
+                        value={newStockCategory}
+                        onChange={(e) =>
+                          setNewStockCategory(
+                            e.target.value as RawStockCategory
+                          )
+                        }
+                        className="w-full mt-0.5 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-amber-600"
+                      >
+                        {RAW_STOCK_CATEGORIES.map((cat) => (
+                          <option key={cat.value} value={cat.value}>
+                            {cat.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-700">
+                        Unit <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={newStockUnit}
+                        onChange={(e) => setNewStockUnit(e.target.value)}
+                        placeholder="kg / gr / can"
+                        className="w-full mt-0.5 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-amber-600"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-700">
+                        Min. Alert
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.5"
+                        value={newStockThreshold}
+                        onChange={(e) => setNewStockThreshold(e.target.value)}
+                        placeholder="1"
+                        className="w-full mt-0.5 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-mono text-slate-900 focus:outline-none focus:border-amber-600"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Unit suggestions */}
+                  <div className="flex flex-wrap items-center gap-1">
+                    <span className="text-[10px] text-slate-400">Quick unit:</span>
+                    {COMMON_UNITS.slice(0, 7).map((u) => (
+                      <button
+                        key={u}
+                        type="button"
+                        onClick={() => setNewStockUnit(u)}
+                        className={`px-1.5 py-0.5 rounded text-[10px] transition-colors cursor-pointer ${
+                          newStockUnit === u
+                            ? "bg-amber-700 text-white font-bold"
+                            : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-100"
+                        }`}
+                      >
+                        {u}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-1.5 pt-1 border-t border-amber-200/50">
+                  <button
+                    type="button"
+                    onClick={() => setShowNewStockForm(false)}
+                    className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!newStockName.trim() || isMutating}
+                    onClick={handleSaveInlineNewStock}
+                    className="px-3 py-1.5 rounded-lg bg-amber-700 hover:bg-amber-800 text-white text-xs font-semibold flex items-center gap-1 shadow-2xs transition-colors disabled:opacity-50 cursor-pointer"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Save &amp; Select</span>
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               {(mode === "single" ? [lines[0]] : lines).map((line, idx) => (
@@ -269,25 +510,29 @@ export function PurchaseModal({
                   className="p-3 bg-slate-50 rounded-xl border border-slate-200 grid grid-cols-12 gap-2 items-end"
                 >
                   <div className="col-span-5">
-                    <label className="text-[10px] text-slate-500">
+                    <label className="text-[10px] text-slate-500 font-medium">
                       Raw Stock Item
                     </label>
-                    <select
-                      value={line.raw_stock_id || rawStocks[0]?.id || ""}
-                      onChange={(e) =>
-                        handleSelectLineStock(idx, e.target.value)
-                      }
-                      className="w-full mt-0.5 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-900"
-                    >
-                      {rawStocks.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.name} ({s.unit})
-                        </option>
-                      ))}
-                    </select>
+                    <div className="mt-0.5">
+                      <SearchableSelect
+                        options={stockOptions}
+                        value={line.raw_stock_id || rawStocks[0]?.id || ""}
+                        onChange={(val) => handleSelectLineStock(idx, val)}
+                        placeholder="Search or pick stock..."
+                        searchPlaceholder="Filter beans, milk, syrups..."
+                        onAddNew={
+                          onCreateRawStock
+                            ? (q) => handleOpenInlineNewStock(idx, q)
+                            : undefined
+                        }
+                        addNewLabel="+ Add New Raw Stock Item"
+                      />
+                    </div>
                   </div>
                   <div className="col-span-3">
-                    <label className="text-[10px] text-slate-500">Qty</label>
+                    <label className="text-[10px] text-slate-500">
+                      Qty ({line.unit || "unit"})
+                    </label>
                     <input
                       type="number"
                       min="0.1"
@@ -300,7 +545,11 @@ export function PurchaseModal({
                     />
                   </div>
                   <div
-                    className={mode === "multi" && lines.length > 1 ? "col-span-3" : "col-span-4"}
+                    className={
+                      mode === "multi" && lines.length > 1
+                        ? "col-span-3"
+                        : "col-span-4"
+                    }
                   >
                     <label className="text-[10px] text-slate-500">
                       Subtotal (Rp)
@@ -735,6 +984,233 @@ export function ExpenseReceiptPreviewModal({
             className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold cursor-pointer"
           >
             Close Preview
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   MODAL 5: EDIT / ADD RAW STOCK ITEM
+   ========================================================= */
+export interface EditRawStockModalProps {
+  isOpen: boolean;
+  stock: RawStockItem | null;
+  isMutating: boolean;
+  onClose: () => void;
+  onSaveRawStock: (
+    stockId: string,
+    payload: RawStockUpdatePayload
+  ) => Promise<void>;
+  onCreateRawStock?: (
+    payload: RawStockCreatePayload
+  ) => Promise<RawStockItem>;
+}
+
+export function EditRawStockModal(props: EditRawStockModalProps) {
+  if (!props.isOpen) return null;
+  const key = props.stock ? `edit-${props.stock.id}` : "create-new";
+  return <EditRawStockDialog key={key} {...props} />;
+}
+
+function EditRawStockDialog({
+  stock,
+  isMutating,
+  onClose,
+  onSaveRawStock,
+  onCreateRawStock,
+}: EditRawStockModalProps) {
+  const [name, setName] = useState(stock?.name ?? "");
+  const [category, setCategory] = useState<RawStockCategory>(
+    stock?.category ?? "beans"
+  );
+  const [unit, setUnit] = useState(stock?.unit ?? "kg");
+  const [threshold, setThreshold] = useState(
+    stock ? String(stock.low_stock_threshold) : "1"
+  );
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const handleSubmit = async () => {
+    if (!name.trim()) {
+      setErrorMsg("Raw stock name cannot be empty.");
+      return;
+    }
+    if (!unit.trim()) {
+      setErrorMsg("Measurement unit is required (e.g. kg, liter, pcs).");
+      return;
+    }
+
+    try {
+      setErrorMsg("");
+      const parsedThreshold = Math.max(0, parseFloat(threshold) || 0);
+
+      if (stock) {
+        await onSaveRawStock(stock.id, {
+          name: name.trim(),
+          category,
+          unit: unit.trim(),
+          low_stock_threshold: parsedThreshold,
+        });
+      } else if (onCreateRawStock) {
+        await onCreateRawStock({
+          name: name.trim(),
+          category,
+          unit: unit.trim(),
+          low_stock_threshold: parsedThreshold,
+        });
+      }
+      onClose();
+    } catch (err: unknown) {
+      const msg =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response?: { data?: { detail?: string } } }).response?.data
+              ?.detail || "Failed to save raw stock item."
+          : "Failed to save raw stock item.";
+      setErrorMsg(String(msg));
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center">
+              {stock ? (
+                <Edit2 className="w-4 h-4" />
+              ) : (
+                <PackagePlus className="w-4 h-4" />
+              )}
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-900 text-sm">
+                {stock
+                  ? `Edit Raw Stock: ${stock.name}`
+                  : "Add New Raw Stock Item"}
+              </h3>
+              <p className="text-[11px] text-slate-500">
+                {stock
+                  ? "Update item name, category, or low stock threshold"
+                  : "Register a new ingredient or cafe supply"}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {errorMsg && (
+          <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{errorMsg}</span>
+          </div>
+        )}
+
+        <div className="space-y-3 text-xs">
+          <div>
+            <label className="font-semibold text-slate-700">
+              Raw Stock Name <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Arabica Gayo Natural - Roastery A"
+              className="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:border-amber-600"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="font-semibold text-slate-700">Category</label>
+              <select
+                value={category}
+                onChange={(e) =>
+                  setCategory(e.target.value as RawStockCategory)
+                }
+                className="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:border-amber-600"
+              >
+                {RAW_STOCK_CATEGORIES.map((c) => (
+                  <option key={c.value} value={c.value}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="font-semibold text-slate-700">
+                Measurement Unit <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={unit}
+                onChange={(e) => setUnit(e.target.value)}
+                placeholder="kg / gr / can / pcs"
+                className="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-mono focus:bg-white focus:outline-none focus:border-amber-600"
+              />
+            </div>
+          </div>
+
+          {/* Quick Unit Presets */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[10px] text-slate-400">Quick unit:</span>
+            {COMMON_UNITS.map((u) => (
+              <button
+                key={u}
+                type="button"
+                onClick={() => setUnit(u)}
+                className={`px-2 py-0.5 rounded text-[11px] transition-colors cursor-pointer ${
+                  unit === u
+                    ? "bg-amber-700 text-white font-bold"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                {u}
+              </button>
+            ))}
+          </div>
+
+          <div>
+            <label className="font-semibold text-slate-700">
+              Low Stock Alert Threshold
+            </label>
+            <input
+              type="number"
+              step="0.5"
+              min="0"
+              value={threshold}
+              onChange={(e) => setThreshold(e.target.value)}
+              placeholder="e.g. 2"
+              className="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-mono focus:bg-white focus:outline-none focus:border-amber-600"
+            />
+            <p className="text-[10px] text-slate-400 mt-1">
+              Triggers a red &ldquo;Low Stock&rdquo; alert when inventory falls at or below this value.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-3.5 py-2 text-slate-600 hover:bg-slate-100 rounded-xl text-xs font-semibold cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={!name.trim() || !unit.trim() || isMutating}
+            onClick={handleSubmit}
+            className="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold disabled:opacity-50 cursor-pointer shadow-xs"
+          >
+            {isMutating ? "Saving..." : stock ? "Save Changes" : "Create Item"}
           </button>
         </div>
       </div>

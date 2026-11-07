@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, Search, X, ShieldCheck, KeyRound, Edit3 } from "lucide-react";
+import { Plus, X, ShieldCheck, KeyRound, Edit3 } from "lucide-react";
+import { SearchBar } from "@/main/components/ui/search-bar";
 import { useStaff, StaffRole, StaffUser } from "./_internal/hooks/use-staff";
 
 const getInitials = (fullName: string) => {
@@ -228,16 +229,13 @@ export default function UsersPage() {
 
       {/* Filter & Search Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-slate-800 p-3 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs">
-        <div className="relative flex-1">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by staff name, username, or role..."
-            className="w-full pl-9 pr-4 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:border-amber-600"
-          />
-        </div>
+        <SearchBar
+          className="flex-1"
+          inputClassName="py-2 bg-slate-50"
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="Search by staff name, username, or role..."
+        />
         <div className="flex items-center gap-1.5 overflow-x-auto">
           {(
             [
@@ -422,7 +420,7 @@ export default function UsersPage() {
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   placeholder="e.g., Rina Putri"
-                  className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900"
+                  className="w-full px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:bg-white focus:outline-none focus:border-amber-600"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -436,7 +434,7 @@ export default function UsersPage() {
                     value={newUsername}
                     onChange={(e) => setNewUsername(e.target.value)}
                     placeholder="e.g., rina.kasir"
-                    className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900"
+                    className="w-full px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:bg-white focus:outline-none focus:border-amber-600"
                   />
                 </div>
                 <div>
@@ -446,7 +444,7 @@ export default function UsersPage() {
                   <select
                     value={newRole}
                     onChange={(e) => setNewRole(e.target.value as StaffRole)}
-                    className="w-full px-3 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900"
+                    className="w-full px-3 py-2.5 text-sm text-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:bg-white focus:outline-none focus:border-amber-600"
                   >
                     <option value="cashier">Cashier (POS &amp; Orders)</option>
                     <option value="manager">Admin / Manager (Full Access)</option>
@@ -463,7 +461,7 @@ export default function UsersPage() {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Enter password (min 6 chars)"
-                  className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-mono"
+                  className="w-full px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-mono focus:bg-white focus:outline-none focus:border-amber-600"
                 />
               </div>
               <div className="pt-2 flex gap-2">
@@ -521,7 +519,7 @@ export default function UsersPage() {
                   value={resetPasswordVal}
                   onChange={(e) => setResetPasswordVal(e.target.value)}
                   placeholder="Enter new password"
-                  className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-mono"
+                  className="w-full px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 font-mono focus:bg-white focus:outline-none focus:border-amber-600"
                 />
               </div>
               <div className="pt-2 flex gap-2">
@@ -571,7 +569,7 @@ export default function UsersPage() {
                   required
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900"
+                  className="w-full px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:bg-white focus:outline-none focus:border-amber-600"
                 />
               </div>
               <div>
@@ -581,7 +579,7 @@ export default function UsersPage() {
                 <select
                   value={editRole}
                   onChange={(e) => setEditRole(e.target.value as StaffRole)}
-                  className="w-full px-3 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900"
+                  className="w-full px-3 py-2.5 text-sm text-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:bg-white focus:outline-none focus:border-amber-600"
                 >
                   <option value="cashier">Cashier (POS &amp; Orders)</option>
                   <option value="manager">Admin / Manager (Full Access)</option>

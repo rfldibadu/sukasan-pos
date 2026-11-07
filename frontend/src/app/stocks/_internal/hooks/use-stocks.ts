@@ -36,6 +36,25 @@ export interface RawStockItem {
   updated_at?: string | null;
 }
 
+export interface RawStockCreatePayload {
+  name: string;
+  category: RawStockCategory;
+  unit: string;
+  current_quantity?: number;
+  cost_per_unit?: number;
+  low_stock_threshold?: number;
+}
+
+export interface RawStockUpdatePayload {
+  name?: string;
+  category?: RawStockCategory;
+  unit?: string;
+  current_quantity?: number;
+  cost_per_unit?: number;
+  low_stock_threshold?: number;
+  is_active?: boolean;
+}
+
 export interface StockPurchaseLineRead {
   id: string;
   raw_stock_id: string;
@@ -177,6 +196,36 @@ export function useStocks() {
     }
   };
 
+  const createRawStock = async (payload: RawStockCreatePayload) => {
+    setIsMutating(true);
+    try {
+      const res = await axiosHttpPrivate.post("/stocks/raw", payload);
+      await mutateRaw();
+      const raw = res.data?.data || res.data;
+      return raw as RawStockItem;
+    } finally {
+      setIsMutating(false);
+    }
+  };
+
+  const updateRawStock = async (
+    stockId: string,
+    payload: RawStockUpdatePayload
+  ) => {
+    setIsMutating(true);
+    try {
+      const res = await axiosHttpPrivate.patch(
+        `/stocks/raw/${stockId}`,
+        payload
+      );
+      await Promise.all([mutateRaw(), mutatePurchases()]);
+      const raw = res.data?.data || res.data;
+      return raw as RawStockItem;
+    } finally {
+      setIsMutating(false);
+    }
+  };
+
   const recordStockPurchase = async (formData: FormData) => {
     setIsMutating(true);
     try {
@@ -214,6 +263,8 @@ export function useStocks() {
     metrics,
     isLoading: loadingRaw || loadingPurchases || loadingOps,
     isMutating,
+    createRawStock,
+    updateRawStock,
     adjustRawStockQuantity,
     recordStockPurchase,
     recordOperationalCost,

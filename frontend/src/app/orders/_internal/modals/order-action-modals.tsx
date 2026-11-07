@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Image from "next/image";
 import {
   AlertTriangle,
@@ -15,6 +15,10 @@ import {
   OrderData,
 } from "../hooks/use-orders";
 import { POSProduct } from "@/app/pos/_internal/usecases/pos";
+import { useGetAddOns } from "@/app/pos/_internal/hooks/use-get-pos-products";
+import { SearchableSelect } from "@/main/components/ui/searchable-select";
+
+const SUGAR_OPTIONS = ["Normal 100%", "Less 70%", "No Sugar"] as const;
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api/backend";
 
@@ -187,7 +191,8 @@ interface AddItemsModalProps {
   onConfirmAddItem: (
     productId: string,
     quantity: number,
-    notes: string
+    notes: string,
+    addonIds: string[]
   ) => void;
 }
 
@@ -199,18 +204,87 @@ export function AddItemsModal({
   onClose,
   onConfirmAddItem,
 }: AddItemsModalProps) {
-  const availableProducts = products.filter((p) => p.is_available);
+  const { addOns, isLoading: loadingAddOns } = useGetAddOns();
   const [selectedProdId, setSelectedProdId] = useState<string>("");
   const [quantity, setQuantity] = useState<number>(1);
+  const [selectedSugar, setSelectedSugar] = useState<string>("Less 70%");
+  const [selectedAddOnIds, setSelectedAddOnIds] = useState<string[]>([]);
   const [notes, setNotes] = useState<string>("");
+
+  const allSelectableItems = useMemo(() => {
+    const base = products.filter((p) => p.is_available);
+    const existingIds = new Set(base.map((p) => p.id));
+    const extraAddOns = addOns.filter(
+      (a) => a.is_available && !existingIds.has(a.id)
+    );
+    return [...base, ...extraAddOns];
+  }, [products, addOns]);
+
+  const selectOptions = useMemo(
+    () =>
+      allSelectableItems.map((p) => ({
+        value: p.id,
+        label: p.name,
+        sublabel: `Rp ${p.price.toLocaleString("id-ID")}`,
+        badge: p.item_type === "ADD_ON" ? "ADD-ON" : p.category,
+      })),
+    [allSelectableItems]
+  );
 
   if (!isOpen || !order) return null;
 
-  const effectiveProdId = selectedProdId || availableProducts[0]?.id || "";
+  const effectiveProdId = selectedProdId || allSelectableItems[0]?.id || "";
+  const selectedProduct = allSelectableItems.find(
+    (p) => p.id === effectiveProdId
+  );
+
+  const isConsignmentFoodOrAddon =
+    !selectedProduct ||
+    selectedProduct.item_type === "CONSIGNMENT" ||
+    selectedProduct.item_type === "ADD_ON" ||
+    selectedProduct.category.toUpperCase().includes("SNACK") ||
+    selectedProduct.category.toUpperCase().includes("FOOD");
+
+  const availableAddOns = addOns.filter((item) => item.id !== effectiveProdId);
+
+  const toggleAddOn = (id: string) => {
+    setSelectedAddOnIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const activeAddOns = isConsignmentFoodOrAddon
+    ? []
+    : availableAddOns.filter((item) => selectedAddOnIds.includes(item.id));
+  const addOnsUnitCost = activeAddOns.reduce((sum, a) => sum + a.price, 0);
+  const unitPrice = (selectedProduct?.price || 0) + addOnsUnitCost;
+  const totalLinePrice = unitPrice * quantity;
+
+  const handleConfirm = () => {
+    const parts: string[] = [];
+    if (!isConsignmentFoodOrAddon && selectedSugar) {
+      parts.push(selectedSugar);
+    }
+    if (activeAddOns.length > 0) {
+      parts.push(...activeAddOns.map((a) => `+${a.name}`));
+    }
+    if (notes.trim()) {
+      parts.push(`(${notes.trim()})`);
+    }
+
+    const finalNotes = parts.join(", ");
+    const finalAddonIds = activeAddOns.map((a) => a.id);
+
+    onConfirmAddItem(effectiveProdId, quantity, finalNotes, finalAddonIds);
+    setNotes("");
+    setQuantity(1);
+    setSelectedAddOnIds([]);
+    setSelectedSugar("Less 70%");
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+      <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl space-y-4">
         <div className="flex items-center justify-between border-b border-slate-100 pb-2">
           <div>
             <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
@@ -234,17 +308,19 @@ export function AddItemsModal({
             <label className="font-semibold text-slate-700">
               Select Item to Add
             </label>
-            <select
-              value={effectiveProdId}
-              onChange={(e) => setSelectedProdId(e.target.value)}
-              className="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900"
-            >
-              {availableProducts.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} - Rp {p.price.toLocaleString("id-ID")}
-                </option>
-              ))}
-            </select>
+            <div className="mt-1">
+              <SearchableSelect
+                options={selectOptions}
+                value={effectiveProdId}
+                onChange={(val) => {
+                  setSelectedProdId(val);
+                  setSelectedAddOnIds([]);
+                }}
+                placeholder="Search or select menu item..."
+                searchPlaceholder="Search drink, food, or add-on..."
+                buttonClassName="py-2 px-3 rounded-xl bg-slate-50"
+              />
+            </div>
           </div>
 
           <div>
@@ -256,9 +332,82 @@ export function AddItemsModal({
               onChange={(e) =>
                 setQuantity(Math.max(1, parseInt(e.target.value, 10) || 1))
               }
-              className="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono text-slate-900"
+              className="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono text-slate-900 focus:bg-white focus:outline-none focus:border-amber-600"
             />
           </div>
+
+          {/* Sugar Level (for drinks) */}
+          {!isConsignmentFoodOrAddon && (
+            <div>
+              <label className="font-semibold text-slate-700">
+                Sugar Level
+              </label>
+              <div className="grid grid-cols-3 gap-2 mt-1">
+                {SUGAR_OPTIONS.map((level) => {
+                  const active = selectedSugar === level;
+                  return (
+                    <button
+                      key={level}
+                      type="button"
+                      onClick={() => setSelectedSugar(active ? "" : level)}
+                      className={`py-2 rounded-xl border transition-all cursor-pointer ${
+                        active
+                          ? "bg-amber-100 border-amber-600 text-amber-800 font-semibold"
+                          : "border-slate-200 text-slate-600 font-medium hover:bg-slate-50"
+                      }`}
+                    >
+                      {level}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Add-ons (for drinks) */}
+          {!isConsignmentFoodOrAddon && (
+            <div>
+              <label className="font-semibold text-slate-700">Add-ons</label>
+              {loadingAddOns ? (
+                <p className="text-slate-400 py-2">Loading add-ons...</p>
+              ) : availableAddOns.length === 0 ? (
+                <p className="text-slate-400 italic py-1">
+                  No additional add-ons available
+                </p>
+              ) : (
+                <div className="space-y-1.5 mt-1 max-h-36 overflow-y-auto pr-1">
+                  {availableAddOns.map((addOn) => {
+                    const checked = selectedAddOnIds.includes(addOn.id);
+                    return (
+                      <label
+                        key={addOn.id}
+                        className={`flex items-center justify-between p-2.5 rounded-xl border cursor-pointer transition-colors ${
+                          checked
+                            ? "border-amber-500 bg-amber-50/50"
+                            : "border-slate-200 hover:bg-slate-50"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleAddOn(addOn.id)}
+                            className="rounded text-amber-700 accent-amber-700"
+                          />
+                          <span className="font-medium text-slate-800">
+                            {addOn.name}
+                          </span>
+                        </div>
+                        <span className="font-mono text-slate-500">
+                          +Rp {addOn.price.toLocaleString("id-ID")}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
           <div>
             <label className="font-semibold text-slate-700">
@@ -268,8 +417,8 @@ export function AddItemsModal({
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="e.g. Less sugar, extra hot"
-              className="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900"
+              placeholder="e.g. Extra hot, serve in glass mug"
+              className="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-amber-600"
             />
           </div>
         </div>
@@ -285,14 +434,12 @@ export function AddItemsModal({
           <button
             type="button"
             disabled={!effectiveProdId || isMutating}
-            onClick={() => {
-              onConfirmAddItem(effectiveProdId, quantity, notes);
-              setNotes("");
-              setQuantity(1);
-            }}
-            className="flex-1 py-2.5 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold disabled:opacity-50 cursor-pointer"
+            onClick={handleConfirm}
+            className="flex-1 py-2.5 px-3 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold disabled:opacity-50 cursor-pointer"
           >
-            {isMutating ? "Adding..." : "Add to Bill"}
+            {isMutating
+              ? "Adding..."
+              : `Add to Bill • Rp ${totalLinePrice.toLocaleString("id-ID")}`}
           </button>
         </div>
       </div>
