@@ -23,6 +23,6 @@ export default withAuth(
 export const config = {
   // Add routes that require authentication while excluding public static assets/logos
   matcher: [
-    "/((?!api|_next/static|_next/image|design|logo|favicon\\.ico|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico)$).*)",
+    "/((?!api|static|_next/static|_next/image|design|logo|favicon\\.ico|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico)$).*)",
   ],
 };

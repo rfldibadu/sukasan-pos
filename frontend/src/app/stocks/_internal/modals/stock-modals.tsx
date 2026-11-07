@@ -15,7 +15,7 @@ import {
   RawStockItem,
 } from "../hooks/use-stocks";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api/backend";
 
 /* =========================================================
    MODAL 1: ADD RAW STOCK PURCHASE WITH RECEIPT / BILL IMAGE
@@ -678,9 +678,11 @@ export function ExpenseReceiptPreviewModal({
   if (!preview) return null;
 
   const fullImgUrl =
-    preview.imageUrl && preview.imageUrl.startsWith("/")
-      ? `${API_BASE_URL}${preview.imageUrl}`
-      : preview.imageUrl;
+    preview.imageUrl && preview.imageUrl.startsWith("/static/")
+      ? preview.imageUrl
+      : preview.imageUrl && preview.imageUrl.startsWith("/")
+        ? `${API_BASE_URL}${preview.imageUrl}`
+        : preview.imageUrl;
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">

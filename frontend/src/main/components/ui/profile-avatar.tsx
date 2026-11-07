@@ -22,7 +22,11 @@ export function ProfileAvatar() {
   }, []);
 
   const handleLogout = () => {
-    signOut({ callbackUrl: "/login" });
+    const callbackUrl =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/login`
+        : "/login";
+    signOut({ callbackUrl });
   };
 
   // State 1: User is logged out
@@ -40,10 +44,12 @@ export function ProfileAvatar() {
 
   const rawPhoto = session.user?.profile_picture_url || session.user?.image;
 
-  // Ensure relative FastAPI backend paths resolve to http://localhost:8000
-  const userPhoto = rawPhoto?.startsWith("/")
-    ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}${rawPhoto}`
-    : rawPhoto;
+  // Relative /static/... paths are proxied by Next.js rewrites to FastAPI
+  const userPhoto = rawPhoto?.startsWith("/static/")
+    ? rawPhoto
+    : rawPhoto?.startsWith("/")
+      ? `${process.env.NEXT_PUBLIC_API_URL || "/api/backend"}${rawPhoto}`
+      : rawPhoto;
   const displayName = session.user?.full_name || session.user?.email || "Staff";
   const isManager = session.user?.role === "manager";
   const roleLabel = isManager ? "Manager" : "Cashier";

@@ -2,7 +2,11 @@ import { AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import axios, { AxiosError } from "axios";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
+const API_BASE_URL =
+  process.env.BACKEND_INTERNAL_URL ||
+  (process.env.NEXT_PUBLIC_API_URL?.startsWith("http")
+    ? process.env.NEXT_PUBLIC_API_URL
+    : "http://127.0.0.1:8000/api");
 
 // Helper to sanitize avatar strings and reject raw Base64 data URIs
 function sanitizeAvatarUrl(url?: string | null): string | null {
@@ -102,7 +106,17 @@ export const authOptions: AuthOptions = {
       }
       return session;
     },
+    async redirect({ url, baseUrl }) {
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      try {
+        new URL(url);
+        return url;
+      } catch {
+        return baseUrl;
+      }
+    },
   },
+  useSecureCookies: false,
   pages: {
     signIn: "/login",
   },

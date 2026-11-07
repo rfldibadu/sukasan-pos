@@ -1,0 +1,15 @@
+# Local developer scripts
+start-remote-dev.ps1
+*.ps1.local
+
+# Python caches & virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+backend/.venv/
+.venv/
+
+# Environment files
+.env
+.env.*
+!.env.example

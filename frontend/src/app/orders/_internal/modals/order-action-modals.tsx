@@ -16,7 +16,7 @@ import {
 } from "../hooks/use-orders";
 import { POSProduct } from "@/app/pos/_internal/usecases/pos";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api/backend";
 
 /* =========================================================
    1. SETTLE OPEN BILL MODAL

@@ -102,7 +102,11 @@ export default function ProfilePage() {
   };
 
   const handleSignOut = async () => {
-    await signOut({ callbackUrl: "/login" });
+    const callbackUrl =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/login`
+        : "/login";
+    await signOut({ callbackUrl });
   };
 
   return (
