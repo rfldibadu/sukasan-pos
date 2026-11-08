@@ -4,7 +4,10 @@ const BACKEND_ORIGIN =
   process.env.BACKEND_INTERNAL_ORIGIN || "http://127.0.0.1:8000";
 
 const nextConfig: NextConfig = {
+  devIndicators: false,
   allowedDevOrigins: [
+    "sukasancoffee-pos.my.id",
+    "*.sukasancoffee-pos.my.id",
     "*.trycloudflare.com",
     "*.ngrok-free.app",
     "*.ngrok.app",

@@ -31,14 +31,16 @@ app = FastAPI(
 static_dir = Path("app/static")
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
-# Enable CORS for Next.js frontend (local + remote tunnels)
+# Enable CORS for Next.js frontend (local + custom domain + remote tunnels)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+        "https://sukasancoffee-pos.my.id",
+        "https://www.sukasancoffee-pos.my.id",
     ],
-    allow_origin_regex=r"https://.*\.(trycloudflare\.com|ngrok-free\.app|ngrok\.app|ngrok\.io|devtunnels\.ms)",
+    allow_origin_regex=r"https://.*\.(sukasancoffee-pos\.my\.id|trycloudflare\.com|ngrok-free\.app|ngrok\.app|ngrok\.io|devtunnels\.ms)",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

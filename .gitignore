@@ -1,6 +1,11 @@
 # Local developer scripts
 start-remote-dev.ps1
+setup-cloudflare-domain.ps1
+cloudflared-config.yml
 *.ps1.local
+
+# Uploads & local media assets
+backend/app/static/uploads/
 
 # Python caches & virtual environments
 __pycache__/
