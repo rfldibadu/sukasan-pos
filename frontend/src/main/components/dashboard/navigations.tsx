@@ -12,6 +12,7 @@ import {
   Boxes,
   Users,
 } from "lucide-react";
+import { NotificationBell } from "@/main/components/ui/notification-bell";
 import { ProfileAvatar } from "@/main/components/ui/profile-avatar";
 
 export function NavigationHeader() {
@@ -105,6 +106,7 @@ export function NavigationHeader() {
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
               Shift Open
             </span>
+            <NotificationBell />
             <ProfileAvatar />
           </div>
         </div>

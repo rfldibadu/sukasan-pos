@@ -80,6 +80,16 @@ class AuthService:
             password_hash=hash_password(user_in.password),
             profile_picture_url=user_in.profile_picture_url,
             role=user_in.role,
+            admin_task=(
+                (user_in.admin_task or "field_manager")
+                if user_in.role == UserRole.MANAGER
+                else None
+            ),
+            salary_day=(
+                max(1, min(31, user_in.salary_day or 30))
+                if user_in.role == UserRole.CASHIER
+                else None
+            ),
         )
         db.add(new_user)
         db.commit()
@@ -103,6 +113,7 @@ class AuthService:
             token_type="bearer",
             full_name=user.full_name,
             role=user.role,
+            admin_task=user.admin_task,
         )
 
     @staticmethod
@@ -156,16 +167,38 @@ class AuthService:
         if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
+        if user_in.password:
+            if user.role == UserRole.MANAGER and user.id != current_user.id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Admins cannot change another admin's password. Each admin can only change their own password.",
+                )
+            user.password_hash = hash_password(user_in.password)
+
         if user_in.full_name is not None:
             user.full_name = user_in.full_name
         if user_in.profile_picture_url is not None:
             user.profile_picture_url = user_in.profile_picture_url
         if user_in.role is not None:
             user.role = user_in.role
+            if user.role == UserRole.MANAGER:
+                user.salary_day = None
+                if not user.admin_task:
+                    user.admin_task = "field_manager"
+            else:
+                user.admin_task = None
+                if not user.salary_day:
+                    user.salary_day = 30
+        if user_in.admin_task is not None:
+            user.admin_task = user_in.admin_task if user.role == UserRole.MANAGER else None
+        if user_in.salary_day is not None:
+            user.salary_day = (
+                max(1, min(31, user_in.salary_day))
+                if user.role == UserRole.CASHIER
+                else None
+            )
         if user_in.is_active is not None:
             user.is_active = user_in.is_active
-        if user_in.password:
-            user.password_hash = hash_password(user_in.password)
 
         db.commit()
         db.refresh(user)

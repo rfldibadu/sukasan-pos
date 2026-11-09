@@ -21,6 +21,7 @@ import {
   RawStockCreatePayload,
   RawStockItem,
   RawStockUpdatePayload,
+  ReimbursementStatus,
 } from "../hooks/use-stocks";
 import { SearchableSelect } from "@/main/components/ui/searchable-select";
 
@@ -88,10 +89,14 @@ export function PurchaseModal({
   const [mode, setMode] = useState<"single" | "multi">("single");
   const [paymentMethod, setPaymentMethod] =
     useState<ExpensePaymentMethod>("m_banking");
+  const [reimbursementStatus, setReimbursementStatus] =
+    useState<ReimbursementStatus>("not_applicable");
   const [supplier, setSupplier] = useState("");
-  const [totalCost, setTotalCost] = useState("");
   const [notes, setNotes] = useState("");
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [showAdjustment, setShowAdjustment] = useState(false);
+  const [discountAmount, setDiscountAmount] = useState("");
+  const [addedBillAmount, setAddedBillAmount] = useState("");
 
   const defaultStock =
     rawStocks.find((s) => s.id === preselectedStockId) || rawStocks[0];
@@ -215,20 +220,51 @@ export function PurchaseModal({
     });
   };
 
+  const activeLines = mode === "single" ? [lines[0]] : lines;
+  const itemsSubtotalSum = activeLines.reduce(
+    (sum, line) => sum + Math.max(0, parseFloat(line.subtotal_cost) || 0),
+    0
+  );
+  const parsedDiscount = showAdjustment
+    ? Math.max(0, parseFloat(discountAmount) || 0)
+    : 0;
+  const parsedAddedBill = showAdjustment
+    ? Math.max(0, parseFloat(addedBillAmount) || 0)
+    : 0;
+  const computedTotalCost = Math.max(
+    0,
+    itemsSubtotalSum - parsedDiscount + parsedAddedBill
+  );
+
   const handleSubmit = async () => {
+    if (computedTotalCost <= 0 && itemsSubtotalSum <= 0) return;
+
     const fd = new FormData();
     fd.append("payment_method", paymentMethod);
+    fd.append(
+      "reimbursement_status",
+      paymentMethod === "cash" ? "not_applicable" : reimbursementStatus
+    );
     if (supplier.trim()) fd.append("supplier_or_store", supplier.trim());
-    if (notes.trim()) fd.append("notes", notes.trim());
 
-    const activeLines = mode === "single" ? [lines[0]] : lines;
+    const adjParts: string[] = [];
+    if (parsedDiscount > 0) {
+      adjParts.push(`Discount: -Rp ${parsedDiscount.toLocaleString("id-ID")}`);
+    }
+    if (parsedAddedBill > 0) {
+      adjParts.push(
+        `Added Bill: +Rp ${parsedAddedBill.toLocaleString("id-ID")}`
+      );
+    }
+    const adjSuffix = adjParts.length > 0 ? `[${adjParts.join(", ")}]` : "";
+    const combinedNotes = [notes.trim(), adjSuffix].filter(Boolean).join(" ");
+    if (combinedNotes) fd.append("notes", combinedNotes);
+
     const payloadItems = activeLines.map((l) => {
       const matched =
         rawStocks.find((s) => s.id === l.raw_stock_id) || rawStocks[0];
       const qty = Math.max(0.1, parseFloat(l.quantity) || 1);
-      const sub =
-        parseFloat(l.subtotal_cost) ||
-        (mode === "single" ? parseFloat(totalCost) || 0 : 0);
+      const sub = Math.max(0, parseFloat(l.subtotal_cost) || 0);
       return {
         raw_stock_id: matched?.id || null,
         raw_stock_name: matched?.name || l.raw_stock_name,
@@ -239,12 +275,7 @@ export function PurchaseModal({
       };
     });
 
-    const computedSum = payloadItems.reduce(
-      (sum, item) => sum + (item.subtotal_cost || 0),
-      0
-    );
-    const finalTotal = parseFloat(totalCost) || computedSum || 10000;
-    fd.append("total_cost", String(finalTotal));
+    fd.append("total_cost", String(computedTotalCost));
     fd.append("items_json", JSON.stringify(payloadItems));
 
     if (receiptFile) {
@@ -343,6 +374,54 @@ export function PurchaseModal({
               />
             </div>
           </div>
+
+          {/* Reimbursement / Funding Source Selector */}
+          {paymentMethod === "cash" ? (
+            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-600 flex items-center justify-between">
+              <span className="font-semibold text-slate-700">
+                Reimbursement Status:
+              </span>
+              <span className="px-2 py-0.5 rounded-md bg-slate-200/80 text-slate-700 font-bold">
+                Paid with Cafe Cash (No Reimburse)
+              </span>
+            </div>
+          ) : (
+            <div>
+              <label className="font-semibold text-slate-700">
+                Funding Source / Reimbursement
+              </label>
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                <button
+                  type="button"
+                  onClick={() => setReimbursementStatus("not_applicable")}
+                  className={`px-3 py-2 rounded-xl border text-left transition-all cursor-pointer ${
+                    reimbursementStatus === "not_applicable"
+                      ? "bg-emerald-50 border-emerald-300 text-emerald-900 font-bold"
+                      : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  <span className="block text-xs">Cafe / Finance Account</span>
+                  <span className="block text-[10px] font-normal text-slate-500">
+                    Paid directly by Finance (No Reimburse)
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setReimbursementStatus("pending")}
+                  className={`px-3 py-2 rounded-xl border text-left transition-all cursor-pointer ${
+                    reimbursementStatus === "pending"
+                      ? "bg-amber-50 border-amber-300 text-amber-900 font-bold"
+                      : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  <span className="block text-xs">Paid Out-of-Pocket</span>
+                  <span className="block text-[10px] font-normal text-slate-500">
+                    Needs reimbursement from Finance
+                  </span>
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Dynamic Line Items Container */}
           <div className="space-y-2">
@@ -580,17 +659,98 @@ export function PurchaseModal({
             </div>
           </div>
 
+          {/* Optional Discount or Added Bill (Shipping / Tax / Fee) */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-slate-600">
+                Discount or Added Bill{" "}
+                <span className="text-slate-400 font-normal">(Optional)</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  if (showAdjustment) {
+                    setDiscountAmount("");
+                    setAddedBillAmount("");
+                  }
+                  setShowAdjustment((prev) => !prev);
+                }}
+                className="text-[11px] font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1 cursor-pointer"
+              >
+                {showAdjustment ? (
+                  <>
+                    <X className="w-3 h-3" />
+                    <span>Remove Discount / Added Bill</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-3 h-3" />
+                    <span>+ Add Discount / Added Bill</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {showAdjustment && (
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-semibold text-emerald-700">
+                      Discount / Promo (- Rp)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={discountAmount}
+                      onChange={(e) => setDiscountAmount(e.target.value)}
+                      placeholder="e.g. 5000"
+                      className="w-full mt-0.5 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-mono text-slate-900 focus:outline-none focus:border-amber-600"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-rose-700">
+                      Added Bill / Fee / Ongkir (+ Rp)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={addedBillAmount}
+                      onChange={(e) => setAddedBillAmount(e.target.value)}
+                      placeholder="e.g. 2500"
+                      className="w-full mt-0.5 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-mono text-slate-900 focus:outline-none focus:border-amber-600"
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-200/70 font-mono">
+                  <span>
+                    Items Subtotal: Rp{" "}
+                    {itemsSubtotalSum.toLocaleString("id-ID")}
+                  </span>
+                  {parsedDiscount > 0 && (
+                    <span className="text-emerald-700 font-semibold">
+                      - Rp {parsedDiscount.toLocaleString("id-ID")}
+                    </span>
+                  )}
+                  {parsedAddedBill > 0 && (
+                    <span className="text-rose-600 font-semibold">
+                      + Rp {parsedAddedBill.toLocaleString("id-ID")}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="font-semibold text-slate-700">
                 Total Bill Amount (Rp)
               </label>
               <input
-                type="number"
-                value={totalCost}
-                onChange={(e) => setTotalCost(e.target.value)}
-                placeholder="e.g. 14000 or 479600"
-                className="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold text-slate-900"
+                type="text"
+                readOnly
+                value={`Rp ${computedTotalCost.toLocaleString("id-ID")}`}
+                className="w-full mt-1 px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl font-mono font-bold text-slate-900 cursor-not-allowed select-none"
               />
             </div>
             <div>
@@ -651,7 +811,7 @@ export function PurchaseModal({
           </button>
           <button
             type="button"
-            disabled={isMutating}
+            disabled={isMutating || computedTotalCost <= 0}
             onClick={handleSubmit}
             className="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold disabled:opacity-50 cursor-pointer"
           >
@@ -684,6 +844,8 @@ export function OperationalModal({
   const [amount, setAmount] = useState("");
   const [paymentMethod, setPaymentMethod] =
     useState<ExpensePaymentMethod>("m_banking");
+  const [reimbursementStatus, setReimbursementStatus] =
+    useState<ReimbursementStatus>("not_applicable");
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
 
   if (!isOpen) return null;
@@ -697,6 +859,10 @@ export function OperationalModal({
     fd.append("category", category);
     fd.append("amount", String(numAmount));
     fd.append("payment_method", paymentMethod);
+    fd.append(
+      "reimbursement_status",
+      paymentMethod === "cash" ? "not_applicable" : reimbursementStatus
+    );
     if (receiptFile) {
       fd.append("receipt", receiptFile);
     }
@@ -705,6 +871,7 @@ export function OperationalModal({
     setTitle("");
     setAmount("");
     setReceiptFile(null);
+    setReimbursementStatus("not_applicable");
   };
 
   return (
@@ -796,6 +963,53 @@ export function OperationalModal({
               </select>
             </div>
           </div>
+
+          {paymentMethod === "cash" ? (
+            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-600 flex items-center justify-between">
+              <span className="font-semibold text-slate-700">
+                Reimbursement Status:
+              </span>
+              <span className="px-2 py-0.5 rounded-md bg-slate-200/80 text-slate-700 font-bold">
+                Paid with Cafe Cash (No Reimburse)
+              </span>
+            </div>
+          ) : (
+            <div>
+              <label className="font-semibold text-slate-700">
+                Funding Source / Reimbursement
+              </label>
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                <button
+                  type="button"
+                  onClick={() => setReimbursementStatus("not_applicable")}
+                  className={`px-3 py-2 rounded-xl border text-left transition-all cursor-pointer ${
+                    reimbursementStatus === "not_applicable"
+                      ? "bg-emerald-50 border-emerald-300 text-emerald-900 font-bold"
+                      : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  <span className="block text-xs">Cafe / Finance Account</span>
+                  <span className="block text-[10px] font-normal text-slate-500">
+                    Paid directly by Finance
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setReimbursementStatus("pending")}
+                  className={`px-3 py-2 rounded-xl border text-left transition-all cursor-pointer ${
+                    reimbursementStatus === "pending"
+                      ? "bg-amber-50 border-amber-300 text-amber-900 font-bold"
+                      : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  <span className="block text-xs">Paid Out-of-Pocket</span>
+                  <span className="block text-[10px] font-normal text-slate-500">
+                    Needs reimbursement
+                  </span>
+                </button>
+              </div>
+            </div>
+          )}
           <div>
             <label className="font-semibold text-slate-700">
               Payment Proof / PLN Receipt (Optional)

@@ -16,6 +16,8 @@ export type RawStockCategory =
 
 export type ExpensePaymentMethod = "m_banking" | "e_wallet" | "qris" | "cash";
 
+export type ReimbursementStatus = "not_applicable" | "pending" | "reimbursed";
+
 export type CostCategory =
   | "electricity_indoor"
   | "electricity_booth"
@@ -76,6 +78,8 @@ export interface StockPurchaseRecord {
   purchased_at: string;
   created_by_id: string;
   created_by_name?: string | null;
+  reimbursement_status?: ReimbursementStatus | null;
+  reimbursed_at?: string | null;
   items: StockPurchaseLineRead[];
 }
 
@@ -88,6 +92,10 @@ export interface OperationalCostRecord {
   notes?: string | null;
   expense_date: string;
   receipt_image_url?: string | null;
+  created_by_id?: string | null;
+  created_by_name?: string | null;
+  reimbursement_status?: ReimbursementStatus | null;
+  reimbursed_at?: string | null;
 }
 
 function extractArray<T>(data: unknown): T[] {
@@ -112,32 +120,46 @@ function extractArray<T>(data: unknown): T[] {
 export function useStocks() {
   const [isMutating, setIsMutating] = useState(false);
 
+  const swrOptions = {
+    dedupingInterval: 120_000, // 2 minutes
+    revalidateOnFocus: false,
+  };
+
   const {
     data: rawRes,
     isLoading: loadingRaw,
     mutate: mutateRaw,
-  } = useSWRPrivateRequest<unknown>({
-    url: "/stocks/raw",
-    method: "GET",
-  });
+  } = useSWRPrivateRequest<unknown>(
+    {
+      url: "/stocks/raw?include_inactive=true",
+      method: "GET",
+    },
+    swrOptions
+  );
 
   const {
     data: purchasesRes,
     isLoading: loadingPurchases,
     mutate: mutatePurchases,
-  } = useSWRPrivateRequest<unknown>({
-    url: "/stocks/purchases?limit=300",
-    method: "GET",
-  });
+  } = useSWRPrivateRequest<unknown>(
+    {
+      url: "/stocks/purchases?limit=300",
+      method: "GET",
+    },
+    swrOptions
+  );
 
   const {
     data: opsRes,
     isLoading: loadingOps,
     mutate: mutateOps,
-  } = useSWRPrivateRequest<unknown>({
-    url: "/operational-costs",
-    method: "GET",
-  });
+  } = useSWRPrivateRequest<unknown>(
+    {
+      url: "/operational-costs",
+      method: "GET",
+    },
+    swrOptions
+  );
 
   const rawStocks = useMemo(
     () => extractArray<RawStockItem>(rawRes),
@@ -155,7 +177,8 @@ export function useStocks() {
   );
 
   const metrics = useMemo(() => {
-    const lowStockItems = rawStocks.filter(
+    const activeStocks = rawStocks.filter((s) => s.is_active);
+    const lowStockItems = activeStocks.filter(
       (s) => s.current_quantity <= s.low_stock_threshold
     );
     const totalStockSpent = purchases.reduce(
@@ -168,6 +191,7 @@ export function useStocks() {
     );
     return {
       totalCatalog: rawStocks.length,
+      activeCatalogCount: activeStocks.length,
       lowStockCount: lowStockItems.length,
       lowStockNames: lowStockItems
         .slice(0, 3)
@@ -256,6 +280,32 @@ export function useStocks() {
     }
   };
 
+  const reimbursePurchase = async (purchaseId: string) => {
+    setIsMutating(true);
+    try {
+      const res = await axiosHttpPrivate.patch(
+        `/stocks/purchases/${purchaseId}/reimburse`
+      );
+      await mutatePurchases();
+      return res.data;
+    } finally {
+      setIsMutating(false);
+    }
+  };
+
+  const reimburseOperationalCost = async (costId: string) => {
+    setIsMutating(true);
+    try {
+      const res = await axiosHttpPrivate.patch(
+        `/operational-costs/${costId}/reimburse`
+      );
+      await mutateOps();
+      return res.data;
+    } finally {
+      setIsMutating(false);
+    }
+  };
+
   return {
     rawStocks,
     purchases,
@@ -268,6 +318,8 @@ export function useStocks() {
     adjustRawStockQuantity,
     recordStockPurchase,
     recordOperationalCost,
+    reimbursePurchase,
+    reimburseOperationalCost,
     refreshAll: () => Promise.all([mutateRaw(), mutatePurchases(), mutateOps()]),
   };
 }

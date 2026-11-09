@@ -1,9 +1,29 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, X, ShieldCheck, KeyRound, Edit3 } from "lucide-react";
+import { useSession } from "next-auth/react";
+import {
+  Plus,
+  X,
+  ShieldCheck,
+  KeyRound,
+  Edit3,
+  Lock,
+  CalendarClock,
+} from "lucide-react";
 import { SearchBar } from "@/main/components/ui/search-bar";
-import { useStaff, StaffRole, StaffUser } from "./_internal/hooks/use-staff";
+import {
+  useStaff,
+  StaffRole,
+  StaffUser,
+  AdminTask,
+} from "./_internal/hooks/use-staff";
+
+const ADMIN_TASK_LABELS: Record<AdminTask, string> = {
+  field_manager: "Field Manager",
+  finance: "Finance",
+  hrd: "HRD",
+};
 
 const getInitials = (fullName: string) => {
   const parts = fullName.trim().split(/\s+/);
@@ -13,7 +33,7 @@ const getInitials = (fullName: string) => {
   return fullName.slice(0, 2).toUpperCase() || "ST";
 };
 
-const getAvatarColorClass = (role: StaffRole, id: number) => {
+const getAvatarColorClass = (role: StaffRole, id: string | number) => {
   if (role === "manager") return "bg-amber-700";
   const cashierColors = [
     "bg-blue-600",
@@ -21,10 +41,15 @@ const getAvatarColorClass = (role: StaffRole, id: number) => {
     "bg-emerald-600",
     "bg-indigo-600",
   ];
-  return cashierColors[id % cashierColors.length];
+  const hash = String(id)
+    .split("")
+    .reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  return cashierColors[hash % cashierColors.length];
 };
 
 export default function UsersPage() {
+  const { data: session } = useSession();
+  const currentUserId = session?.user?.id;
   const { staff, isLoading, registerStaff, updateStaff } = useStaff();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -39,6 +64,8 @@ export default function UsersPage() {
   const [newName, setNewName] = useState("");
   const [newUsername, setNewUsername] = useState("");
   const [newRole, setNewRole] = useState<StaffRole>("cashier");
+  const [newAdminTask, setNewAdminTask] = useState<AdminTask>("field_manager");
+  const [newSalaryDay, setNewSalaryDay] = useState<string>("30");
   const [newPassword, setNewPassword] = useState("");
   const [isSavingNew, setIsSavingNew] = useState(false);
 
@@ -50,6 +77,9 @@ export default function UsersPage() {
   const [editTarget, setEditTarget] = useState<StaffUser | null>(null);
   const [editName, setEditName] = useState("");
   const [editRole, setEditRole] = useState<StaffRole>("cashier");
+  const [editAdminTask, setEditAdminTask] =
+    useState<AdminTask>("field_manager");
+  const [editSalaryDay, setEditSalaryDay] = useState<string>("30");
   const [isEditing, setIsEditing] = useState(false);
 
   const showNotice = (type: "success" | "error", text: string) => {
@@ -81,6 +111,8 @@ export default function UsersPage() {
     setNewName("");
     setNewUsername("");
     setNewRole("cashier");
+    setNewAdminTask("field_manager");
+    setNewSalaryDay("30");
     setNewPassword("");
     setAddOpen(true);
   };
@@ -93,10 +125,16 @@ export default function UsersPage() {
     }
     setIsSavingNew(true);
     try {
+      const parsedDay = Math.min(
+        31,
+        Math.max(1, parseInt(newSalaryDay, 10) || 30)
+      );
       await registerStaff({
         full_name: newName.trim(),
         username: newUsername.trim().toLowerCase(),
         role: newRole,
+        admin_task: newRole === "manager" ? newAdminTask : null,
+        salary_day: newRole === "cashier" ? parsedDay : null,
         password: newPassword,
       });
       showNotice("success", `Staff account created for ${newName.trim()}`);
@@ -149,6 +187,8 @@ export default function UsersPage() {
     setEditTarget(member);
     setEditName(member.full_name);
     setEditRole(member.role);
+    setEditAdminTask(member.admin_task || "field_manager");
+    setEditSalaryDay(String(member.salary_day || 30));
   };
 
   const handleConfirmEdit = async (e: React.FormEvent) => {
@@ -156,9 +196,15 @@ export default function UsersPage() {
     if (!editTarget || !editName.trim()) return;
     setIsEditing(true);
     try {
+      const parsedDay = Math.min(
+        31,
+        Math.max(1, parseInt(editSalaryDay, 10) || 30)
+      );
       await updateStaff(editTarget.id, {
         full_name: editName.trim(),
         role: editRole,
+        admin_task: editRole === "manager" ? editAdminTask : null,
+        salary_day: editRole === "cashier" ? parsedDay : null,
       });
       showNotice("success", `Updated details for ${editName.trim()}`);
       setEditTarget(null);
@@ -312,11 +358,19 @@ export default function UsersPage() {
                       <h3 className="font-bold text-sm text-slate-900 dark:text-white">
                         {member.full_name}
                       </h3>
-                      <span
-                        className={`inline-block mt-0.5 px-2 py-0.5 text-[10px] font-bold rounded-md ${roleBadge}`}
-                      >
-                        {isManager ? "Admin / Manager" : "Cashier"}
-                      </span>
+                      <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                        <span
+                          className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded-md ${roleBadge}`}
+                        >
+                          {isManager ? "Admin / Manager" : "Cashier"}
+                        </span>
+                        {isManager && member.admin_task && (
+                          <span className="inline-block px-2 py-0.5 text-[10px] font-bold rounded-md bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300">
+                            {ADMIN_TASK_LABELS[member.admin_task] ||
+                              member.admin_task}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <span
@@ -337,12 +391,26 @@ export default function UsersPage() {
                       {member.username}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Default Landing</span>
-                    <span className="font-semibold text-slate-600 dark:text-slate-300">
-                      {isManager ? "Dashboard (/)" : "POS Register (/pos)"}
-                    </span>
-                  </div>
+                  {isManager ? (
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Principal Task</span>
+                      <span className="font-semibold text-amber-800 dark:text-amber-300">
+                        {member.admin_task
+                          ? ADMIN_TASK_LABELS[member.admin_task]
+                          : "General Manager"}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between">
+                      <span className="text-slate-400 flex items-center gap-1">
+                        <CalendarClock className="w-3 h-3" />
+                        Salary Date
+                      </span>
+                      <span className="font-semibold text-emerald-700 dark:text-emerald-300">
+                        Every {member.salary_day || 30}th of Month
+                      </span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-slate-400">Permissions</span>
                     <span className="font-semibold text-slate-600 dark:text-slate-300">
@@ -355,17 +423,29 @@ export default function UsersPage() {
 
                 <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700">
                   <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setResetTarget(member);
-                        setResetPasswordVal("");
-                      }}
-                      className="inline-flex items-center gap-1 text-xs font-bold text-amber-700 dark:text-amber-400 hover:underline cursor-pointer"
-                    >
-                      <KeyRound className="w-3.5 h-3.5" />
-                      Reset Password
-                    </button>
+                    {isManager &&
+                    currentUserId &&
+                    String(member.id) !== String(currentUserId) ? (
+                      <span
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400 select-none"
+                        title="Admins cannot change another admin's password"
+                      >
+                        <Lock className="w-3 h-3" />
+                        Own Password Only
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setResetTarget(member);
+                          setResetPasswordVal("");
+                        }}
+                        className="inline-flex items-center gap-1 text-xs font-bold text-amber-700 dark:text-amber-400 hover:underline cursor-pointer"
+                      >
+                        <KeyRound className="w-3.5 h-3.5" />
+                        {isManager ? "Change My Password" : "Reset Password"}
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => handleOpenEdit(member)}
@@ -451,6 +531,50 @@ export default function UsersPage() {
                   </select>
                 </div>
               </div>
+              {newRole === "manager" ? (
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                    Admin Principal Task
+                  </label>
+                  <select
+                    value={newAdminTask}
+                    onChange={(e) =>
+                      setNewAdminTask(e.target.value as AdminTask)
+                    }
+                    className="w-full px-3 py-2.5 text-sm text-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:bg-white focus:outline-none focus:border-amber-600"
+                  >
+                    <option value="field_manager">
+                      Field Manager (General POS &amp; Orders Notifications)
+                    </option>
+                    <option value="finance">
+                      Finance (Expenses &amp; Reimbursement Notifications)
+                    </option>
+                    <option value="hrd">
+                      HRD (Cashier Salary Date Reminders)
+                    </option>
+                  </select>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                    Monthly Salary Date (1&ndash;31)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="31"
+                    required
+                    value={newSalaryDay}
+                    onChange={(e) => setNewSalaryDay(e.target.value)}
+                    placeholder="30"
+                    className="w-full px-3.5 py-2.5 text-sm text-slate-900 font-mono rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:bg-white focus:outline-none focus:border-amber-600"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Default 30th &bull; HRD is notified 2 days before payday
+                    (February automatically adjusts to 28th/29th).
+                  </p>
+                </div>
+              )}
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
                   Initial Password
@@ -585,6 +709,50 @@ export default function UsersPage() {
                   <option value="manager">Admin / Manager (Full Access)</option>
                 </select>
               </div>
+              {editRole === "manager" ? (
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                    Admin Principal Task
+                  </label>
+                  <select
+                    value={editAdminTask}
+                    onChange={(e) =>
+                      setEditAdminTask(e.target.value as AdminTask)
+                    }
+                    className="w-full px-3 py-2.5 text-sm text-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:bg-white focus:outline-none focus:border-amber-600"
+                  >
+                    <option value="field_manager">
+                      Field Manager (General POS &amp; Orders Notifications)
+                    </option>
+                    <option value="finance">
+                      Finance (Expenses &amp; Reimbursement Notifications)
+                    </option>
+                    <option value="hrd">
+                      HRD (Cashier Salary Date Reminders)
+                    </option>
+                  </select>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                    Monthly Salary Date (1&ndash;31)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="31"
+                    required
+                    value={editSalaryDay}
+                    onChange={(e) => setEditSalaryDay(e.target.value)}
+                    placeholder="30"
+                    className="w-full px-3.5 py-2.5 text-sm text-slate-900 font-mono rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:bg-white focus:outline-none focus:border-amber-600"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Default 30th &bull; HRD is notified 2 days before payday
+                    (February automatically adjusts to 28th/29th).
+                  </p>
+                </div>
+              )}
               <div className="pt-2 flex gap-2">
                 <button
                   type="button"

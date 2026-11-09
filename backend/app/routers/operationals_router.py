@@ -1,5 +1,6 @@
 from datetime import datetime, UTC
 from typing import Optional
+import uuid
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 from sqlalchemy.orm import Session
 
@@ -13,6 +14,7 @@ from app.services.operationals_service import (
     create_operational_cost,
     list_operational_costs,
     save_operational_receipt_file,
+    mark_operational_cost_reimbursed,
 )
 
 router = APIRouter(tags=["Operational Expenses"])
@@ -39,6 +41,7 @@ def add_operational_cost_with_receipt(
     amount: float = Form(..., gt=0),
     payment_method: ExpensePaymentMethod = Form(ExpensePaymentMethod.M_BANKING),
     notes: Optional[str] = Form(None),
+    reimbursement_status: Optional[str] = Form("not_applicable"),
     expense_date: Optional[datetime] = Form(None),
     receipt: Optional[UploadFile] = File(None, description="Optional PLN token receipt or transfer screenshot"),
     current_manager: User = Depends(require_manager),
@@ -54,6 +57,7 @@ def add_operational_cost_with_receipt(
         amount=amount,
         payment_method=payment_method,
         notes=notes,
+        reimbursement_status=reimbursement_status,
         expense_date=expense_date or datetime.now(UTC),
         receipt_image_url=receipt_url,
     )
@@ -61,6 +65,19 @@ def add_operational_cost_with_receipt(
     return success_response(
         result.model_dump(mode="json"),
         "Successfully recorded operational expense with payment proof",
+    )
+
+
+@router.patch("/operational-costs/{cost_id}/reimburse")
+def reimburse_operational_cost(
+    cost_id: uuid.UUID,
+    current_manager: User = Depends(require_manager),
+    db: Session = Depends(get_db),
+):
+    result = mark_operational_cost_reimbursed(db, cost_id)
+    return success_response(
+        result.model_dump(mode="json"),
+        "Marked operational expense as reimbursed",
     )
 
 

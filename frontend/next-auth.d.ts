@@ -8,6 +8,8 @@ declare module "next-auth" {
     full_name?: string;
     profile_picture_url?: string | null;
     role: string;
+    admin_task?: "field_manager" | "finance" | "hrd" | null;
+    salary_day?: number | null;
     access_token: string;
   }
 
@@ -19,6 +21,8 @@ declare module "next-auth" {
       full_name?: string;
       profile_picture_url?: string | null;
       role: string;
+      admin_task?: "field_manager" | "finance" | "hrd" | null;
+      salary_day?: number | null;
       access_token?: string;
     } & DefaultSession["user"];
   }
@@ -31,6 +35,8 @@ declare module "next-auth/jwt" {
     full_name?: string;
     profile_picture_url?: string | null;
     role?: string;
+    admin_task?: "field_manager" | "finance" | "hrd" | null;
+    salary_day?: number | null;
     access_token?: string;
   }
 }

@@ -175,10 +175,17 @@ export function useOrders(params: UseOrdersParams = {}) {
   }, [period, status, search, page, limit]);
 
   const { data, isLoading, isValidating, error, mutate } =
-    useSWRPrivateRequest<PaginatedOrdersPayload>({
-      url: `/orders?${queryString}`,
-      method: "GET",
-    });
+    useSWRPrivateRequest<PaginatedOrdersPayload>(
+      {
+        url: `/orders?${queryString}`,
+        method: "GET",
+      },
+      {
+        dedupingInterval: 60_000,
+        revalidateOnFocus: false,
+        keepPreviousData: true,
+      }
+    );
 
   const normalized = useMemo(() => normalizeOrdersResponse(data), [data]);
 

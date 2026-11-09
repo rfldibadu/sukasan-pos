@@ -72,16 +72,28 @@ export function useMenuProducts() {
     isLoading,
     error,
     mutate: mutateProducts,
-  } = useSWRPrivateRequest<unknown>({
-    url: "/products?limit=1000&include_inactive=true",
-    method: "GET",
-  });
+  } = useSWRPrivateRequest<unknown>(
+    {
+      url: "/products?limit=1000&include_inactive=true",
+      method: "GET",
+    },
+    {
+      dedupingInterval: 120_000,
+      revalidateOnFocus: false,
+    }
+  );
 
   const { data: vendorsRes, mutate: mutateVendors } =
-    useSWRPrivateRequest<unknown>({
-      url: "/vendors",
-      method: "GET",
-    });
+    useSWRPrivateRequest<unknown>(
+      {
+        url: "/vendors",
+        method: "GET",
+      },
+      {
+        dedupingInterval: 120_000,
+        revalidateOnFocus: false,
+      }
+    );
 
   const products = useMemo(
     () => extractArray<MenuProductItem>(productsRes),

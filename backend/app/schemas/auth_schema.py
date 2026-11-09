@@ -15,6 +15,8 @@ class UserCreate(BaseModel):
     password: str
     profile_picture_url: Optional[str] = None
     role: UserRole = UserRole.CASHIER
+    admin_task: Optional[str] = None
+    salary_day: Optional[int] = None
 
 
 class UserUpdateSelf(BaseModel):
@@ -28,6 +30,8 @@ class UserUpdateAdmin(BaseModel):
     password: Optional[str] = None
     profile_picture_url: Optional[str] = None
     role: Optional[UserRole] = None
+    admin_task: Optional[str] = None
+    salary_day: Optional[int] = None
     is_active: Optional[bool] = None
 
 
@@ -37,6 +41,8 @@ class UserRead(BaseModel):
     full_name: str
     profile_picture_url: Optional[str] = None
     role: UserRole
+    admin_task: Optional[str] = None
+    salary_day: Optional[int] = None
     is_active: bool
 
     model_config = ConfigDict(from_attributes=True)
@@ -47,3 +53,4 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     full_name: str
     role: UserRole
+    admin_task: Optional[str] = None

@@ -39,10 +39,16 @@ function toProductArray(data: ProductData): PosProductApi[] {
 export function useGetPosProducts() {
   const [category, setCategory] = useState<string>("All");
 
-  const { data, error, isLoading, mutate } = useSWRPrivateRequest<POSProductListResponse | POSProduct[]>({
-    url: "/products?limit=1000",
-    method: "GET",
-  });
+  const { data, error, isLoading, mutate } = useSWRPrivateRequest<POSProductListResponse | POSProduct[]>(
+    {
+      url: "/products?limit=1000",
+      method: "GET",
+    },
+    {
+      dedupingInterval: 120_000,
+      revalidateOnFocus: false,
+    }
+  );
 
   const products: POSProduct[] = useMemo(() => {
     const rawProducts = toProductArray(data);
@@ -96,10 +102,16 @@ export function useGetPosProducts() {
 }
 
 export function useGetAddOns() {
-  const { data, isLoading } = useSWRPrivateRequest<POSProductListResponse | POSProduct[]>({
-    url: "/products?item_type=ADD_ON&limit=1000",
-    method: "GET",
-  });
+  const { data, isLoading } = useSWRPrivateRequest<POSProductListResponse | POSProduct[]>(
+    {
+      url: "/products?limit=1000",
+      method: "GET",
+    },
+    {
+      dedupingInterval: 120_000,
+      revalidateOnFocus: false,
+    }
+  );
 
   const addOns: POSProduct[] = useMemo(() => {
     const rawProducts = toProductArray(data);

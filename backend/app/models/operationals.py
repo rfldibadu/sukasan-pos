@@ -47,6 +47,12 @@ class OperationalCost(Base):
         DateTime(timezone=True), default=now_wita, index=True
     )
     notes: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    reimbursement_status: Mapped[str] = mapped_column(
+        String, default="not_applicable", nullable=False
+    )
+    reimbursed_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     created_by_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=True

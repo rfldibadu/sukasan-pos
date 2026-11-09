@@ -5,15 +5,33 @@ from pathlib import Path
 from typing import List, Optional
 from fastapi import HTTPException, UploadFile, status
 from sqlalchemy import extract
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.core.timezone import now_wita, to_wita
 from app.models.operationals import OperationalCost, CostCategory
+from app.models.stocks import ExpensePaymentMethod
 from app.models.users import User
 from app.schemas.operationals_schema import OperationalCostIn, OperationalCostRead
 
 OPERATIONAL_RECEIPT_DIR = Path("app/static/uploads/receipts/operationals")
 OPERATIONAL_RECEIPT_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _serialize_operational_cost(cost: OperationalCost) -> OperationalCostRead:
+    return OperationalCostRead(
+        id=cost.id,
+        title=cost.title,
+        category=cost.category,
+        amount=cost.amount,
+        payment_method=cost.payment_method,
+        notes=cost.notes,
+        reimbursement_status=getattr(cost, "reimbursement_status", None) or "not_applicable",
+        reimbursed_at=getattr(cost, "reimbursed_at", None),
+        expense_date=cost.expense_date,
+        receipt_image_url=cost.receipt_image_url,
+        created_by_id=cost.created_by_id,
+        created_by_name=cost.created_by.full_name if getattr(cost, "created_by", None) else None,
+    )
 
 
 def save_operational_receipt_file(file: UploadFile, manager_id: uuid.UUID) -> str:
@@ -39,6 +57,12 @@ def create_operational_cost(
     data: OperationalCostIn,
     current_manager: Optional[User] = None,
 ) -> OperationalCostRead:
+    effective_reimburse_status = data.reimbursement_status or "not_applicable"
+    if data.payment_method == ExpensePaymentMethod.CASH:
+        effective_reimburse_status = "not_applicable"
+    elif current_manager and getattr(current_manager, "admin_task", None) == "finance":
+        effective_reimburse_status = "not_applicable"
+
     db_cost = OperationalCost(
         title=data.title.strip(),
         category=data.category,
@@ -47,13 +71,19 @@ def create_operational_cost(
         receipt_image_url=data.receipt_image_url,
         expense_date=to_wita(data.expense_date) if data.expense_date else now_wita(),
         notes=data.notes,
+        reimbursement_status=effective_reimburse_status,
         created_by_id=current_manager.id if current_manager else None,
     )
 
     db.add(db_cost)
     db.commit()
-    db.refresh(db_cost)
-    return OperationalCostRead.model_validate(db_cost)
+    reloaded = (
+        db.query(OperationalCost)
+        .options(joinedload(OperationalCost.created_by))
+        .filter(OperationalCost.id == db_cost.id)
+        .first()
+    )
+    return _serialize_operational_cost(reloaded or db_cost)
 
 
 def list_operational_costs(
@@ -62,7 +92,7 @@ def list_operational_costs(
     year: Optional[int] = None,
     category: Optional[CostCategory] = None,
 ) -> List[OperationalCostRead]:
-    query = db.query(OperationalCost)
+    query = db.query(OperationalCost).options(joinedload(OperationalCost.created_by))
 
     if month:
         query = query.filter(extract("month", OperationalCost.expense_date) == month)
@@ -72,4 +102,27 @@ def list_operational_costs(
         query = query.filter(OperationalCost.category == category)
 
     costs = query.order_by(OperationalCost.expense_date.desc()).all()
-    return [OperationalCostRead.model_validate(c) for c in costs]
+    return [_serialize_operational_cost(c) for c in costs]
+
+
+def mark_operational_cost_reimbursed(
+    db: Session,
+    cost_id: uuid.UUID,
+) -> OperationalCostRead:
+    cost = (
+        db.query(OperationalCost)
+        .options(joinedload(OperationalCost.created_by))
+        .filter(OperationalCost.id == cost_id)
+        .first()
+    )
+    if not cost:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Operational expense not found",
+        )
+
+    cost.reimbursement_status = "reimbursed"
+    cost.reimbursed_at = now_wita()
+    db.commit()
+    db.refresh(cost)
+    return _serialize_operational_cost(cost)

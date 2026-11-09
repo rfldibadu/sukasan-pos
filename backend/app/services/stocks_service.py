@@ -174,6 +174,8 @@ def _serialize_purchase(purchase: StockPurchase) -> StockPurchaseRead:
         total_cost=purchase.total_cost,
         receipt_image_url=purchase.receipt_image_url,
         notes=purchase.notes,
+        reimbursement_status=getattr(purchase, "reimbursement_status", None) or "not_applicable",
+        reimbursed_at=getattr(purchase, "reimbursed_at", None),
         purchased_at=purchase.purchased_at,
         created_by_id=purchase.created_by_id,
         created_by_name=purchase.created_by.full_name if purchase.created_by else None,
@@ -277,12 +279,20 @@ def record_stock_purchase(
                 item_names.append(stock_obj.name)
         notes = ", ".join(item_names)
 
+    # If paid via Cafe Cash or if logged by Finance directly (unless explicitly overridden), no reimbursement is needed
+    effective_reimburse_status = payload.reimbursement_status or "not_applicable"
+    if payload.payment_method == ExpensePaymentMethod.CASH:
+        effective_reimburse_status = "not_applicable"
+    elif getattr(current_manager, "admin_task", None) == "finance":
+        effective_reimburse_status = "not_applicable"
+
     purchase = StockPurchase(
         supplier_or_store=payload.supplier_or_store,
         payment_method=payload.payment_method,
         total_cost=final_total_cost,
         receipt_image_url=receipt_image_url,
         notes=notes,
+        reimbursement_status=effective_reimburse_status,
         purchased_at=to_wita(payload.purchased_at) if payload.purchased_at else now,
         created_by_id=current_manager.id,
         items=db_items,
@@ -328,3 +338,29 @@ def list_stock_purchases(
 
     purchases = query.order_by(StockPurchase.purchased_at.desc()).limit(limit).all()
     return [_serialize_purchase(p) for p in purchases]
+
+
+def mark_stock_purchase_reimbursed(
+    db: Session,
+    purchase_id: uuid.UUID,
+) -> StockPurchaseRead:
+    purchase = (
+        db.query(StockPurchase)
+        .options(
+            joinedload(StockPurchase.items).joinedload(StockPurchaseItem.raw_stock),
+            joinedload(StockPurchase.created_by),
+        )
+        .filter(StockPurchase.id == purchase_id)
+        .first()
+    )
+    if not purchase:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Stock purchase not found",
+        )
+
+    purchase.reimbursement_status = "reimbursed"
+    purchase.reimbursed_at = now_wita()
+    db.commit()
+    db.refresh(purchase)
+    return _serialize_purchase(purchase)

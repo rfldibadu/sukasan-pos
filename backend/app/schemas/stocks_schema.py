@@ -62,6 +62,7 @@ class StockPurchaseCreateIn(BaseModel):
     payment_method: ExpensePaymentMethod = ExpensePaymentMethod.M_BANKING
     total_cost: Optional[float] = Field(None, gt=0)
     notes: Optional[str] = None
+    reimbursement_status: Optional[str] = "not_applicable"
     purchased_at: Optional[datetime] = None
     items: List[StockPurchaseItemIn] = Field(..., min_length=1)
 
@@ -86,6 +87,8 @@ class StockPurchaseRead(BaseModel):
     total_cost: float
     receipt_image_url: Optional[str] = None
     notes: Optional[str] = None
+    reimbursement_status: str = "not_applicable"
+    reimbursed_at: Optional[datetime] = None
     purchased_at: datetime
     created_by_id: uuid.UUID
     created_by_name: Optional[str] = None

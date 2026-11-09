@@ -1,18 +1,24 @@
 // app/profile/_internal/hooks/use-profile.ts
-'use client';
+"use client";
 
-import { signOut } from 'next-auth/react';
-import { useSWRPrivateRequest } from '@/main/lib/axios/use-swr';
-import { axiosHttpPrivate } from '@/main/lib/axios/instance';
-import {UserProfile, UpdateProfileRequest, UpdateProfileResponse, UpdateUserAdminRequest} from '../usecases/profile';
+import { signOut } from "next-auth/react";
+import { useSWRPrivateRequest } from "@/main/lib/axios/use-swr";
+import { axiosHttpPrivate } from "@/main/lib/axios/instance";
+import {
+  UserProfile,
+  UpdateProfileRequest,
+  UpdateProfileResponse,
+  UpdateUserAdminRequest,
+} from "../usecases/profile";
 
 export function useProfile() {
   const { data, error, isLoading, mutate } = useSWRPrivateRequest<UserProfile>(
     {
-      url: '/auth/me',
-      method: 'GET',
+      url: "/auth/me",
+      method: "GET",
     },
     {
+      dedupingInterval: 300_000,
       shouldRetryOnError: false,
       revalidateOnFocus: false,
     }
@@ -33,23 +39,32 @@ export function useProfile() {
   };
 
   const updateProfile = async (payload: UpdateProfileRequest) => {
-    const res = await axiosHttpPrivate.put<UpdateProfileResponse>('/auth/me', payload);
+    const res = await axiosHttpPrivate.put<UpdateProfileResponse>(
+      "/auth/me",
+      payload
+    );
     await mutate();
     return res.data;
   };
 
-  const updateUserByAdmin = async (userId: string, payload: UpdateUserAdminRequest) => {
-    const res = await axiosHttpPrivate.put<UpdateProfileResponse>(`/auth/users/${userId}`, payload);
+  const updateUserByAdmin = async (
+    userId: string,
+    payload: UpdateUserAdminRequest
+  ) => {
+    const res = await axiosHttpPrivate.put<UpdateProfileResponse>(
+      `/auth/users/${userId}`,
+      payload
+    );
     return res.data;
   };
 
   const logoutUser = async () => {
     try {
-      await axiosHttpPrivate.post('/auth/logout');
+      await axiosHttpPrivate.post("/auth/logout");
     } catch {
       // Proceed with client signout if backend request fails
     } finally {
-      await signOut({ callbackUrl: '/login' });
+      await signOut({ callbackUrl: "/login" });
     }
   };
 

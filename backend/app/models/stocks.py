@@ -28,6 +28,12 @@ class ExpensePaymentMethod(str, enum.Enum):
     QRIS = "qris"
 
 
+class ReimbursementStatus(str, enum.Enum):
+    NOT_APPLICABLE = "not_applicable"
+    PENDING = "pending"
+    REIMBURSED = "reimbursed"
+
+
 class RawStock(Base):
     """Tracks raw ingredients and cafe supplies (beans, milks, syrups, creamer, ice crystals, packaging)"""
     __tablename__ = "raw_stocks"
@@ -80,6 +86,12 @@ class StockPurchase(Base):
     total_cost: Mapped[float] = mapped_column(Float, nullable=False)
     receipt_image_url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    reimbursement_status: Mapped[str] = mapped_column(
+        String, default="not_applicable", nullable=False
+    )
+    reimbursed_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     purchased_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=now_wita,

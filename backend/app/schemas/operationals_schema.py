@@ -12,6 +12,7 @@ class OperationalCostBase(BaseModel):
     amount: float = Field(..., gt=0)
     payment_method: Optional[ExpensePaymentMethod] = ExpensePaymentMethod.M_BANKING
     notes: Optional[str] = None
+    reimbursement_status: Optional[str] = "not_applicable"
 
 
 class OperationalCostIn(OperationalCostBase):
@@ -23,6 +24,9 @@ class OperationalCostRead(OperationalCostBase):
     id: uuid.UUID
     expense_date: datetime
     receipt_image_url: Optional[str] = None
+    reimbursement_status: str = "not_applicable"
+    reimbursed_at: Optional[datetime] = None
     created_by_id: Optional[uuid.UUID] = None
+    created_by_name: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)

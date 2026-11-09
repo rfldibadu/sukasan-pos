@@ -54,6 +54,8 @@ export const authOptions: AuthOptions = {
             full_name: user.full_name,
             profile_picture_url: sanitizeAvatarUrl(user.profile_picture_url),
             role: user.role,
+            admin_task: user.admin_task ?? null,
+            salary_day: user.salary_day ?? null,
             access_token: token,
           };
         } catch (error: unknown) {
@@ -75,6 +77,8 @@ export const authOptions: AuthOptions = {
         token.full_name = user.full_name;
         token.profile_picture_url = user.profile_picture_url;
         token.role = user.role;
+        token.admin_task = user.admin_task ?? null;
+        token.salary_day = user.salary_day ?? null;
         token.access_token = user.access_token;
       }
 
@@ -85,6 +89,8 @@ export const authOptions: AuthOptions = {
           });
           token.full_name = meResponse.data.full_name;
           token.profile_picture_url = sanitizeAvatarUrl(meResponse.data.profile_picture_url);
+          token.admin_task = meResponse.data.admin_task ?? null;
+          token.salary_day = meResponse.data.salary_day ?? null;
         } catch (error) {
           console.error("Failed to re-fetch /auth/me safely:", error);
           // Fail silently so NextAuth returns standard JSON instead of crashing with HTML 500
@@ -101,6 +107,8 @@ export const authOptions: AuthOptions = {
         session.user.full_name = token.full_name as string;
         session.user.profile_picture_url = token.profile_picture_url as string | null;
         session.user.role = token.role as string;
+        session.user.admin_task = (token.admin_task as "field_manager" | "finance" | "hrd" | null) ?? null;
+        session.user.salary_day = (token.salary_day as number | null) ?? null;
         session.user.access_token = token.access_token as string;
         session.access_token = token.access_token as string;
       }

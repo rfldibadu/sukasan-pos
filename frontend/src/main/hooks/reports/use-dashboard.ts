@@ -20,8 +20,10 @@ export function useDashboard(
     useSWRPrivateRequest<DashboardReport>(
       { url, method: "GET" },
       {
+        dedupingInterval: 120_000,
         shouldRetryOnError: false,
         revalidateOnFocus: false,
+        keepPreviousData: true,
       }
     );
 

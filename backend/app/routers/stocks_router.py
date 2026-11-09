@@ -24,6 +24,7 @@ from app.services.stocks_service import (
     save_stock_receipt_file,
     record_stock_purchase,
     list_stock_purchases,
+    mark_stock_purchase_reimbursed,
 )
 
 router = APIRouter(tags=["Raw Stocks & Purchases"])
@@ -100,6 +101,7 @@ def add_stock_purchase_with_receipt(
     supplier_or_store: Optional[str] = Form(None),
     total_cost: Optional[float] = Form(None),
     notes: Optional[str] = Form(None),
+    reimbursement_status: Optional[str] = Form("not_applicable"),
     purchased_at: Optional[datetime] = Form(None),
     # Option A: Multi-item receipt passed as a JSON string of StockPurchaseItemIn[]
     items_json: Optional[str] = Form(
@@ -166,6 +168,7 @@ def add_stock_purchase_with_receipt(
         payment_method=payment_method,
         total_cost=total_cost,
         notes=notes,
+        reimbursement_status=reimbursement_status,
         purchased_at=purchased_at,
         items=parsed_items,
     )
@@ -174,6 +177,19 @@ def add_stock_purchase_with_receipt(
     return success_response(
         result.model_dump(mode="json"),
         "Successfully recorded raw stock purchase",
+    )
+
+
+@router.patch("/stocks/purchases/{purchase_id}/reimburse")
+def reimburse_stock_purchase(
+    purchase_id: uuid.UUID,
+    current_manager: User = Depends(require_manager),
+    db: Session = Depends(get_db),
+):
+    result = mark_stock_purchase_reimbursed(db, purchase_id)
+    return success_response(
+        result.model_dump(mode="json"),
+        "Marked stock purchase as reimbursed",
     )
 
 
