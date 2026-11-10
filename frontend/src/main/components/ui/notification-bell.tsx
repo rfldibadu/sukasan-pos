@@ -6,17 +6,29 @@ import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import type { AxiosResponse } from "axios";
 import {
+  AlertCircle,
   Bell,
   CalendarClock,
   Check,
   CheckCircle2,
   Clock,
   Receipt,
+  Send,
   ShoppingBag,
+  Smartphone,
   Sparkles,
   Wallet,
 } from "lucide-react";
 import { axiosHttpPrivate, useSWRPrivateRequest } from "@/main/lib/axios";
+import {
+  getDeviceName,
+  getDeviceSubscription,
+  isIosDevice,
+  isPushNotificationSupported,
+  isStandalonePwa,
+  subscribeDeviceToPush,
+  unsubscribeDeviceFromPush,
+} from "@/main/utils/push-notifications";
 
 type AdminTask = "field_manager" | "finance" | "hrd";
 type ReimbursementStatus = "not_applicable" | "pending" | "reimbursed";
@@ -201,8 +213,127 @@ export function NotificationBell() {
   const [mutatingId, setMutatingId] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Mobile Web Push states
+  const [isPushSubscribed, setIsPushSubscribed] = useState<boolean>(false);
+  const [isPushLoading, setIsPushLoading] = useState<boolean>(false);
+  const [isIosNotPwa] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return isIosDevice() && !isStandalonePwa();
+  });
+  const [pushFeedback, setPushFeedback] = useState<{
+    text: string;
+    type: "success" | "error" | "info";
+  } | null>(null);
+
   const userRole = session?.user?.role;
   const isEligible = userRole === "manager" && pathname !== "/pos";
+
+  // Check current device push subscription
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if (isPushNotificationSupported()) {
+      getDeviceSubscription()
+        .then((sub) => {
+          setIsPushSubscribed(!!sub);
+        })
+        .catch(() => {
+          // ignore
+        });
+    }
+  }, []);
+
+  const showPushNotice = (
+    text: string,
+    type: "success" | "error" | "info" = "success"
+  ) => {
+    setPushFeedback({ text, type });
+    setTimeout(() => setPushFeedback(null), 4500);
+  };
+
+  const handleTogglePush = async () => {
+    if (!isPushNotificationSupported()) {
+      showPushNotice(
+        "Push notifications are not supported on this browser.",
+        "error"
+      );
+      return;
+    }
+
+    setIsPushLoading(true);
+    try {
+      if (isPushSubscribed) {
+        const endpoint = await unsubscribeDeviceFromPush();
+        if (endpoint) {
+          await axiosHttpPrivate.post("/notifications/push/unsubscribe", {
+            endpoint,
+          });
+        }
+        setIsPushSubscribed(false);
+        showPushNotice("Push notifications disabled on this device.", "info");
+      } else {
+        // Fetch VAPID public key
+        const keyRes = await axiosHttpPrivate.get<{ public_key: string }>(
+          "/notifications/push/public-key"
+        );
+        const vapidPublicKey = keyRes.data.public_key;
+
+        const sub = await subscribeDeviceToPush(vapidPublicKey);
+        if (!sub) {
+          throw new Error("Failed to subscribe device to push service.");
+        }
+
+        const subJson = sub.toJSON();
+        const p256dh = subJson.keys?.p256dh;
+        const auth = subJson.keys?.auth;
+
+        if (!p256dh || !auth) {
+          throw new Error("Invalid push subscription keys returned by browser.");
+        }
+
+        await axiosHttpPrivate.post("/notifications/push/subscribe", {
+          endpoint: sub.endpoint,
+          keys: { p256dh, auth },
+          device_name: getDeviceName(),
+        });
+
+        setIsPushSubscribed(true);
+        showPushNotice(
+          "Mobile push active! You will receive notifications even when the app is closed.",
+          "success"
+        );
+      }
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Failed to configure push notifications.";
+      showPushNotice(msg, "error");
+    } finally {
+      setIsPushLoading(false);
+    }
+  };
+
+  const handleSendTestPush = async () => {
+    setIsPushLoading(true);
+    try {
+      const res = await axiosHttpPrivate.post<{ sent_count?: number; message?: string }>(
+        "/notifications/push/test"
+      );
+      const count = res.data?.sent_count ?? 1;
+      showPushNotice(
+        `Test notification sent to ${count} device${count > 1 ? "s" : ""}! Check your phone lock screen or banner.`,
+        "success"
+      );
+    } catch (err: unknown) {
+      const msg =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response?: { data?: { detail?: string } } }).response?.data
+              ?.detail || "Failed to send test push"
+          : "Failed to send test push";
+      showPushNotice(String(msg), "error");
+    } finally {
+      setIsPushLoading(false);
+    }
+  };
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -508,6 +639,100 @@ export function NotificationBell() {
                 <Check className="w-3 h-3" />
                 Mark read
               </button>
+            )}
+          </div>
+
+          {/* Mobile Web Push Bar */}
+          <div className="p-3 bg-amber-50/70 dark:bg-amber-950/30 border-b border-amber-200/60 dark:border-amber-900/40 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-amber-700 text-white flex items-center justify-center shrink-0">
+                  <Smartphone className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white">
+                      Mobile Push
+                    </span>
+                    <span
+                      className={`px-1.5 py-0.2 rounded-full text-[9px] font-bold ${
+                        isPushSubscribed
+                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                          : "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+                      }`}
+                    >
+                      {isPushSubscribed ? "Active ✓" : "Off"}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                    {isPushSubscribed
+                      ? "Receiving alerts even when phone is locked"
+                      : "Get alerts when browser/app is closed"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                {isPushSubscribed && (
+                  <button
+                    type="button"
+                    disabled={isPushLoading}
+                    onClick={handleSendTestPush}
+                    className="px-2 py-1 bg-white dark:bg-slate-800 hover:bg-slate-50 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50 shadow-2xs"
+                    title="Send a real test push notification now"
+                  >
+                    <Send className="w-3 h-3 text-amber-700" />
+                    <span>Test</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  disabled={isPushLoading}
+                  onClick={handleTogglePush}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer disabled:opacity-50 shadow-2xs ${
+                    isPushSubscribed
+                      ? "bg-slate-200 hover:bg-slate-300 text-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-200"
+                      : "bg-amber-700 hover:bg-amber-800 text-white"
+                  }`}
+                >
+                  {isPushLoading
+                    ? "..."
+                    : isPushSubscribed
+                    ? "Disable"
+                    : "Enable Push"}
+                </button>
+              </div>
+            </div>
+
+            {/* iOS Safari Home Screen Guidance */}
+            {isIosNotPwa && (
+              <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-blue-900 dark:text-blue-300 text-[10px] space-y-0.5">
+                <p className="font-bold flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3 text-blue-600 shrink-0" />
+                  iPhone Requirement for Background Push:
+                </p>
+                <p className="text-[9.5px] leading-tight">
+                  Tap Safari&apos;s <strong>Share</strong> button (box with arrow) &rarr; <strong>&quot;Add to Home Screen&quot;</strong>, then open from your home screen to receive push when closed.
+                </p>
+              </div>
+            )}
+
+            {/* Notice banner */}
+            {pushFeedback && (
+              <div
+                className={`p-2 rounded-lg text-[10px] font-semibold flex items-center gap-1.5 ${
+                  pushFeedback.type === "error"
+                    ? "bg-rose-50 text-rose-800 border border-rose-200"
+                    : pushFeedback.type === "info"
+                    ? "bg-slate-100 text-slate-700 border border-slate-200"
+                    : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                }`}
+              >
+                {pushFeedback.type === "success" && (
+                  <Check className="w-3 h-3 text-emerald-600 shrink-0" />
+                )}
+                <span>{pushFeedback.text}</span>
+              </div>
             )}
           </div>
 

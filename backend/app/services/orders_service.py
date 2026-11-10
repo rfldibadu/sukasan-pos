@@ -11,6 +11,7 @@ from app.db.database import SessionLocal
 from app.models.orders import Order, OrderItem, OrderStatus, PaymentMethod, PaymentStatus
 from app.models.products import Product, ItemType
 from app.models.users import User
+from app.services.push_service import notify_admins_new_order
 from app.schemas.orders_schema import (
     OrderCreateIn, 
     OrderRead, 
@@ -153,6 +154,11 @@ def process_checkout(order_data: OrderCreateIn, current_user: User) -> OrderRead
         session.add(db_order)
         session.commit()
         session.refresh(db_order)
+
+        try:
+            notify_admins_new_order(db_order, session)
+        except Exception as push_err:
+            print(f"[PushNotification] Order notify notice: {push_err}")
 
         return OrderRead.model_validate(db_order)
 

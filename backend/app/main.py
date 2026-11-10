@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
 from app.db.database import engine
-from app.models import products, stocks, operationals, orders, users
+from app.models import products, stocks, operationals, orders, users, notifications
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
@@ -15,6 +15,7 @@ from app.routers.operationals_router import router as operational_router
 from app.routers.orders_router import router as order_router
 from app.routers.receipt_router import router as receipt_router
 from app.routers.reports_router import router as reports_router
+from app.routers.push_router import router as push_router
 
 
 def run_startup_schema_migrations():
@@ -33,6 +34,21 @@ def run_startup_schema_migrations():
         "UPDATE users SET admin_task = 'field_manager' WHERE role = 'MANAGER' AND admin_task IS NULL",
         # Assign default salary_day = 30 for existing cashiers if not set
         "UPDATE users SET salary_day = 30 WHERE role = 'CASHIER' AND salary_day IS NULL",
+        # Push subscriptions table
+        """
+        CREATE TABLE IF NOT EXISTS push_subscriptions (
+            id UUID PRIMARY KEY,
+            user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            endpoint TEXT NOT NULL UNIQUE,
+            p256dh TEXT NOT NULL,
+            auth TEXT NOT NULL,
+            device_name VARCHAR NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_push_subscriptions_user_id ON push_subscriptions (user_id)",
+        "CREATE INDEX IF NOT EXISTS ix_push_subscriptions_endpoint ON push_subscriptions (endpoint)",
     ]
     try:
         with engine.begin() as conn:
@@ -83,6 +99,7 @@ app.include_router(operational_router, prefix="/api")
 app.include_router(order_router, prefix="/api")
 app.include_router(receipt_router, prefix="/api")
 app.include_router(reports_router, prefix="/api")
+app.include_router(push_router, prefix="/api")
 
 @app.get("/api/health")
 def health_check():

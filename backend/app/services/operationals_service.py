@@ -11,6 +11,7 @@ from app.core.timezone import now_wita, to_wita
 from app.models.operationals import OperationalCost, CostCategory
 from app.models.stocks import ExpensePaymentMethod
 from app.models.users import User
+from app.services.push_service import notify_finance_expense
 from app.schemas.operationals_schema import OperationalCostIn, OperationalCostRead
 
 OPERATIONAL_RECEIPT_DIR = Path("app/static/uploads/receipts/operationals")
@@ -77,6 +78,18 @@ def create_operational_cost(
 
     db.add(db_cost)
     db.commit()
+
+    if effective_reimburse_status == "pending":
+        try:
+            notify_finance_expense(
+                db_cost.title,
+                db_cost.amount,
+                str(db_cost.id),
+                db,
+            )
+        except Exception as push_err:
+            print(f"[PushNotification] Operational cost notify notice: {push_err}")
+
     reloaded = (
         db.query(OperationalCost)
         .options(joinedload(OperationalCost.created_by))

@@ -16,6 +16,7 @@ from app.models.stocks import (
     ExpensePaymentMethod,
 )
 from app.models.users import User
+from app.services.push_service import notify_finance_expense
 from app.schemas.stocks_schema import (
     RawStockIn,
     RawStockUpdate,
@@ -300,6 +301,17 @@ def record_stock_purchase(
 
     db.add(purchase)
     db.commit()
+
+    if effective_reimburse_status == "pending":
+        try:
+            notify_finance_expense(
+                purchase.supplier_or_store or "Raw Stock Restock",
+                purchase.total_cost,
+                str(purchase.id),
+                db,
+            )
+        except Exception as push_err:
+            print(f"[PushNotification] Stock purchase notify notice: {push_err}")
 
     # Reload with relationships
     reloaded = (
