@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ChevronUp,
   Clock,
@@ -26,6 +26,8 @@ export interface POSCartItem {
   selectedAddOns?: POSProduct[];
 }
 
+const POS_CART_STORAGE_KEY = "sukasan_pos_draft_cart_v1";
+
 export default function POSPage() {
   const { products, categories, category, setCategory, refreshProducts } =
     useGetPosProducts();
@@ -46,6 +48,50 @@ export default function POSPage() {
   const [orderType, setOrderType] = useState<"takeaway" | "dine_in">("dine_in");
   const [paymentMethod, setPaymentMethod] = useState<"qris" | "cash">("qris");
   const [cashReceived, setCashReceived] = useState<number>(0);
+  const hasHydratedRef = useRef(false);
+
+  // Restore draft POS cart & customer info on mount so page navigation keeps current items
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(POS_CART_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed.cart)) {
+          setCart(parsed.cart);
+        }
+        if (typeof parsed.customerName === "string") {
+          setCustomerName(parsed.customerName);
+        }
+        if (parsed.orderType === "takeaway" || parsed.orderType === "dine_in") {
+          setOrderType(parsed.orderType);
+        }
+        if (parsed.paymentMethod === "qris" || parsed.paymentMethod === "cash") {
+          setPaymentMethod(parsed.paymentMethod);
+        }
+      }
+    } catch {
+      // ignore corrupted storage
+    } finally {
+      hasHydratedRef.current = true;
+    }
+  }, []);
+
+  // Persist draft POS cart & customer info whenever modified
+  useEffect(() => {
+    if (!hasHydratedRef.current) return;
+    try {
+      if (cart.length === 0 && !customerName.trim()) {
+        window.localStorage.removeItem(POS_CART_STORAGE_KEY);
+      } else {
+        window.localStorage.setItem(
+          POS_CART_STORAGE_KEY,
+          JSON.stringify({ cart, customerName, orderType, paymentMethod })
+        );
+      }
+    } catch {
+      // ignore quota/storage errors
+    }
+  }, [cart, customerName, orderType, paymentMethod]);
 
   const showNotice = (
     text: string,
@@ -96,8 +142,17 @@ export default function POSPage() {
     });
   };
 
+  const clearPersistedDraft = () => {
+    try {
+      window.localStorage.removeItem(POS_CART_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+  };
+
   const handleClearCart = () => {
     setCart([]);
+    clearPersistedDraft();
     showNotice("Cart cleared", "info");
   };
 
@@ -132,6 +187,7 @@ export default function POSPage() {
       setCart([]);
       setIsMobileCartOpen(false);
       setCustomerName("");
+      clearPersistedDraft();
       refreshProducts();
     } else {
       showNotice("Failed to save Open Bill. Check stock or server.", "error");
@@ -171,6 +227,7 @@ export default function POSPage() {
       setIsMobileCartOpen(false);
       setCustomerName("");
       setCashReceived(0);
+      clearPersistedDraft();
       refreshProducts();
     } else {
       showNotice(

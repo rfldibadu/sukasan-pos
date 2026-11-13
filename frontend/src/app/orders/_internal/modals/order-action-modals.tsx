@@ -17,6 +17,7 @@ import {
 import { POSProduct } from "@/app/pos/_internal/usecases/pos";
 import { useGetAddOns } from "@/app/pos/_internal/hooks/use-get-pos-products";
 import { SearchableSelect } from "@/main/components/ui/searchable-select";
+import { axiosHttpPrivate } from "@/main/lib/axios";
 
 const SUGAR_OPTIONS = ["Normal 100%", "Less 70%", "No Sugar"] as const;
 
@@ -582,7 +583,7 @@ interface VoidOrderModalProps {
   isOpen: boolean;
   isMutating: boolean;
   onClose: () => void;
-  onConfirmVoid: (reason: string) => void;
+  onConfirmVoid: (reason: string, authPin: string) => void;
 }
 
 const VOID_REASONS = [
@@ -601,8 +602,52 @@ export function VoidOrderModal({
 }: VoidOrderModalProps) {
   const [reason, setReason] = useState(VOID_REASONS[0]);
   const [pin, setPin] = useState("");
+  const [pinError, setPinError] = useState<string | null>(null);
+  const [isVerifyingPin, setIsVerifyingPin] = useState(false);
+  const [showYesNoConfirm, setShowYesNoConfirm] = useState(false);
 
   if (!isOpen || !order) return null;
+
+  const handleClose = () => {
+    setPin("");
+    setPinError(null);
+    setShowYesNoConfirm(false);
+    onClose();
+  };
+
+  const handleVerifyAndProceed = async () => {
+    const trimmedPin = pin.trim();
+    if (!/^\d{4,6}$/.test(trimmedPin)) {
+      setPinError("Please enter a valid 4 to 6-digit numeric PIN.");
+      return;
+    }
+
+    setPinError(null);
+    setIsVerifyingPin(true);
+    try {
+      await axiosHttpPrivate.post("/settings/void-pin/verify", {
+        pin: trimmedPin,
+      });
+      setShowYesNoConfirm(true);
+    } catch (err: unknown) {
+      const detail =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response?: { data?: { detail?: string } } }).response?.data
+              ?.detail
+          : null;
+      setPinError(detail || "Invalid authorization PIN.");
+    } finally {
+      setIsVerifyingPin(false);
+    }
+  };
+
+  const handleFinalConfirmYes = () => {
+    const trimmedPin = pin.trim();
+    setShowYesNoConfirm(false);
+    setPin("");
+    setPinError(null);
+    onConfirmVoid(reason, trimmedPin);
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
@@ -619,55 +664,103 @@ export function VoidOrderModal({
           </div>
         </div>
 
-        <div className="space-y-3">
-          <div>
-            <label className="text-xs font-semibold text-slate-700">
-              Reason for Voiding
-            </label>
-            <select
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              className="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900"
-            >
-              {VOID_REASONS.map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-slate-700">
-              Authorization PIN (Optional)
-            </label>
-            <input
-              type="password"
-              maxLength={6}
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              placeholder="Enter 4 or 6-digit PIN"
-              className="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono tracking-widest text-center text-slate-900"
-            />
-          </div>
-        </div>
+        {showYesNoConfirm ? (
+          <div className="space-y-4">
+            <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 space-y-1.5 text-xs">
+              <p className="font-bold text-rose-900">
+                Confirm Void {formatOrderCode(order)}?
+              </p>
+              <p className="text-rose-800">
+                Are you sure you want to void this order and restore product stock?
+              </p>
+              <p className="text-[11px] text-rose-700 pt-1">
+                Reason: <span className="font-semibold">{reason}</span>
+              </p>
+            </div>
 
-        <div className="flex gap-2 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 py-2 text-xs font-semibold text-slate-600 rounded-xl hover:bg-slate-100 cursor-pointer"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            disabled={isMutating}
-            onClick={() => onConfirmVoid(reason)}
-            className="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold disabled:opacity-50 cursor-pointer"
-          >
-            {isMutating ? "Voiding..." : "Confirm Void & Restore Stock"}
-          </button>
-        </div>
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                disabled={isMutating}
+                onClick={() => setShowYesNoConfirm(false)}
+                className="flex-1 py-2.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl cursor-pointer disabled:opacity-50"
+              >
+                No, Go Back
+              </button>
+              <button
+                type="button"
+                disabled={isMutating}
+                onClick={handleFinalConfirmYes}
+                className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold disabled:opacity-50 cursor-pointer"
+              >
+                {isMutating ? "Voiding..." : "Yes, Void Order"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-slate-700">
+                  Reason for Voiding
+                </label>
+                <select
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  className="w-full mt-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900"
+                >
+                  {VOID_REASONS.map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-700">
+                  Authorization PIN <span className="text-rose-600">*</span>
+                </label>
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={pin}
+                  onChange={(e) => {
+                    setPin(e.target.value.replace(/\D/g, ""));
+                    if (pinError) setPinError(null);
+                  }}
+                  placeholder="Enter 4 or 6-digit PIN"
+                  className={`w-full mt-1 px-3 py-2 bg-slate-50 border rounded-xl text-xs font-mono tracking-widest text-center text-slate-900 ${
+                    pinError ? "border-rose-500 bg-rose-50/40" : "border-slate-200"
+                  }`}
+                />
+                {pinError && (
+                  <p className="text-[11px] font-semibold text-rose-600 mt-1">
+                    {pinError}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="flex-1 py-2 text-xs font-semibold text-slate-600 rounded-xl hover:bg-slate-100 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isMutating || isVerifyingPin || !pin.trim()}
+                onClick={handleVerifyAndProceed}
+                className="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold disabled:opacity-50 cursor-pointer"
+              >
+                {isVerifyingPin ? "Verifying PIN..." : "Confirm Void & Restore Stock"}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

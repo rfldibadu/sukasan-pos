@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
 from app.db.database import engine
-from app.models import products, stocks, operationals, orders, users, notifications
+from app.models import products, stocks, operationals, orders, users, notifications, settings
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
@@ -16,6 +16,7 @@ from app.routers.orders_router import router as order_router
 from app.routers.receipt_router import router as receipt_router
 from app.routers.reports_router import router as reports_router
 from app.routers.push_router import router as push_router
+from app.routers.settings_router import router as settings_router
 
 
 def run_startup_schema_migrations():
@@ -49,6 +50,15 @@ def run_startup_schema_migrations():
         """,
         "CREATE INDEX IF NOT EXISTS ix_push_subscriptions_user_id ON push_subscriptions (user_id)",
         "CREATE INDEX IF NOT EXISTS ix_push_subscriptions_endpoint ON push_subscriptions (endpoint)",
+        # App settings table (for admin-configurable Void Authorization PIN, etc.)
+        """
+        CREATE TABLE IF NOT EXISTS app_settings (
+            key VARCHAR PRIMARY KEY,
+            value VARCHAR NOT NULL,
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """,
+        "INSERT INTO app_settings (key, value) VALUES ('void_pin', '0852') ON CONFLICT (key) DO NOTHING",
     ]
     try:
         with engine.begin() as conn:
@@ -100,6 +110,7 @@ app.include_router(order_router, prefix="/api")
 app.include_router(receipt_router, prefix="/api")
 app.include_router(reports_router, prefix="/api")
 app.include_router(push_router, prefix="/api")
+app.include_router(settings_router, prefix="/api")
 
 @app.get("/api/health")
 def health_check():

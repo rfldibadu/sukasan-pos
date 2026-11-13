@@ -19,6 +19,7 @@ from app.services.orders_service import (
     settle_order_payment, 
     complete_order_service,
     add_items_to_order, 
+    remove_item_from_order,
     void_order, 
     get_order_by_id, 
     list_orders_with_pagination,
@@ -117,7 +118,7 @@ def void_order_route(
     current_user: User = Depends(get_current_user)
 ):
     try:
-        return void_order(order_id, payload.void_reason)
+        return void_order(order_id, payload.void_reason, payload.auth_pin)
     except HTTPException as he:
         raise he
     except Exception as e:
@@ -131,6 +132,19 @@ def add_items_to_order_route(
 ):
     try:
         return add_items_to_order(order_id, payload)
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/orders/{order_id}/items/{item_id}", response_model=OrderRead)
+def remove_item_from_order_route(
+    order_id: uuid.UUID,
+    item_id: uuid.UUID,
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        return remove_item_from_order(order_id, item_id)
     except HTTPException as he:
         raise he
     except Exception as e:

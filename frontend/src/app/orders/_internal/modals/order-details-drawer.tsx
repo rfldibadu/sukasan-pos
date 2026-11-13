@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import {
   CheckCircle,
   CreditCard,
   Plus,
   Printer,
+  Trash2,
   X,
   XCircle,
 } from "lucide-react";
@@ -22,6 +24,7 @@ interface OrderDetailsDrawerProps {
   onOpenSettle: () => void;
   onCompletePaidOrder: () => void;
   onOpenAddItems: () => void;
+  onRemoveItem?: (itemId: string) => void;
   onOpenReceipt: () => void;
   onOpenVoid: () => void;
 }
@@ -35,9 +38,12 @@ export function OrderDetailsDrawer({
   onOpenSettle,
   onCompletePaidOrder,
   onOpenAddItems,
+  onRemoveItem,
   onOpenReceipt,
   onOpenVoid,
 }: OrderDetailsDrawerProps) {
+  const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
+
   if (!order) return null;
 
   const isUnpaid = order.payment_status === "unpaid";
@@ -140,9 +146,51 @@ export function OrderDetailsDrawer({
                       </p>
                     )}
                   </div>
-                  <span className="font-mono font-bold text-slate-900">
-                    Rp {item.line_total.toLocaleString("id-ID")}
-                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="font-mono font-bold text-slate-900">
+                      Rp {item.line_total.toLocaleString("id-ID")}
+                    </span>
+                    {isQueued && isUnpaid && onRemoveItem && (
+                      <>
+                        {confirmRemoveId === item.id ? (
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              disabled={isMutating}
+                              onClick={() => {
+                                setConfirmRemoveId(null);
+                                onRemoveItem(item.id);
+                              }}
+                              className="px-2 py-0.5 rounded bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold cursor-pointer disabled:opacity-50"
+                            >
+                              Remove
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmRemoveId(null)}
+                              className="px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300 text-slate-700 text-[10px] font-semibold cursor-pointer"
+                            >
+                              No
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={isMutating || order.items.length <= 1}
+                            onClick={() => setConfirmRemoveId(item.id)}
+                            title={
+                              order.items.length <= 1
+                                ? "Last item — use Void Order to cancel"
+                                : "Remove item from Open Bill"
+                            }
+                            className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
               );
             })}

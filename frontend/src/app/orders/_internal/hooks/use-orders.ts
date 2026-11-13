@@ -248,13 +248,31 @@ export function useOrders(params: UseOrdersParams = {}) {
     }
   };
 
+  // Remove an item from an unpaid open bill (DELETE /orders/{id}/items/{item_id})
+  const removeItemFromOrder = async (orderId: string, itemId: string) => {
+    setIsMutating(true);
+    try {
+      const res = await axiosHttpPrivate.delete<OrderData>(
+        `/orders/${orderId}/items/${itemId}`
+      );
+      await mutate();
+      return res.data;
+    } finally {
+      setIsMutating(false);
+    }
+  };
+
   // Void an order and restore stock (POST /orders/{id}/void)
-  const voidOrder = async (orderId: string, voidReason: string) => {
+  const voidOrder = async (
+    orderId: string,
+    voidReason: string,
+    authPin: string
+  ) => {
     setIsMutating(true);
     try {
       const res = await axiosHttpPrivate.post<OrderData>(
         `/orders/${orderId}/void`,
-        { void_reason: voidReason }
+        { void_reason: voidReason, auth_pin: authPin }
       );
       await mutate();
       return res.data;
@@ -284,6 +302,7 @@ export function useOrders(params: UseOrdersParams = {}) {
     settleOrder,
     completeOrder,
     addItemsToOrder,
+    removeItemFromOrder,
     voidOrder,
   };
 }

@@ -12,6 +12,7 @@ import {
   CalendarClock,
 } from "lucide-react";
 import { SearchBar } from "@/main/components/ui/search-bar";
+import { axiosHttpPrivate } from "@/main/lib/axios";
 import {
   useStaff,
   StaffRole,
@@ -82,9 +83,46 @@ export default function UsersPage() {
   const [editSalaryDay, setEditSalaryDay] = useState<string>("30");
   const [isEditing, setIsEditing] = useState(false);
 
+  // Void Authorization PIN Modal (Manager-only)
+  const [voidPinOpen, setVoidPinOpen] = useState(false);
+  const [newVoidPin, setNewVoidPin] = useState("");
+  const [confirmVoidPin, setConfirmVoidPin] = useState("");
+  const [isSavingVoidPin, setIsSavingVoidPin] = useState(false);
+
   const showNotice = (type: "success" | "error", text: string) => {
     setFeedback({ type, text });
     setTimeout(() => setFeedback(null), 4000);
+  };
+
+  const handleSaveVoidPin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleaned = newVoidPin.trim();
+    if (!/^\d{4,6}$/.test(cleaned)) {
+      showNotice("error", "Void PIN must be 4 to 6 numeric digits.");
+      return;
+    }
+    if (cleaned !== confirmVoidPin.trim()) {
+      showNotice("error", "New Void PIN and confirmation do not match.");
+      return;
+    }
+
+    setIsSavingVoidPin(true);
+    try {
+      await axiosHttpPrivate.put("/settings/void-pin", { new_pin: cleaned });
+      showNotice("success", "Void Authorization PIN updated successfully!");
+      setVoidPinOpen(false);
+      setNewVoidPin("");
+      setConfirmVoidPin("");
+    } catch (err: unknown) {
+      const detail =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response?: { data?: { detail?: string } } }).response?.data
+              ?.detail
+          : null;
+      showNotice("error", detail || "Failed to update Void Authorization PIN.");
+    } finally {
+      setIsSavingVoidPin(false);
+    }
   };
 
   const filteredStaff = useMemo(() => {
@@ -262,6 +300,19 @@ export default function UsersPage() {
               </p>
             </div>
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              setNewVoidPin("");
+              setConfirmVoidPin("");
+              setVoidPinOpen(true);
+            }}
+            className="inline-flex items-center gap-1.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-bold px-3.5 py-2.5 rounded-xl text-xs shadow-xs transition-all cursor-pointer"
+            title="Change Order Void Authorization PIN"
+          >
+            <KeyRound className="w-4 h-4 text-rose-600" />
+            <span>Void PIN</span>
+          </button>
           <button
             type="button"
             onClick={handleOpenAddModal}
@@ -767,6 +818,87 @@ export default function UsersPage() {
                   className="w-1/2 py-2.5 rounded-xl bg-amber-700 hover:bg-amber-800 disabled:opacity-50 text-white text-xs font-bold shadow-md cursor-pointer"
                 >
                   {isEditing ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Change Void Authorization PIN Modal */}
+      {voidPinOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-950/60 text-rose-600 flex items-center justify-center">
+                  <KeyRound className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                    Void Authorization PIN
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Required when voiding any order
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setVoidPinOpen(false)}
+                className="text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveVoidPin} className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                  New PIN (4–6 digits)
+                </label>
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={6}
+                  required
+                  value={newVoidPin}
+                  onChange={(e) => setNewVoidPin(e.target.value.replace(/\D/g, ""))}
+                  placeholder="e.g. 0852"
+                  className="w-full px-3.5 py-2.5 text-sm font-mono tracking-widest text-center text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:bg-white focus:outline-none focus:border-amber-600"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                  Confirm New PIN
+                </label>
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={6}
+                  required
+                  value={confirmVoidPin}
+                  onChange={(e) =>
+                    setConfirmVoidPin(e.target.value.replace(/\D/g, ""))
+                  }
+                  placeholder="Re-enter PIN"
+                  className="w-full px-3.5 py-2.5 text-sm font-mono tracking-widest text-center text-slate-900 dark:text-white rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:bg-white focus:outline-none focus:border-amber-600"
+                />
+              </div>
+              <div className="pt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setVoidPinOpen(false)}
+                  className="w-1/2 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingVoidPin}
+                  className="w-1/2 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-xs font-bold shadow-md cursor-pointer"
+                >
+                  {isSavingVoidPin ? "Saving..." : "Update PIN"}
                 </button>
               </div>
             </form>

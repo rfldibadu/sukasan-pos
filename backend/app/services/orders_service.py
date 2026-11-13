@@ -10,6 +10,7 @@ from app.core.timezone import get_wita_day_bounds, now_wita, to_wita, today_wita
 from app.db.database import SessionLocal
 from app.models.orders import Order, OrderItem, OrderStatus, PaymentMethod, PaymentStatus
 from app.models.products import Product, ItemType
+from app.models.settings import AppSetting
 from app.models.users import User
 from app.services.push_service import notify_admins_new_order
 from app.schemas.orders_schema import (
@@ -312,9 +313,62 @@ def add_items_to_order(order_id: uuid.UUID, items_data: OrderAddItemsIn) -> Orde
         return OrderRead.model_validate(order)
 
 
-def void_order(order_id: uuid.UUID, reason: str) -> OrderRead:
-    """Cancels an existing order and automatically restores stock levels on Product."""
+def remove_item_from_order(order_id: uuid.UUID, item_id: uuid.UUID) -> OrderRead:
+    """Removes a single line item from an active unpaid Open Bill and restores stock."""
     with SessionLocal() as session:
+        order = session.query(Order).options(
+            joinedload(Order.items)
+        ).filter(Order.id == order_id).first()
+
+        if not order:
+            raise HTTPException(status_code=404, detail="Order not found")
+
+        if order.status != OrderStatus.QUEUED or order.payment_status != PaymentStatus.UNPAID:
+            raise HTTPException(
+                status_code=400,
+                detail="Can only remove items from an active unpaid Open Bill",
+            )
+
+        target_item = next((i for i in order.items if i.id == item_id), None)
+        if not target_item:
+            raise HTTPException(status_code=404, detail="Order item not found")
+
+        if len(order.items) <= 1:
+            raise HTTPException(
+                status_code=400,
+                detail="Cannot remove the last item. Please Void the order instead.",
+            )
+
+        # Restore product stock if tracked
+        product = session.query(Product).filter(Product.id == target_item.product_id).first()
+        if product and product.stock_quantity is not None:
+            product.stock_quantity += target_item.quantity
+
+        # Recalculate order totals
+        order.subtotal_amount = max(0.0, order.subtotal_amount - target_item.line_total)
+        order.total_amount = max(0.0, order.subtotal_amount - order.discount_amount)
+        order.net_cafe_revenue = max(
+            0.0, order.net_cafe_revenue - target_item.calculated_cafe_revenue
+        )
+
+        session.delete(target_item)
+        session.commit()
+        session.refresh(order)
+        return OrderRead.model_validate(order)
+
+
+def void_order(order_id: uuid.UUID, reason: str, auth_pin: str) -> OrderRead:
+    """Cancels an existing order after verifying the Authorization PIN and restores stock."""
+    with SessionLocal() as session:
+        pin_setting = session.query(AppSetting).filter(AppSetting.key == "void_pin").first()
+        expected_pin = (
+            pin_setting.value.strip()
+            if pin_setting and pin_setting.value
+            else "0852"
+        )
+        if (auth_pin or "").strip() != expected_pin:
+            raise HTTPException(status_code=403, detail="Invalid authorization PIN.")
+
         order = session.query(Order).options(
             joinedload(Order.items)
         ).filter(Order.id == order_id).first()

@@ -52,6 +52,7 @@ export default function OrdersPage() {
     settleOrder,
     completeOrder,
     addItemsToOrder,
+    removeItemFromOrder,
     voidOrder,
   } = useOrders({
     period: shiftFilter,
@@ -183,16 +184,37 @@ export default function OrdersPage() {
     }
   };
 
-  const handleConfirmVoid = async (reason: string) => {
+  const handleRemoveOpenBillItem = async (itemId: string) => {
     if (!activeOrder) return;
     try {
-      await voidOrder(activeOrder.id, reason);
+      await removeItemFromOrder(activeOrder.id, itemId);
+      refreshProducts();
+      showNotice("Item removed from Open Bill and stock restored!", "info");
+    } catch (err: unknown) {
+      const detail =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response?: { data?: { detail?: string } } }).response?.data
+              ?.detail
+          : null;
+      showNotice(detail || "Failed to remove item from Open Bill.", "error");
+    }
+  };
+
+  const handleConfirmVoid = async (reason: string, authPin: string) => {
+    if (!activeOrder) return;
+    try {
+      await voidOrder(activeOrder.id, reason, authPin);
       setIsVoidOpen(false);
       setSelectedOrderId(null);
       refreshProducts();
       showNotice("Order voided and product stock restored!", "info");
-    } catch {
-      showNotice("Failed to void order.", "error");
+    } catch (err: unknown) {
+      const detail =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response?: { data?: { detail?: string } } }).response?.data
+              ?.detail
+          : null;
+      showNotice(detail || "Failed to void order.", "error");
     }
   };
 
@@ -574,6 +596,7 @@ export default function OrdersPage() {
         onOpenSettle={() => setIsSettleOpen(true)}
         onCompletePaidOrder={handleCompletePaidOrder}
         onOpenAddItems={() => setIsAddItemsOpen(true)}
+        onRemoveItem={handleRemoveOpenBillItem}
         onOpenReceipt={() => setIsReceiptOpen(true)}
         onOpenVoid={() => setIsVoidOpen(true)}
       />

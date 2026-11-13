@@ -27,6 +27,7 @@ class OrderSettleIn(BaseModel):
 
 class OrderVoidIn(BaseModel):
     void_reason: str = Field(..., min_length=1)
+    auth_pin: str = Field(..., min_length=4, max_length=6)
 
 class OrderAddItemsIn(BaseModel):
     items: List[OrderItemIn]
