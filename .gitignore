@@ -6,6 +6,8 @@ cloudflared-config.yml
 
 # Uploads & local media assets
 backend/app/static/uploads/
+backups/
+backend/backups/
 
 # Python caches & virtual environments
 __pycache__/
