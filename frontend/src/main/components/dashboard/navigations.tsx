@@ -11,6 +11,7 @@ import {
   Package,
   Boxes,
   Users,
+  MessageCircle,
 } from "lucide-react";
 import { NotificationBell } from "@/main/components/ui/notification-bell";
 import { ProfileAvatar } from "@/main/components/ui/profile-avatar";
@@ -30,6 +31,12 @@ export function NavigationHeader() {
       roles: ["manager", "cashier"],
     },
     {
+      name: "WA & Delivery",
+      href: "/whatsapp",
+      icon: MessageCircle,
+      roles: ["manager", "cashier"],
+    },
+    {
       name: "Menu",
       href: "/products",
       icon: Package,
@@ -45,6 +52,7 @@ export function NavigationHeader() {
     "/": "Cafe POS & Consignment",
     "/pos": "Cashier Terminal • Active Shift",
     "/orders": "Order Queue & Open Bills",
+    "/whatsapp": "OpenWA AI & Grab/GoSend Delivery",
     "/products": "Menu & Consignment Catalog",
     "/stocks": "Raw Materials & Purchase Receipts",
     "/users": "Team & Access Control",

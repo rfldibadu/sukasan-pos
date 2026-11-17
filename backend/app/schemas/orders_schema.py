@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import List, Literal, Optional
 from pydantic import BaseModel, Field, ConfigDict
-from app.models.orders import PaymentMethod, PaymentStatus, OrderType, OrderStatus
+from app.models.orders import PaymentMethod, PaymentStatus, OrderType, OrderSource, OrderStatus
 
 class OrderItemIn(BaseModel):
     product_id: uuid.UUID
@@ -16,8 +16,13 @@ class OrderCreateIn(BaseModel):
     payment_status: PaymentStatus = PaymentStatus.UNPAID
     cash_amount_received: Optional[float] = None
     order_type: OrderType = OrderType.DINE_IN
+    order_source: OrderSource = OrderSource.POS
     customer_name: Optional[str] = None
+    customer_phone: Optional[str] = None
     table_number: Optional[str] = None
+    delivery_address: Optional[str] = None
+    delivery_provider: Optional[str] = None
+    delivery_fee: float = Field(0.0, ge=0.0)
     discount_amount: float = Field(0.0, ge=0.0)
 
 class OrderSettleIn(BaseModel):
@@ -61,8 +66,15 @@ class OrderRead(BaseModel):
     cash_amount_received: Optional[float] = None
     change_given: Optional[float] = None
     order_type: OrderType
+    order_source: OrderSource = OrderSource.POS
     customer_name: Optional[str] = None
+    customer_phone: Optional[str] = None
     table_number: Optional[str] = None
+    delivery_address: Optional[str] = None
+    delivery_provider: Optional[str] = None
+    delivery_fee: float = 0.0
+    delivery_tracking_id: Optional[str] = None
+    delivery_status: Optional[str] = None
     daily_order_number: Optional[int] = None
     status: OrderStatus
     void_reason: Optional[str] = None

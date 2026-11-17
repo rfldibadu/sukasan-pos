@@ -6,9 +6,11 @@ import {
   Check,
   Clock,
   Coffee,
+  MessageCircle,
   Printer,
   RefreshCw,
   ShoppingBag,
+  Truck,
 } from "lucide-react";
 import { SearchBar } from "@/main/components/ui/search-bar";
 import { Pagination } from "@/main/components/ui/pagination";
@@ -54,6 +56,7 @@ export default function OrdersPage() {
     addItemsToOrder,
     removeItemFromOrder,
     voidOrder,
+    dispatchDelivery,
   } = useOrders({
     period: shiftFilter,
     status: statusTab,
@@ -197,6 +200,19 @@ export default function OrdersPage() {
               ?.detail
           : null;
       showNotice(detail || "Failed to remove item from Open Bill.", "error");
+    }
+  };
+
+  const handleDispatchDelivery = async (provider?: string) => {
+    if (!activeOrder) return;
+    try {
+      const res = await dispatchDelivery(activeOrder.id, provider);
+      showNotice(
+        `Courier dispatched (${(res.provider || "courier").toUpperCase()}) • Tracking: ${res.tracking_id}`,
+        "success"
+      );
+    } catch {
+      showNotice("Failed to dispatch delivery courier.", "error");
     }
   };
 
@@ -481,9 +497,20 @@ export default function OrdersPage() {
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
                           <Coffee className="w-3 h-3" /> Dine-In
                         </span>
+                      ) : order.order_type === "delivery" ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
+                          <Truck className="w-3 h-3" />{" "}
+                          {(order.delivery_provider || "Delivery").replace("_", " ").toUpperCase()}
+                        </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-200">
                           <ShoppingBag className="w-3 h-3" /> Takeaway
+                        </span>
+                      )}
+
+                      {order.order_source === "whatsapp" && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <MessageCircle className="w-3 h-3" /> WhatsApp
                         </span>
                       )}
 
@@ -599,6 +626,7 @@ export default function OrdersPage() {
         onRemoveItem={handleRemoveOpenBillItem}
         onOpenReceipt={() => setIsReceiptOpen(true)}
         onOpenVoid={() => setIsVoidOpen(true)}
+        onDispatchDelivery={handleDispatchDelivery}
       />
 
       {/* Action Modals */}

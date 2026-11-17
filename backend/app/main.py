@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
 from app.db.database import engine
-from app.models import products, stocks, operationals, orders, users, notifications, settings
+from app.models import products, stocks, operationals, orders, users, notifications, settings, whatsapp
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
@@ -17,6 +17,8 @@ from app.routers.receipt_router import router as receipt_router
 from app.routers.reports_router import router as reports_router
 from app.routers.push_router import router as push_router
 from app.routers.settings_router import router as settings_router
+from app.routers.whatsapp_router import router as whatsapp_router
+from app.routers.delivery_router import router as delivery_router
 
 
 def run_startup_schema_migrations():
@@ -59,6 +61,43 @@ def run_startup_schema_migrations():
         )
         """,
         "INSERT INTO app_settings (key, value) VALUES ('void_pin', '0852') ON CONFLICT (key) DO NOTHING",
+        # WhatsApp & Delivery order columns
+        "ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_source VARCHAR NOT NULL DEFAULT 'pos'",
+        "ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_phone VARCHAR DEFAULT NULL",
+        "ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_address VARCHAR DEFAULT NULL",
+        "ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_provider VARCHAR DEFAULT NULL",
+        "ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_fee FLOAT NOT NULL DEFAULT 0.0",
+        "ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_tracking_id VARCHAR DEFAULT NULL",
+        "ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_status VARCHAR DEFAULT NULL",
+        # WhatsApp AI sessions & message logs
+        """
+        CREATE TABLE IF NOT EXISTS whatsapp_sessions (
+            id UUID PRIMARY KEY,
+            phone_number VARCHAR NOT NULL UNIQUE,
+            customer_name VARCHAR NULL,
+            state VARCHAR NOT NULL DEFAULT 'browsing',
+            draft_cart JSON NOT NULL DEFAULT '[]',
+            delivery_address TEXT NULL,
+            selected_provider VARCHAR NULL,
+            quoted_delivery_fee FLOAT NOT NULL DEFAULT 0.0,
+            payment_method VARCHAR NULL,
+            conversation_history JSON NOT NULL DEFAULT '[]',
+            last_order_id UUID NULL,
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_whatsapp_sessions_phone ON whatsapp_sessions (phone_number)",
+        """
+        CREATE TABLE IF NOT EXISTS whatsapp_message_logs (
+            id UUID PRIMARY KEY,
+            session_id UUID NOT NULL REFERENCES whatsapp_sessions(id) ON DELETE CASCADE,
+            direction VARCHAR NOT NULL,
+            message_text TEXT NOT NULL,
+            wa_message_id VARCHAR NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_whatsapp_message_logs_session ON whatsapp_message_logs (session_id)",
     ]
     try:
         with engine.begin() as conn:
@@ -111,6 +150,8 @@ app.include_router(receipt_router, prefix="/api")
 app.include_router(reports_router, prefix="/api")
 app.include_router(push_router, prefix="/api")
 app.include_router(settings_router, prefix="/api")
+app.include_router(whatsapp_router, prefix="/api")
+app.include_router(delivery_router, prefix="/api")
 
 @app.get("/api/health")
 def health_check():

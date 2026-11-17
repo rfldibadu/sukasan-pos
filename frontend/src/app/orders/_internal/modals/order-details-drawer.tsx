@@ -4,9 +4,12 @@ import { useState } from "react";
 import {
   CheckCircle,
   CreditCard,
+  MapPin,
+  MessageCircle,
   Plus,
   Printer,
   Trash2,
+  Truck,
   X,
   XCircle,
 } from "lucide-react";
@@ -27,6 +30,7 @@ interface OrderDetailsDrawerProps {
   onRemoveItem?: (itemId: string) => void;
   onOpenReceipt: () => void;
   onOpenVoid: () => void;
+  onDispatchDelivery?: (provider?: string) => void;
 }
 
 export function OrderDetailsDrawer({
@@ -41,6 +45,7 @@ export function OrderDetailsDrawer({
   onRemoveItem,
   onOpenReceipt,
   onOpenVoid,
+  onDispatchDelivery,
 }: OrderDetailsDrawerProps) {
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
 
@@ -84,8 +89,18 @@ export function OrderDetailsDrawer({
             </div>
             <p className="text-xs text-slate-600 mt-0.5 font-medium">
               {order.customer_name || "Guest"} &bull;{" "}
-              {order.order_type === "dine_in" ? "Dine-In" : "Takeaway"}
+              {order.order_type === "dine_in"
+                ? "Dine-In"
+                : order.order_type === "delivery"
+                ? "Delivery"
+                : "Takeaway"}
             </p>
+            {order.order_source === "whatsapp" && (
+              <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <MessageCircle className="w-3 h-3" /> WhatsApp Order
+                {order.customer_phone ? ` • ${order.customer_phone}` : ""}
+              </span>
+            )}
           </div>
           <button
             type="button"
@@ -211,6 +226,16 @@ export function OrderDetailsDrawer({
               Rp {order.discount_amount.toLocaleString("id-ID")}
             </span>
           </div>
+          {(order.delivery_fee ?? 0) > 0 && (
+            <div className="flex justify-between text-slate-500">
+              <span>
+                Delivery Fee ({(order.delivery_provider || "courier").replace("_", " ").toUpperCase()})
+              </span>
+              <span className="font-mono">
+                Rp {(order.delivery_fee || 0).toLocaleString("id-ID")}
+              </span>
+            </div>
+          )}
           <div className="flex justify-between font-bold text-slate-900 pt-2 border-t border-slate-100 text-sm">
             <span>Total Tagihan (Bill Due)</span>
             <span className="font-mono text-amber-800">
@@ -229,6 +254,57 @@ export function OrderDetailsDrawer({
             </div>
           )}
         </div>
+
+        {/* Delivery Info & Grab/GoSend Dispatch */}
+        {(order.order_type === "delivery" || order.delivery_address) && (
+          <div className="bg-sky-50/70 rounded-xl border border-sky-200 p-3.5 space-y-2 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-sky-900 inline-flex items-center gap-1.5">
+                <Truck className="w-4 h-4 text-sky-600" />
+                {(order.delivery_provider || "gosend").replace("_", " ").toUpperCase()}
+              </span>
+              {order.delivery_status && (
+                <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-white text-sky-800 border border-sky-200">
+                  {order.delivery_status.replace("_", " ")}
+                </span>
+              )}
+            </div>
+            {order.delivery_address && (
+              <p className="text-slate-700 flex items-start gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-sky-600 shrink-0 mt-0.5" />
+                <span>{order.delivery_address}</span>
+              </p>
+            )}
+            {order.delivery_tracking_id && (
+              <p className="text-[11px] font-mono text-sky-800">
+                Tracking ID: <span className="font-bold">{order.delivery_tracking_id}</span>
+              </p>
+            )}
+            {!isVoided &&
+              order.delivery_provider !== "self_pickup" &&
+              !order.delivery_tracking_id &&
+              onDispatchDelivery && (
+                <div className="flex gap-2 pt-1">
+                  <button
+                    type="button"
+                    disabled={isMutating}
+                    onClick={() => onDispatchDelivery("gosend")}
+                    className="flex-1 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold cursor-pointer disabled:opacity-50"
+                  >
+                    Dispatch GoSend
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isMutating}
+                    onClick={() => onDispatchDelivery("grab_express")}
+                    className="flex-1 py-2 px-3 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-[11px] font-bold cursor-pointer disabled:opacity-50"
+                  >
+                    Dispatch GrabExpress
+                  </button>
+                </div>
+              )}
+          </div>
+        )}
 
         {/* Dynamic Actions Based on Open Bill / Paid Status */}
         <div className="space-y-2 pt-2">

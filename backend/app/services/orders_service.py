@@ -94,9 +94,10 @@ def process_checkout(order_data: OrderCreateIn, current_user: User) -> OrderRead
                 )
             )
 
-        # 7. Overall Discount Math
+        # 7. Overall Discount & Delivery Math
         discount = min(order_data.discount_amount, subtotal_amount)
-        final_total = subtotal_amount - discount
+        delivery_fee = max(0.0, float(getattr(order_data, "delivery_fee", 0.0) or 0.0))
+        final_total = (subtotal_amount - discount) + delivery_fee
         net_cafe_revenue = max(0.0, net_cafe_revenue - discount)
 
         # 8. Daily order sequence number calculation (FIFO for today in WITA UTC+8)
@@ -143,9 +144,15 @@ def process_checkout(order_data: OrderCreateIn, current_user: User) -> OrderRead
             cash_amount_received=cash_received,
             change_given=change_given,
             order_type=order_data.order_type,
+            order_source=order_data.order_source,
             cashier_id=current_user.id,
             customer_name=order_data.customer_name,
+            customer_phone=order_data.customer_phone,
             table_number=order_data.table_number,
+            delivery_address=order_data.delivery_address,
+            delivery_provider=order_data.delivery_provider,
+            delivery_fee=delivery_fee,
+            delivery_status="pending" if order_data.delivery_provider and order_data.delivery_provider != "self_pickup" else None,
             daily_order_number=daily_order_number,
             status=order_status,
             created_at=now_wita(),

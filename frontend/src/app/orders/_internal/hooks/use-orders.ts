@@ -34,9 +34,16 @@ export interface OrderData {
   payment_status: "unpaid" | "paid";
   cash_amount_received?: number | null;
   change_given?: number | null;
-  order_type: "dine_in" | "takeaway";
+  order_type: "dine_in" | "takeaway" | "delivery";
+  order_source?: "pos" | "whatsapp";
   customer_name?: string | null;
+  customer_phone?: string | null;
   table_number?: string | null;
+  delivery_address?: string | null;
+  delivery_provider?: string | null;
+  delivery_fee?: number;
+  delivery_tracking_id?: string | null;
+  delivery_status?: string | null;
   daily_order_number?: number | null;
   status: "queued" | "completed" | "voided";
   void_reason?: string | null;
@@ -281,6 +288,21 @@ export function useOrders(params: UseOrdersParams = {}) {
     }
   };
 
+  // Dispatch GrabExpress / GoSend courier for a delivery order
+  const dispatchDelivery = async (orderId: string, provider?: string) => {
+    setIsMutating(true);
+    try {
+      const res = await axiosHttpPrivate.post(
+        `/delivery/orders/${orderId}/dispatch`,
+        { provider: provider || null }
+      );
+      await mutate();
+      return res.data;
+    } finally {
+      setIsMutating(false);
+    }
+  };
+
   return {
     orders: normalized.items,
     counts: normalized.counts,
@@ -304,5 +326,6 @@ export function useOrders(params: UseOrdersParams = {}) {
     addItemsToOrder,
     removeItemFromOrder,
     voidOrder,
+    dispatchDelivery,
   };
 }

@@ -23,6 +23,11 @@ class PaymentStatus(str, enum.Enum):
 class OrderType(str, enum.Enum):
     DINE_IN = "dine_in"
     TAKEAWAY = "takeaway"
+    DELIVERY = "delivery"
+
+class OrderSource(str, enum.Enum):
+    POS = "pos"
+    WHATSAPP = "whatsapp"
 
 class OrderStatus(str, enum.Enum):
     QUEUED = "queued"
@@ -60,9 +65,18 @@ class Order(Base):
     order_type: Mapped[OrderType] = mapped_column(
         SQLEnum(OrderType, native_enum=False, values_callable=lambda x: [e.value for e in x]), default=OrderType.DINE_IN
     )
+    order_source: Mapped[OrderSource] = mapped_column(
+        SQLEnum(OrderSource, native_enum=False, values_callable=lambda x: [e.value for e in x]), default=OrderSource.POS
+    )
     cashier_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     cashier: Mapped["User"] = relationship("User", lazy="joined")
     customer_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    customer_phone: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    delivery_address: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    delivery_provider: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    delivery_fee: Mapped[float] = mapped_column(Float, default=0.0)
+    delivery_tracking_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    delivery_status: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
     @property
     def cashier_name(self) -> Optional[str]:

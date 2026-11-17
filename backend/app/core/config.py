@@ -16,6 +16,23 @@ class Settings(BaseSettings):
     vapid_private_key_pem: Optional[str] = None
     vapid_claim_email: Optional[str] = "mailto:admin@sukasan.com"
 
+    # AI (Google Gemini Free Tier)
+    gemini_api_key: Optional[str] = None
+    gemini_model: str = "gemini-2.5-flash"
+
+    # WhatsApp (OpenWA Easy API + Simulator)
+    whatsapp_provider: str = "openwa"  # "openwa" | "simulator"
+    openwa_base_url: str = "http://localhost:8080"
+    openwa_api_key: Optional[str] = None
+    openwa_webhook_secret: Optional[str] = None
+
+    # Delivery (GrabExpress / GoSend via Sandbox or Biteship)
+    delivery_provider_mode: str = "sandbox"  # "sandbox" | "biteship"
+    biteship_api_key: Optional[str] = None
+    store_origin_address: str = "Sukasan Coffee"
+    store_origin_lat: float = -8.6500
+    store_origin_lng: float = 115.2167
+
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore"
