@@ -121,11 +121,20 @@ def get_dashboard_report(
     # 5. Payment Breakdown
     payment_stats = {}
     for o in paid_orders:
-        pm = o.payment_method.value if hasattr(o.payment_method, "value") else str(o.payment_method or "cash")
-        if pm not in payment_stats:
-            payment_stats[pm] = {"total": 0.0, "count": 0}
-        payment_stats[pm]["total"] += o.total_amount
-        payment_stats[pm]["count"] += 1
+        if getattr(o, "payment_breakdown", None) and isinstance(o.payment_breakdown, list):
+            for part in o.payment_breakdown:
+                pm = str(part.get("payment_method") or "cash")
+                amt = float(part.get("amount") or 0.0)
+                if pm not in payment_stats:
+                    payment_stats[pm] = {"total": 0.0, "count": 0}
+                payment_stats[pm]["total"] += amt
+                payment_stats[pm]["count"] += 1
+        else:
+            pm = o.payment_method.value if hasattr(o.payment_method, "value") else str(o.payment_method or "cash")
+            if pm not in payment_stats:
+                payment_stats[pm] = {"total": 0.0, "count": 0}
+            payment_stats[pm]["total"] += o.total_amount
+            payment_stats[pm]["count"] += 1
 
     payment_breakdown = [
         PaymentMethodBreakdown(

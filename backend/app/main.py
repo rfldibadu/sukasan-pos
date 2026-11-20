@@ -28,6 +28,7 @@ def run_startup_schema_migrations():
         "ALTER TABLE stock_purchases ADD COLUMN IF NOT EXISTS reimbursed_at TIMESTAMPTZ DEFAULT NULL",
         "ALTER TABLE operational_costs ADD COLUMN IF NOT EXISTS reimbursement_status VARCHAR NOT NULL DEFAULT 'not_applicable'",
         "ALTER TABLE operational_costs ADD COLUMN IF NOT EXISTS reimbursed_at TIMESTAMPTZ DEFAULT NULL",
+        "ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_breakdown JSON DEFAULT NULL",
         # Assign principal tasks for existing managers if not set
         "UPDATE users SET admin_task = 'field_manager' WHERE role = 'MANAGER' AND admin_task IS NULL AND (LOWER(full_name) LIKE '%rifaldi%' OR LOWER(username) = 'admin')",
         "UPDATE users SET admin_task = 'finance' WHERE role = 'MANAGER' AND admin_task IS NULL AND (LOWER(full_name) LIKE '%gerhana%' OR LOWER(username) LIKE 'gean%')",

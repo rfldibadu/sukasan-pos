@@ -187,24 +187,74 @@ def settle_order_payment(order_id: uuid.UUID, settle_data: OrderSettleIn) -> Ord
             order.total_amount = order.subtotal_amount - discount
             order.net_cafe_revenue = max(0.0, order.net_cafe_revenue - discount)
 
-        # Validate cash tendered
+        # Split / Multi-Method Payment Settlement vs Single-Method Settlement
         change_given = 0.0
-        if settle_data.payment_method == PaymentMethod.CASH:
-            if settle_data.cash_amount_received is None:
-                raise HTTPException(
-                    status_code=400, 
-                    detail="cash_amount_received is required for CASH transactions"
+        if settle_data.split_payments and len(settle_data.split_payments) > 0:
+            totals_by_method: dict[str, float] = {}
+            for part in settle_data.split_payments:
+                totals_by_method[part.payment_method] = (
+                    totals_by_method.get(part.payment_method, 0.0) + float(part.amount)
                 )
-            if settle_data.cash_amount_received < order.total_amount:
-                raise HTTPException(
-                    status_code=400, 
-                    detail=f"Insufficient cash payment. Needed: {order.total_amount}, Received: {settle_data.cash_amount_received}"
-                )
-            change_given = settle_data.cash_amount_received - order.total_amount
 
-        order.payment_method = settle_data.payment_method
+            split_total = sum(totals_by_method.values())
+            if abs(split_total - order.total_amount) > 0.01:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Split payment total ({split_total}) must equal bill total ({order.total_amount}).",
+                )
+
+            cash_portion = totals_by_method.get("cash", 0.0)
+            cash_received: Optional[float] = None
+            if cash_portion > 0:
+                if settle_data.cash_amount_received is not None:
+                    if settle_data.cash_amount_received < cash_portion:
+                        raise HTTPException(
+                            status_code=400,
+                            detail=f"Insufficient cash payment. Cash share: {cash_portion}, Received: {settle_data.cash_amount_received}",
+                        )
+                    cash_received = settle_data.cash_amount_received
+                    change_given = settle_data.cash_amount_received - cash_portion
+                else:
+                    cash_received = cash_portion
+                    change_given = 0.0
+
+            breakdown = [
+                {"payment_method": m, "amount": amt}
+                for m, amt in totals_by_method.items()
+                if amt > 0
+            ]
+            order.payment_breakdown = breakdown
+            order.payment_method = (
+                PaymentMethod.SPLIT
+                if len(breakdown) > 1
+                else PaymentMethod(breakdown[0]["payment_method"])
+            )
+            order.cash_amount_received = cash_received
+        else:
+            if not settle_data.payment_method:
+                raise HTTPException(
+                    status_code=400,
+                    detail="payment_method is required when split_payments is not provided.",
+                )
+
+            if settle_data.payment_method == PaymentMethod.CASH:
+                if settle_data.cash_amount_received is None:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="cash_amount_received is required for CASH transactions",
+                    )
+                if settle_data.cash_amount_received < order.total_amount:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Insufficient cash payment. Needed: {order.total_amount}, Received: {settle_data.cash_amount_received}",
+                    )
+                change_given = settle_data.cash_amount_received - order.total_amount
+
+            order.payment_method = settle_data.payment_method
+            order.payment_breakdown = None
+            order.cash_amount_received = settle_data.cash_amount_received
+
         order.payment_status = PaymentStatus.PAID
-        order.cash_amount_received = settle_data.cash_amount_received
         order.change_given = change_given
         order.status = OrderStatus.COMPLETED
 

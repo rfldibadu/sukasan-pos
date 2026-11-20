@@ -20,10 +20,15 @@ class OrderCreateIn(BaseModel):
     table_number: Optional[str] = None
     discount_amount: float = Field(0.0, ge=0.0)
 
+class SplitPaymentPart(BaseModel):
+    payment_method: Literal["cash", "qris"]
+    amount: float = Field(..., gt=0)
+
 class OrderSettleIn(BaseModel):
-    payment_method: PaymentMethod
+    payment_method: Optional[PaymentMethod] = None
     cash_amount_received: Optional[float] = None
     discount_amount: float = Field(0.0, ge=0.0)
+    split_payments: Optional[List[SplitPaymentPart]] = None
 
 class OrderVoidIn(BaseModel):
     void_reason: str = Field(..., min_length=1)
@@ -60,6 +65,7 @@ class OrderRead(BaseModel):
     payment_status: PaymentStatus
     cash_amount_received: Optional[float] = None
     change_given: Optional[float] = None
+    payment_breakdown: Optional[List[dict]] = None
     order_type: OrderType
     customer_name: Optional[str] = None
     table_number: Optional[str] = None

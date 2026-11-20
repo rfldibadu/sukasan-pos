@@ -15,6 +15,7 @@ class PaymentMethod(str, enum.Enum):
     CASH = "cash"
     QRIS = "qris"
     TRANSFER = "transfer"
+    SPLIT = "split"
 
 class PaymentStatus(str, enum.Enum):
     UNPAID = "unpaid"
@@ -55,6 +56,7 @@ class Order(Base):
     )
     cash_amount_received: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     change_given: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    payment_breakdown: Mapped[Optional[list]] = mapped_column(JSON, nullable=True, default=None)
     
     # Context & Status
     order_type: Mapped[OrderType] = mapped_column(

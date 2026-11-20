@@ -65,12 +65,22 @@ export default function ProfilePage() {
       (o) => o.created_at.slice(0, 10) === todayStr
     );
     const validOrders = todaysOrders.filter((o) => o.status !== "voided");
-    const cashReceived = validOrders
-      .filter((o) => o.payment_status === "paid" && o.payment_method === "cash")
-      .reduce((acc, o) => acc + o.total_amount, 0);
-    const qrisReceived = validOrders
-      .filter((o) => o.payment_status === "paid" && o.payment_method === "qris")
-      .reduce((acc, o) => acc + o.total_amount, 0);
+    let cashReceived = 0;
+    let qrisReceived = 0;
+
+    for (const o of validOrders) {
+      if (o.payment_status !== "paid") continue;
+      if (o.payment_breakdown && o.payment_breakdown.length > 0) {
+        for (const part of o.payment_breakdown) {
+          if (part.payment_method === "cash") cashReceived += part.amount || 0;
+          if (part.payment_method === "qris") qrisReceived += part.amount || 0;
+        }
+      } else if (o.payment_method === "cash") {
+        cashReceived += o.total_amount;
+      } else if (o.payment_method === "qris") {
+        qrisReceived += o.total_amount;
+      }
+    }
 
     return {
       ordersPunched: validOrders.length,

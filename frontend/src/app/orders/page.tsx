@@ -128,24 +128,25 @@ export default function OrdersPage() {
     setPage(1);
   };
 
-  const handleConfirmSettle = async (
-    method: "cash" | "qris",
-    cashReceived: number | null
-  ) => {
+  const handleConfirmSettle = async (payload: {
+    payment_method?: "cash" | "qris";
+    cash_amount_received?: number | null;
+    split_payments?: Array<{ payment_method: "cash" | "qris"; amount: number }>;
+  }) => {
     if (!activeOrder) return;
     try {
-      await settleOrder(activeOrder.id, {
-        payment_method: method,
-        cash_amount_received: cashReceived,
-      });
+      await settleOrder(activeOrder.id, payload);
       setIsSettleOpen(false);
       setSelectedOrderId(null);
+      const label = payload.split_payments?.length
+        ? "SPLIT PAYMENT"
+        : (payload.payment_method || "cash").toUpperCase();
       showNotice(
-        `Open Bill settled (${method.toUpperCase()}) & marked completed!`,
+        `Open Bill settled (${label}) & marked completed!`,
         "success"
       );
     } catch {
-      showNotice("Failed to settle open bill. Check cash amount.", "error");
+      showNotice("Failed to settle open bill. Check payment amounts.", "error");
     }
   };
 
@@ -604,6 +605,7 @@ export default function OrdersPage() {
       {/* Action Modals */}
       <SettleBillModal
         order={activeOrder}
+        productLookup={productLookup}
         isOpen={isSettleOpen}
         isMutating={isMutating}
         onClose={() => setIsSettleOpen(false)}

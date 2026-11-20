@@ -5,8 +5,12 @@ import Image from "next/image";
 import {
   AlertTriangle,
   Banknote,
+  Check,
+  Plus,
   Printer,
   QrCode,
+  Trash2,
+  Users,
   X,
 } from "lucide-react";
 import {
@@ -26,36 +30,138 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api/backend";
 /* =========================================================
    1. SETTLE OPEN BILL MODAL
    ========================================================= */
+interface SplitRow {
+  id: string;
+  payment_method: "cash" | "qris";
+  amount: string;
+}
+
 interface SettleBillModalProps {
   order: OrderData | null;
+  productLookup?: Record<string, string>;
   isOpen: boolean;
   isMutating: boolean;
   onClose: () => void;
-  onConfirmSettle: (
-    method: "cash" | "qris",
-    cashReceived: number | null
-  ) => void;
+  onConfirmSettle: (payload: {
+    payment_method?: "cash" | "qris";
+    cash_amount_received?: number | null;
+    split_payments?: Array<{ payment_method: "cash" | "qris"; amount: number }>;
+  }) => void;
 }
 
 export function SettleBillModal({
   order,
+  productLookup = {},
   isOpen,
   isMutating,
   onClose,
   onConfirmSettle,
 }: SettleBillModalProps) {
+  const [settleMode, setSettleMode] = useState<"single" | "split">("single");
   const [method, setMethod] = useState<"cash" | "qris">("cash");
   const [cashTendered, setCashTendered] = useState<string>("");
+
+  // Split payment states
+  const [splitRows, setSplitRows] = useState<SplitRow[]>([]);
+  const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
+  const [assignedItemIds, setAssignedItemIds] = useState<string[]>([]);
 
   if (!isOpen || !order) return null;
 
   const numericCash = parseFloat(cashTendered) || 0;
-  const changeDue =
+  const singleChangeDue =
     method === "cash" ? Math.max(0, numericCash - order.total_amount) : 0;
+
+  // Split payment calculations
+  const parsedRows = splitRows.map((r) => ({
+    ...r,
+    numericAmount: Math.max(0, parseFloat(r.amount) || 0),
+  }));
+  const splitPaidTotal = parsedRows.reduce((s, r) => s + r.numericAmount, 0);
+  const splitRemaining = Math.max(0, order.total_amount - splitPaidTotal);
+  const splitCashTotal = parsedRows
+    .filter((r) => r.payment_method === "cash")
+    .reduce((s, r) => s + r.numericAmount, 0);
+  const splitQrisTotal = parsedRows
+    .filter((r) => r.payment_method === "qris")
+    .reduce((s, r) => s + r.numericAmount, 0);
+  const splitCashChangeDue =
+    splitCashTotal > 0 && cashTendered.trim() !== ""
+      ? Math.max(0, numericCash - splitCashTotal)
+      : 0;
+  const isSplitValid =
+    parsedRows.length > 0 &&
+    parsedRows.every((r) => r.numericAmount > 0) &&
+    Math.abs(splitPaidTotal - order.total_amount) < 1 &&
+    (splitCashTotal === 0 ||
+      cashTendered.trim() === "" ||
+      numericCash >= splitCashTotal);
+
+  const selectedItemsTotal = order.items
+    .filter((item) => selectedItemIds.includes(item.id))
+    .reduce((sum, item) => sum + item.line_total, 0);
+
+  const toggleItemSelection = (itemId: string) => {
+    setSelectedItemIds((prev) =>
+      prev.includes(itemId)
+        ? prev.filter((id) => id !== itemId)
+        : [...prev, itemId]
+    );
+  };
+
+  const addSplitRow = (pm: "cash" | "qris", amountValue: number, markSelected = false) => {
+    if (amountValue <= 0) return;
+    setSplitRows((prev) => [
+      ...prev,
+      {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        payment_method: pm,
+        amount: String(Math.round(amountValue)),
+      },
+    ]);
+    if (markSelected && selectedItemIds.length > 0) {
+      setAssignedItemIds((prev) =>
+        Array.from(new Set([...prev, ...selectedItemIds]))
+      );
+      setSelectedItemIds([]);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setSettleMode("single");
+    setCashTendered("");
+    setSplitRows([]);
+    setSelectedItemIds([]);
+    setAssignedItemIds([]);
+    onClose();
+  };
+
+  const handleConfirm = () => {
+    if (settleMode === "single") {
+      onConfirmSettle({
+        payment_method: method,
+        cash_amount_received: method === "cash" ? numericCash : null,
+      });
+      return;
+    }
+
+    onConfirmSettle({
+      split_payments: parsedRows.map((r) => ({
+        payment_method: r.payment_method,
+        amount: r.numericAmount,
+      })),
+      cash_amount_received:
+        splitCashTotal > 0
+          ? cashTendered.trim() !== ""
+            ? numericCash
+            : splitCashTotal
+          : null,
+    });
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+      <div className="bg-white rounded-2xl max-w-md w-full max-h-[92vh] overflow-y-auto p-6 shadow-2xl space-y-4">
         <div className="flex items-center justify-between border-b border-slate-100 pb-2">
           <div>
             <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
@@ -67,7 +173,7 @@ export function SettleBillModal({
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleCloseModal}
             className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
           >
             <X className="w-4 h-4" />
@@ -81,82 +187,357 @@ export function SettleBillModal({
           </p>
         </div>
 
-        {/* Payment Method Toggle */}
-        <div className="grid grid-cols-2 gap-2 text-xs font-semibold">
+        {/* Single vs Split Payment Mode Switch */}
+        <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-xl text-[11px] font-bold">
           <button
             type="button"
-            onClick={() => setMethod("cash")}
-            className={`py-2.5 rounded-xl border flex items-center justify-center gap-1.5 cursor-pointer ${
-              method === "cash"
-                ? "border-amber-600 bg-amber-100 text-amber-800"
-                : "border-slate-200 text-slate-600"
+            onClick={() => setSettleMode("single")}
+            className={`py-1.5 rounded-lg transition-all cursor-pointer ${
+              settleMode === "single"
+                ? "bg-white text-slate-900 shadow-xs"
+                : "text-slate-500 hover:text-slate-700"
             }`}
           >
-            <Banknote className="w-4 h-4" /> Cash
+            Single Payment
           </button>
           <button
             type="button"
-            onClick={() => setMethod("qris")}
-            className={`py-2.5 rounded-xl border flex items-center justify-center gap-1.5 cursor-pointer ${
-              method === "qris"
-                ? "border-amber-600 bg-amber-100 text-amber-800"
-                : "border-slate-200 text-slate-600"
+            onClick={() => setSettleMode("split")}
+            className={`py-1.5 rounded-lg flex items-center justify-center gap-1 transition-all cursor-pointer ${
+              settleMode === "split"
+                ? "bg-white text-amber-800 shadow-xs"
+                : "text-slate-500 hover:text-slate-700"
             }`}
           >
-            <QrCode className="w-4 h-4" /> QRIS
+            <Users className="w-3.5 h-3.5" /> Split (Group)
           </button>
         </div>
 
-        {method === "cash" ? (
-          <div className="p-3 bg-slate-50 rounded-xl space-y-2 border border-slate-100 text-xs">
-            <div>
-              <label className="text-slate-600 font-semibold">
-                Cash Tendered (Rp)
-              </label>
-              <input
-                type="number"
-                value={cashTendered}
-                onChange={(e) => setCashTendered(e.target.value)}
-                placeholder="e.g. 100000"
-                className="w-full mt-1 px-3 py-2 bg-white border border-slate-200 rounded-xl font-mono text-sm text-slate-900"
-              />
-              <div className="flex gap-1.5 mt-2">
-                {[order.total_amount, 50000, 100000].map((preset) => (
-                  <button
-                    key={preset}
-                    type="button"
-                    onClick={() => setCashTendered(String(preset))}
-                    className="px-2 py-1 rounded-lg bg-white border border-slate-200 text-[10px] font-mono font-semibold text-slate-700 hover:border-amber-500 cursor-pointer"
-                  >
-                    {preset === order.total_amount
-                      ? "Uang Pas"
-                      : `Rp ${(preset / 1000).toFixed(0)}k`}
-                  </button>
-                ))}
+        {settleMode === "single" ? (
+          <>
+            {/* Payment Method Toggle */}
+            <div className="grid grid-cols-2 gap-2 text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setMethod("cash")}
+                className={`py-2.5 rounded-xl border flex items-center justify-center gap-1.5 cursor-pointer ${
+                  method === "cash"
+                    ? "border-amber-600 bg-amber-100 text-amber-800"
+                    : "border-slate-200 text-slate-600"
+                }`}
+              >
+                <Banknote className="w-4 h-4" /> Cash
+              </button>
+              <button
+                type="button"
+                onClick={() => setMethod("qris")}
+                className={`py-2.5 rounded-xl border flex items-center justify-center gap-1.5 cursor-pointer ${
+                  method === "qris"
+                    ? "border-amber-600 bg-amber-100 text-amber-800"
+                    : "border-slate-200 text-slate-600"
+                }`}
+              >
+                <QrCode className="w-4 h-4" /> QRIS
+              </button>
+            </div>
+
+            {method === "cash" ? (
+              <div className="p-3 bg-slate-50 rounded-xl space-y-2 border border-slate-100 text-xs">
+                <div>
+                  <label className="text-slate-600 font-semibold">
+                    Cash Tendered (Rp)
+                  </label>
+                  <input
+                    type="number"
+                    value={cashTendered}
+                    onChange={(e) => setCashTendered(e.target.value)}
+                    placeholder="e.g. 100000"
+                    className="w-full mt-1 px-3 py-2 bg-white border border-slate-200 rounded-xl font-mono text-sm text-slate-900"
+                  />
+                  <div className="flex gap-1.5 mt-2">
+                    {[order.total_amount, 50000, 100000].map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => setCashTendered(String(preset))}
+                        className="px-2 py-1 rounded-lg bg-white border border-slate-200 text-[10px] font-mono font-semibold text-slate-700 hover:border-amber-500 cursor-pointer"
+                      >
+                        {preset === order.total_amount
+                          ? "Uang Pas"
+                          : `Rp ${(preset / 1000).toFixed(0)}k`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex justify-between pt-1">
+                  <span className="text-slate-500">Change Due (Kembalian):</span>
+                  <span className="font-mono font-bold text-emerald-600">
+                    Rp {singleChangeDue.toLocaleString("id-ID")}
+                  </span>
+                </div>
               </div>
-            </div>
-            <div className="flex justify-between pt-1">
-              <span className="text-slate-500">Change Due (Kembalian):</span>
-              <span className="font-mono font-bold text-emerald-600">
-                Rp {changeDue.toLocaleString("id-ID")}
-              </span>
-            </div>
-          </div>
+            ) : (
+              <div className="p-4 bg-slate-50 rounded-2xl text-center space-y-2 border border-slate-100">
+                <div className="w-32 h-32 bg-white border border-slate-300 mx-auto rounded-xl flex items-center justify-center shadow-xs">
+                  <QrCode className="w-20 h-20 text-slate-800" />
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  Scan QRIS to confirm payment
+                </p>
+              </div>
+            )}
+          </>
         ) : (
-          <div className="p-4 bg-slate-50 rounded-2xl text-center space-y-2 border border-slate-100">
-            <div className="w-32 h-32 bg-white border border-slate-300 mx-auto rounded-xl flex items-center justify-center shadow-xs">
-              <QrCode className="w-20 h-20 text-slate-800" />
+          <div className="space-y-3 text-xs">
+            {/* Optional Item-Picker Calculator */}
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-700">
+                  Tap Items to Sum Share (Optional)
+                </span>
+                {selectedItemIds.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedItemIds([])}
+                    className="text-[10px] text-slate-500 hover:text-slate-700 underline cursor-pointer"
+                  >
+                    Clear selection
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
+                {order.items.map((item, idx) => {
+                  const name =
+                    item.product_name ||
+                    productLookup[item.product_id] ||
+                    `Item #${idx + 1}`;
+                  const isSelected = selectedItemIds.includes(item.id);
+                  const isAssigned = assignedItemIds.includes(item.id);
+
+                  return (
+                    <button
+                      key={item.id || idx}
+                      type="button"
+                      onClick={() => toggleItemSelection(item.id)}
+                      className={`px-2 py-1 rounded-lg border text-[10px] font-semibold flex items-center gap-1 transition-all cursor-pointer ${
+                        isSelected
+                          ? "bg-amber-700 text-white border-amber-700"
+                          : isAssigned
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200 opacity-75"
+                          : "bg-white text-slate-700 border-slate-200 hover:border-amber-400"
+                      }`}
+                    >
+                      {isAssigned && !isSelected && (
+                        <Check className="w-2.5 h-2.5 text-emerald-600" />
+                      )}
+                      <span>
+                        {item.quantity}x {name}
+                      </span>
+                      <span className="font-mono opacity-80">
+                        ({Math.round(item.line_total / 1000)}k)
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {selectedItemIds.length > 0 && (
+                <div className="pt-1.5 border-t border-slate-200 flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-bold text-amber-800 font-mono">
+                    Selected: Rp {selectedItemsTotal.toLocaleString("id-ID")}
+                  </span>
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        addSplitRow("cash", selectedItemsTotal, true)
+                      }
+                      className="px-2 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold cursor-pointer"
+                    >
+                      + Cash
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        addSplitRow("qris", selectedItemsTotal, true)
+                      }
+                      className="px-2 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold cursor-pointer"
+                    >
+                      + QRIS
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-            <p className="text-[11px] text-slate-500">
-              Scan QRIS to confirm payment
-            </p>
+
+            {/* Split Payment Rows */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-700">
+                  Payment Shares ({splitRows.length})
+                </span>
+                <div className="flex gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      addSplitRow("cash", splitRemaining > 0 ? splitRemaining : 0)
+                    }
+                    className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold inline-flex items-center gap-0.5 cursor-pointer"
+                  >
+                    <Plus className="w-3 h-3" /> Cash
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      addSplitRow("qris", splitRemaining > 0 ? splitRemaining : 0)
+                    }
+                    className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold inline-flex items-center gap-0.5 cursor-pointer"
+                  >
+                    <Plus className="w-3 h-3" /> QRIS
+                  </button>
+                </div>
+              </div>
+
+              {splitRows.length === 0 ? (
+                <div className="p-3 rounded-xl border border-dashed border-slate-200 text-center text-[11px] text-slate-400">
+                  Tap items above or click + Cash / + QRIS to split the bill.
+                </div>
+              ) : (
+                <div className="space-y-1.5 max-h-36 overflow-y-auto pr-0.5">
+                  {splitRows.map((row) => (
+                    <div
+                      key={row.id}
+                      className="flex items-center gap-1.5 bg-white p-1.5 rounded-xl border border-slate-200"
+                    >
+                      <select
+                        value={row.payment_method}
+                        onChange={(e) => {
+                          const val = e.target.value as "cash" | "qris";
+                          setSplitRows((prev) =>
+                            prev.map((r) =>
+                              r.id === row.id ? { ...r, payment_method: val } : r
+                            )
+                          );
+                        }}
+                        className="px-2 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-[11px] font-bold text-slate-800"
+                      >
+                        <option value="cash">Cash</option>
+                        <option value="qris">QRIS</option>
+                      </select>
+                      <div className="relative flex-1">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-mono">
+                          Rp
+                        </span>
+                        <input
+                          type="number"
+                          min={0}
+                          value={row.amount}
+                          onChange={(e) =>
+                            setSplitRows((prev) =>
+                              prev.map((r) =>
+                                r.id === row.id
+                                  ? { ...r, amount: e.target.value }
+                                  : r
+                              )
+                            )
+                          }
+                          className="w-full pl-7 pr-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg font-mono text-xs text-slate-900"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSplitRows((prev) =>
+                            prev.filter((r) => r.id !== row.id)
+                          )
+                        }
+                        className="p-1.5 text-slate-400 hover:text-rose-600 cursor-pointer"
+                        title="Remove payment row"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {splitRemaining > 0 && splitRows.length > 0 && (
+                <div className="flex gap-1.5 pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => addSplitRow("cash", splitRemaining)}
+                    className="flex-1 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 text-[10px] font-bold cursor-pointer"
+                  >
+                    + Remaining Cash (Rp {splitRemaining.toLocaleString("id-ID")})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => addSplitRow("qris", splitRemaining)}
+                    className="flex-1 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-900 text-[10px] font-bold cursor-pointer"
+                  >
+                    + Remaining QRIS (Rp {splitRemaining.toLocaleString("id-ID")})
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Split Totals & Optional Cash Tendered */}
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-1.5 text-[11px]">
+              <div className="flex justify-between text-slate-600">
+                <span>Cash Share Total</span>
+                <span className="font-mono font-bold">
+                  Rp {splitCashTotal.toLocaleString("id-ID")}
+                </span>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>QRIS Share Total</span>
+                <span className="font-mono font-bold">
+                  Rp {splitQrisTotal.toLocaleString("id-ID")}
+                </span>
+              </div>
+              <div className="flex justify-between border-t border-slate-200 pt-1.5 font-bold">
+                <span className="text-slate-700">Remaining Balance</span>
+                <span
+                  className={`font-mono ${
+                    splitRemaining === 0 && Math.abs(splitPaidTotal - order.total_amount) < 1
+                      ? "text-emerald-600"
+                      : "text-rose-600"
+                  }`}
+                >
+                  Rp {(order.total_amount - splitPaidTotal).toLocaleString("id-ID")}
+                </span>
+              </div>
+
+              {splitCashTotal > 0 && (
+                <div className="pt-2 border-t border-slate-200 space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <label className="text-slate-600 font-semibold whitespace-nowrap">
+                      Cash Tendered (Optional)
+                    </label>
+                    <input
+                      type="number"
+                      value={cashTendered}
+                      onChange={(e) => setCashTendered(e.target.value)}
+                      placeholder={String(splitCashTotal)}
+                      className="w-32 px-2.5 py-1 bg-white border border-slate-200 rounded-lg font-mono text-xs text-right text-slate-900"
+                    />
+                  </div>
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-slate-500">Cash Change Due:</span>
+                    <span className="font-mono font-bold text-emerald-600">
+                      Rp {splitCashChangeDue.toLocaleString("id-ID")}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
         <div className="flex gap-2 pt-2">
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleCloseModal}
             className="flex-1 py-2 text-xs font-semibold text-slate-600 rounded-xl hover:bg-slate-100 cursor-pointer"
           >
             Cancel
@@ -165,11 +546,11 @@ export function SettleBillModal({
             type="button"
             disabled={
               isMutating ||
-              (method === "cash" && numericCash < order.total_amount)
+              (settleMode === "single"
+                ? method === "cash" && numericCash < order.total_amount
+                : !isSplitValid)
             }
-            onClick={() =>
-              onConfirmSettle(method, method === "cash" ? numericCash : null)
-            }
+            onClick={handleConfirm}
             className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold disabled:opacity-50 cursor-pointer"
           >
             {isMutating ? "Settling..." : "Settle & Complete"}

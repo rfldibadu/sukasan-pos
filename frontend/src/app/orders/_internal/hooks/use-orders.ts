@@ -30,7 +30,11 @@ export interface OrderData {
   net_cafe_revenue: number;
   cashier_id: string;
   cashier_name?: string | null;
-  payment_method?: "cash" | "qris" | "transfer" | null;
+  payment_method?: "cash" | "qris" | "transfer" | "split" | null;
+  payment_breakdown?: Array<{
+    payment_method: "cash" | "qris";
+    amount: number;
+  }> | null;
   payment_status: "unpaid" | "paid";
   cash_amount_received?: number | null;
   change_given?: number | null;
@@ -193,9 +197,13 @@ export function useOrders(params: UseOrdersParams = {}) {
   const settleOrder = async (
     orderId: string,
     payload: {
-      payment_method: "cash" | "qris";
+      payment_method?: "cash" | "qris";
       cash_amount_received?: number | null;
       discount_amount?: number;
+      split_payments?: Array<{
+        payment_method: "cash" | "qris";
+        amount: number;
+      }>;
     }
   ) => {
     setIsMutating(true);

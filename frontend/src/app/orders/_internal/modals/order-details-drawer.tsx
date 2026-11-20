@@ -217,6 +217,26 @@ export function OrderDetailsDrawer({
               Rp {order.total_amount.toLocaleString("id-ID")}
             </span>
           </div>
+          {order.payment_breakdown && order.payment_breakdown.length > 0 && (
+            <div className="pt-1.5 space-y-1 border-t border-slate-100">
+              <span className="text-[10px] font-bold uppercase text-slate-400 block">
+                Split Payment Breakdown
+              </span>
+              {order.payment_breakdown.map((part, idx) => (
+                <div
+                  key={`${part.payment_method}-${idx}`}
+                  className="flex justify-between text-[11px] text-slate-600"
+                >
+                  <span className="font-semibold uppercase">
+                    {part.payment_method}
+                  </span>
+                  <span className="font-mono font-bold">
+                    Rp {Number(part.amount || 0).toLocaleString("id-ID")}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="flex justify-between text-[11px] text-slate-400 pt-1">
             <span>Est. Net Cafe Revenue (less vendor fee)</span>
             <span className="font-mono text-emerald-600 font-semibold">
